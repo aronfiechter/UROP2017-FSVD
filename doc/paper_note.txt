@@ -1,0 +1,46 @@
+###############################
+Notes on Aurenhammer 2006 paper
+
+___________
+Corrections
+
+page 4: s_i is a proper subset of R^2 \ H (and not a proper subset of H)
+
+_____
+Notes
+
+1 # Introduction
+
+2 # Structural properties
+- region of a segment:
+- Lemma 1 = all faces are unbounded:
+- Corollary 2 = non-empty regions:
+- O(n) faces, edges, vertices:
+- graph of edges of FV(S) is connected:
+
+3 # Dual setting
+- upper envelope: compute duals of all segments, consider union of lower wedges,
+  then define E as the boundary (edge) of this union.
+  If you choose a point p on E so that it is contained only in a single lower
+  wedge dual of segment s_i (it is on one of the "spikes"), then consider the
+  ray R_p from p to -infinity and transform it into its dual open halfplane H_p
+  (oriented upwards), then H_p will intersect every segment except s_i, and
+  reg(s_i) will be unbounded in the positive direction with slope x, where x is
+  the x-coordinate of the ray R_p.
+- lower envelope: consider upper wedges, then choose p and consider the ray to
+  +infinity, which becomes an open halfplane oriented downwards. reg(s_i) is
+  unbounded in the negative direction with slope x, where x is the x-coordinate
+  of the ray.
+  Easier way to do this: rotate input by pi and repeat as upper envelope.
+
+4 # Construction algorithm
+- G-map: find unbounded edges in cyclical order using dual envelopes. First make
+  make wedges out of all segments, then use divide and conquer and plane sweep
+  to find upper envelope E of union of the dual wedges W_1, ... W_n.
+  Save vertexes of E, they are the supporting lines of the halfplanes defining
+  the unbounded edges which are bisectors between s_i and s_j, or between parts
+  of regions (closest to the two endopoints of segment).
+  The directions of the halfplanes (normal to the supporting lines) are the
+  unbounded edges.
+  These directions are also the normal lines of the edges of the furthest hull.
+- Collapse: 

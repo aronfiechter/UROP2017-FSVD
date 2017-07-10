@@ -41,11 +41,7 @@ Papadopoulou, Ioannis Mantas, Martin Suderland).
 --------------------------------------------------------------------------------
 ## Temporal log
 
-### 2017-07-03
-### 2017-07-04
-### 2017-07-05
-### 2017-07-06
-### 2017-07-07
+### 2017-07-03 to 2017-07-07
 
 Read lecture notes, book chapter and paper
 
@@ -60,6 +56,7 @@ Files removed:
   * `points-2.ipe`
   * `temp`
   * `inputs/*`
+
 Created new folder TestIpelet to try creting an Ipelet from scratch. The only
 needed files are:
   * test.cpp
