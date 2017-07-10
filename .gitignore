@@ -1,2 +1,11 @@
+# ignore folder containing save of old files
 old/
+
+# ignore all build files. To build, look at documentation
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# ignore junk
 *.DS_Store

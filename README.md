@@ -37,6 +37,16 @@ Papadopoulou, Ioannis Mantas, Martin Suderland).
   - [ ] implement simple test ipelet
 
 
+--------------------------------------------------------------------------------
+## Notes
+
+To compile an own non-shipped program creating `executable` (adapt according to
+CGAL version):
+```cd /path/to/program
+cgal_create_CMakeLists -s executable
+cmake -DCGAL_DIR=$HOME/CGAL-4.9.1 .
+make```
+
 
 --------------------------------------------------------------------------------
 ## Temporal log
