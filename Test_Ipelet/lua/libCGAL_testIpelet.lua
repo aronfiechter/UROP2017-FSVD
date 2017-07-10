@@ -2,7 +2,7 @@
 -- CGAL test ipelet description
 ----------------------------------------------------------------------
 
-label = "Test"
+label = "Min Circle"
 
 about = [[
 This ipelet is based on the CGAL_ipelet package. See www.cgal.org.
@@ -17,16 +17,7 @@ function run(model, num)
 end
 
 methods = {
-  { label="two points euclidean bisector" },
-  { label="two points L_inf bisector" },
-  { label="point/segment L_inf-parabola" },
-  { label="two sites L_inf bisector" },
-  { label="Linf 2D Voronoi Diagram" },
-  { label="L2 farthest Voronoi Diagram" },
-  { label="Hausdorff Voronoi Diagram" },
-  { label="L2 FVD polygonal input" },
-  { label="farthest color Voronoi diagram" },
-  { label="L2 NVD polygonal input" },
+  { label="Min circle enclosing points" },
   { label="Help" },
 }
 
