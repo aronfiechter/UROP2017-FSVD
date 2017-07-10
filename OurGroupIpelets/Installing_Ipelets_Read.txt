@@ -1,0 +1,77 @@
+% Instruction to install Ipelets on a Mac. With version 4.9 CGal and Ipe 7.2.7
+
+% (Similar with minor changes to the instruction given 
+% https://3d.bk.tudelft.nl/hledoux/blog/ipe-cgal-ipelets/)
+
+
+% Install Homebrew by copying the following command to the terminal promt:
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+% Then install CGAL in the terminal promt:
+brew install cgal
+
+% Install Ipe at the website (download the *.dmg file and open it):
+http://ipe.otfried.org/
+
+% Open Ipe one time to finish the installation.
+
+% Continue with some commands in the terminal promt:
+cd .../CGAL_ipelets/demo/CGAL_ipelets/		(This is somewhere in the CGAL folder which was created when you installed it.)
+
+%Then in the promt:
+cmake -DIPE_LIBRARIES=/Applications/Ipe.app/Contents/Frameworks/libipe.dylib -DIPE_INCLUDE_DIR=/Applications/Ipe.app/Contents/Frameworks/Headers/
+make
+
+
+
+
+mkdirr RenamingFolder
+
+cp *.so .../CGAL_ipelets/demo/CGAL_ipelets/RenamingFolder/
+cp lua/*.lua .../CGAL_ipelets/demo/CGAL_ipelets/RenamingFolder/
+
+cd RenamingFolder
+
+% Correct the endings of all *.so files:
+brew install ren
+ren '*.so' ‘#1.dylib'
+
+cp *.dylib /Applications/Ipe.app/Contents/Resources/ipelets
+cp *.lua /Applications/Ipe.app/Contents/Resources/ipelets
+
+cd ..
+rm -r RenamingFolder
+
+
+
+
+
+
+
+For the ipelets in our group we had to do the following steps:
+- Copy the CMakeLists.txt file of the CGAL_ipelets folder into our folder (we need a newer version since Ipe has had some changes)
+- Delete the 4 files:
+	CMakeCache.txt
+	cmake_install.cmake
+	Makefile
+	install_manifest.txt
+- Delete some parts out of this CMakeLists.txt file:
+	set(CGAL_IPELETS ${CGAL_IPELETS} alpha_shapes)
+	… (and following ones)
+- Create one line for our functions
+	set(CGAL_IPELETS ${CGAL_IPELETS} bisectors)
+- Delete 3 additional line:
+	add_library(simple_triangulation MODULE simple_triangulation.cpp)
+	add_to_cached_list(CGAL_EXECUTABLE_TARGETS simple_triangulation)
+	target_link_libraries(simple_triangulation ${IPE_LIBRARIES})
+- Save the file
+
+- Navigate with the terminal into the folder
+- Type:
+	cmake -DIPE_LIBRARIES=/Applications/Ipe.app/Contents/Frameworks/libipe.dylib -DIPE_INCLUDE_DIR=/Applications/Ipe.app/Contents/Frameworks/Headers/
+	make
+- Then continue with the renaming and copying procedure as for CGAL ipelets.
+
+
+Maybe it is necessary to install additional Xcode parts.
+
