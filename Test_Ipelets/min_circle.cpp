@@ -1,23 +1,18 @@
-// #define CGAL_SDG_VERBOSE
-// #undef CGAL_SDG_VERBOSE
-//
-// #ifndef CGAL_SDG_VERBOSE
-// #define CGAL_SDG_DEBUG(a)
-// #else
-// #define CGAL_SDG_DEBUG(a) { a }
-// #endif
-
+#include <CGAL/CGAL_Ipelet_base.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+
 #include <CGAL/Min_circle_2.h>
 #include <CGAL/Min_circle_2_traits_2.h>
 
 namespace CGAL_min_circle {
 
   // Voronoi diagrams
-  typedef CGAL::Exact_predicates_exact_constructions_kernel K;
-  typedef CGAL::Min_circle_2_traits_2<K>                    Traits;
+  typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
+  typedef CGAL::Min_circle_2_traits_2<Kernel>               Traits;
   typedef CGAL::Min_circle_2<Traits>                        Min_circle;
-  typedef K::Point_2                                        Point;
+  typedef Kernel::Point_2                                   Point;
+  typedef Traits::Circle                                    T_Circle;
+  typedef Kernel::Circle_2                                  Circle;
 
   const unsigned int num_entries = 1;
 
@@ -50,8 +45,8 @@ namespace CGAL_min_circle {
     case 0:
       std::list<Point_2> pt_lst;
 
-      // Recovering points using output iterator of type
-      // Dispatch_or_drop_output_iterator
+      /* Recovering points using output iterator of type */
+      /* Dispatch_or_drop_output_iterator */
       read_active_objects(
         CGAL::dispatch_or_drop_output<Point_2>(std::back_inserter(pt_lst))
       );
@@ -61,15 +56,17 @@ namespace CGAL_min_circle {
         return;
       }
 
-      Delaunay dt;
-      dt.insert(pt_lst.begin(),pt_lst.end());
+      /* Create Min_circle object with the given points */
+      Min_circle mc2(pt_lst.begin(), pt_lst.end(), true);
+      const T_Circle min_c = mc2.circle(); // get the circle
+      Circle c(min_c.center(), min_c.squared_radius());
 
-      //draw the triangulation.
-      draw_in_ipe(dt);
+      /* Draw the minimum enclosing circle */
+      draw_in_ipe(c);
   };
 
   }
 
 }
 
-CGAL_IPELET(CGAL_bisectors::bisectorIpelet)
+CGAL_IPELET(CGAL_min_circle::minCircleIpelet)
