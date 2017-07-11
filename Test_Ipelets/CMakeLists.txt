@@ -104,6 +104,7 @@ if ( CGAL_FOUND )
 
     set(CGAL_IPELETS ${CGAL_IPELETS})
     set(CGAL_IPELETS ${CGAL_IPELETS} simple_triangulation)
+    set(CGAL_IPELETS ${CGAL_IPELETS} min_circle)
 
 
     if ( IPELET_INSTALL_DIR )

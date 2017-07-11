@@ -34,11 +34,15 @@ Papadopoulou, Ioannis Mantas, Martin Suderland).
 - [ ] Understand how Ipelets work
   - [x] walk through the build process
   - [ ] read documentation
+  - [x] compile copy of an ipelet myself
   - [ ] implement simple test ipelet
+- [ ] Start implementing algorithm from Aurenhammer paper
 
 
 --------------------------------------------------------------------------------
 ## Notes
+
+# Compilation
 
 To compile an own non-shipped program creating `executable` (adapt according to
 CGAL version):
@@ -52,6 +56,10 @@ To compile an Ipelet copy the file `CMakeLists.txt` from
 `set(CGAL_IPELETS ${CGAL_IPELETS})` delete the other Ipelets and add own. Don't
 forget to create a `lua/` folder where to put the `libCGAL_ipeletname.lua`
 files.
+
+# CGAL
+
+# C++
 
 
 --------------------------------------------------------------------------------
@@ -82,3 +90,4 @@ needed files are:
 ### 2017-07-11
 Copied example `simple_triangulation.cpp` ipelet from documentation and tried to
 compile it and add it to Ipe. It works.
+Took `min_cricle.cpp` example from CGAL documentation, TODO converted it into Ipelet.
