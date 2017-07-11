@@ -42,14 +42,16 @@ Papadopoulou, Ioannis Mantas, Martin Suderland).
 --------------------------------------------------------------------------------
 ## Notes
 
-# Compilation
+### Compilation
 
 To compile an own non-shipped program creating `executable` (adapt according to
 CGAL version):
-```cd /path/to/program
+```shell
+cd /path/to/program
 cgal_create_CMakeLists -s executable
 cmake -DCGAL_DIR=$HOME/CGAL-4.9.1 .
-make```
+make
+```
 
 To compile an Ipelet copy the file `CMakeLists.txt` from
 `.../CGAL-X.X/demo/CGAL_Ipelets/CMakeLists.txt`, then after
@@ -57,9 +59,9 @@ To compile an Ipelet copy the file `CMakeLists.txt` from
 forget to create a `lua/` folder where to put the `libCGAL_ipeletname.lua`
 files.
 
-# CGAL
+### CGAL
 
-# C++
+### C++
 
 
 --------------------------------------------------------------------------------
