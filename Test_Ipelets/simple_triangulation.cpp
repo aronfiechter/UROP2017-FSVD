@@ -1,6 +1,7 @@
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/CGAL_Ipelet_base.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+
+#include <CGAL/Delaunay_triangulation_2.h>
 
 namespace my_triangulation {
 
