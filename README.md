@@ -47,6 +47,12 @@ cgal_create_CMakeLists -s executable
 cmake -DCGAL_DIR=$HOME/CGAL-4.9.1 .
 make```
 
+To compile an Ipelet copy the file `CMakeLists.txt` from
+`.../CGAL-X.X/demo/CGAL_Ipelets/CMakeLists.txt`, then after
+`set(CGAL_IPELETS ${CGAL_IPELETS})` delete the other Ipelets and add own. Don't
+forget to create a `lua/` folder where to put the `libCGAL_ipeletname.lua`
+files.
+
 
 --------------------------------------------------------------------------------
 ## Temporal log
@@ -72,3 +78,7 @@ needed files are:
   * test.cpp
   * lua/libCGAL_testIpelet.lua
   * CMakeLists.txt (copy of the file in `FCVD_HVD_Bisectors`)
+
+### 2017-07-11
+Copied example `simple_triangulation.cpp` ipelet from documentation and tried to
+compile it and add it to Ipe. It works.
