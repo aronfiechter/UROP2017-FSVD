@@ -27,6 +27,7 @@ methods = {
   { label="L2 FVD polygonal input" },
   { label="farthest color Voronoi diagram" },
   { label="L2 NVD polygonal input" },
+  { label="L2 FSVD" },
   { label="Help" },
 }
 

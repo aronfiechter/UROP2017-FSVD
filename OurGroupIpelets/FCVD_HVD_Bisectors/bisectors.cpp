@@ -84,7 +84,7 @@ namespace CGAL_bisectors{
 
 typedef  HVD_Envelope_diagram_2 Envelope;
 
-  const unsigned int num_entries = 11;
+  const unsigned int num_entries = 12;
 
   const std::string sublabel[] = {
     "two points euclidean bisector",
@@ -98,6 +98,7 @@ typedef  HVD_Envelope_diagram_2 Envelope;
     "L2 farthest color Voronoi diagram (FCVD)",
     "L2 NVD with polygonal input",
     "L2 FCVDstar",
+    "L2 farthest segment Voronoi Diagram",
     "Help"
   };
 
@@ -112,7 +113,8 @@ typedef  HVD_Envelope_diagram_2 Envelope;
     "Draw the L2 FVD for points of given clusters",
     "Draw the farthest color Voronoi diagram for points",
     "Draw the L2 NVD for points of given clusters",
-     "Draw the L2 FCVDstar for points of given clusters"
+    "Draw the L2 FCVDstar for points of given clusters",
+    "Draw the L2 farthest Voronoi diagram for segments",
   };
 
   class bisectorIpelet
