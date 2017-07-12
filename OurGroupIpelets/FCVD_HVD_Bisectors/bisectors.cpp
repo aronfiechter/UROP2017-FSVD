@@ -59,7 +59,7 @@ namespace CGAL_bisectors{
 
   Inf_bis bisector_linf;
 
-  // Voronoi diagrams
+  /* Voronoi diagrams */
   typedef CGAL::Exact_predicates_exact_constructions_kernel VD_Kernel;
   typedef VD_Kernel::FT                                   Number_type;
   typedef VD_Kernel::Iso_rectangle_2                      Iso_rectangle_2;
@@ -67,41 +67,40 @@ namespace CGAL_bisectors{
   typedef std::vector<VD_Point_2>                         Points;
 
   typedef CGAL::Linf2D_voronoi_traits_2<VD_Kernel>        VD_Traits_3;
-  typedef VD_Traits_3::Surface_3   VD_Surface_3;
+  typedef VD_Traits_3::Surface_3                          VD_Surface_3;
   typedef CGAL::Envelope_diagram_2<VD_Traits_3>           VD_Envelope_diagram_2;
 
-  typedef CGAL::L2_voronoi_traits_2<VD_Kernel>   L2_VD_Traits_3;
-  typedef L2_VD_Traits_3::Surface_3   L2_VD_Surface_3;
-  typedef CGAL::Envelope_diagram_2<L2_VD_Traits_3> L2_VD_Envelope_diagram_2;
+  typedef CGAL::L2_voronoi_traits_2<VD_Kernel>            L2_VD_Traits_3;
+  typedef L2_VD_Traits_3::Surface_3                       L2_VD_Surface_3;
+  typedef CGAL::Envelope_diagram_2<L2_VD_Traits_3>        L2_VD_Envelope_diagram_2;
 
-  typedef CGAL::L2_HVD_traits_2<VD_Kernel>       HVD_Traits_3;
-  typedef HVD_Traits_3::Surface_3                HVD_Surface_3;
-  typedef CGAL::Envelope_diagram_2<HVD_Traits_3> HVD_Envelope_diagram_2;
+  typedef CGAL::L2_HVD_traits_2<VD_Kernel>                HVD_Traits_3;
+  typedef HVD_Traits_3::Surface_3                         HVD_Surface_3;
+  typedef CGAL::Envelope_diagram_2<HVD_Traits_3>          HVD_Envelope_diagram_2;
 
-  typedef CGAL::L2_FCVD_traits_2<VD_Kernel>       FCVD_Traits_3;
-  typedef FCVD_Traits_3::Surface_3                FCVD_Surface_3;
-  typedef CGAL::Envelope_diagram_2<FCVD_Traits_3> FCVD_Envelope_diagram_2;
+  typedef CGAL::L2_FCVD_traits_2<VD_Kernel>               FCVD_Traits_3;
+  typedef FCVD_Traits_3::Surface_3                        FCVD_Surface_3;
+  typedef CGAL::Envelope_diagram_2<FCVD_Traits_3>         FCVD_Envelope_diagram_2;
 
-typedef  HVD_Envelope_diagram_2 Envelope;
+  typedef HVD_Envelope_diagram_2                          Envelope;
 
+  /* Ipelet labels */
   const unsigned int num_entries = 12;
-
   const std::string sublabel[] = {
-    "two points euclidean bisector",
-    "two points L_inf bisector",
-    "point/segment L_inf-parabola",
-    "two sites L_inf bisector",
-    "Linf 2D Voronoi Diagram",
-    "L2 farthest Voronoi Diagram",
-    "Hausdorff Voronoi Diagram",
-    "L2 FVD with polygonal input",
-    "L2 farthest color Voronoi diagram (FCVD)",
-    "L2 NVD with polygonal input",
-    "L2 FCVDstar",
-    "L2 farthest segment Voronoi Diagram",
+    "two points euclidean bisector",            // 0
+    "two points L_inf bisector",                // 1
+    "point/segment L_inf-parabola",             // 2
+    "two sites L_inf bisector",                 // 3
+    "Linf 2D Voronoi Diagram",                  // 4
+    "L2 farthest Voronoi Diagram",              // 5
+    "Hausdorff Voronoi Diagram",                // 6
+    "L2 FVD with polygonal input",              // 7
+    "L2 farthest color Voronoi diagram (FCVD)", // 8
+    "L2 NVD with polygonal input",              // 9
+    "L2 FCVDstar",                              // 10
+    "L2 farthest segment Voronoi Diagram",      // 11
     "Help"
   };
-
   const std::string helpmsg[] = {
     "Draw the L2 bisector of two points",
     "Draw the L_inf bisector of two points",
@@ -147,9 +146,9 @@ typedef  HVD_Envelope_diagram_2 Envelope;
 
   void bisectorIpelet::protected_run(int fn)
   {
-    Delaunay dt;     //Voronoi of points
-    Regular rt;     //power diagram
-    Apollonius apo;     //apollonius
+    Delaunay dt;        // Voronoi of points
+    Regular rt;         // power diagram
+    Apollonius apo;     // apollonius
 
     if (fn == (num_entries-1)) {
       show_help();
@@ -175,31 +174,28 @@ typedef  HVD_Envelope_diagram_2 Envelope;
       // a 2-point cluster {p,q} is denoted by a segment pq;
       // a cluster with more than two points
       //   is denoted by a polygon with these points as vertices
-      bbox =
-        read_active_objects(
-          CGAL::dispatch_or_drop_output
-          <Point_2,Segment_2,Polygon_2>(
+      bbox = read_active_objects(
+        CGAL::dispatch_or_drop_output<Point_2,Segment_2,Polygon_2>(
           cluster_grabber(std::back_inserter(cluster_list)),
           cluster_grabber(std::back_inserter(cluster_list)),
           cluster_grabber(std::back_inserter(cluster_list))
-          )
-          );
-    } else { // all other cases
-      bbox =
-        read_active_objects(
-          CGAL::dispatch_or_drop_output
-          <Point_2,Polygon_2,Segment_2>(
+        )
+      );
+    }
+    else { // all other cases
+      bbox = read_active_objects(
+        CGAL::dispatch_or_drop_output<Point_2,Polygon_2,Segment_2>(
           std::back_inserter(pt_list),
           segment_grabber(std::back_inserter(sg_list)),
           std::back_inserter(sg_list)
-          )
-          );
+        )
+      );
     }
 
 
 
-    switch(fn){
-      case 0:
+    switch(fn) {
+      case 0: // L_2 BISECTOR (two points)
         if (pt_list.empty()){
           print_error_message(("No mark selected"));
           return;
@@ -211,8 +207,7 @@ typedef  HVD_Envelope_diagram_2 Envelope;
         }
 
         break;
-      case 1:
-        // BISECTOR L_INF for two points
+      case 1: // L_INF BISECTOR (two points)
         if (pt_list.empty()){
           print_error_message(("No mark selected"));
           return;
@@ -225,8 +220,7 @@ typedef  HVD_Envelope_diagram_2 Envelope;
 
         break;
 
-      case 2:
-        // L_INF PARABOLA (one point and one segment)
+      case 2: // L_INF PARABOLA (one point and one segment)
         if (pt_list.empty() && sg_list.empty()){
           print_error_message(("No mark, no segment and no polygon selected"));
           return;
@@ -245,8 +239,7 @@ typedef  HVD_Envelope_diagram_2 Envelope;
 
         break;
 
-      case 3:
-        // L_INF bisector of two sites (a site can be a point or a segment)
+      case 3: // L_INF BISECTOR (two sites; a site can be a point or a segment)
         if (pt_list.empty() && sg_list.empty()){
           print_error_message(("No mark, no segment and no polygon selected"));
           return;
@@ -259,15 +252,15 @@ typedef  HVD_Envelope_diagram_2 Envelope;
 
         break;
 
-      case 4:
-      case 5:
+      case 4: // L_INF VD (points)
+      case 5: // L_2 FVD (points)
         {
           std::list<Point_2>::iterator it;
           for(it = pt_list.begin(); it != pt_list.end(); ++it) {
             vd_pt_list.push_back(VD_Point_2(it->x(), it->y()));
           }
 
-          //Voronoi diagram for points.
+          // Voronoi diagram for points
           if (vd_pt_list.empty()){
             print_error_message(("No mark selected"));
             return;
@@ -275,8 +268,8 @@ typedef  HVD_Envelope_diagram_2 Envelope;
         }
         break;
 
-      case 6:
-      case 8:
+      case 6: // Hausdorff VD
+      case 8: // L_2 F Color VD (FDVC)
       //  std::cout << "debug HVD/FCVD input check" << std::endl;
         if (cluster_list.empty()) {
           print_error_message(("No cluster selected"));
@@ -301,8 +294,8 @@ typedef  HVD_Envelope_diagram_2 Envelope;
         }
         break;
 
-      case 7:
-      case 9:
+      case 7: // L_2 FVD (polygonal input)
+      case 9: // L_2 VD (polygonal input)
        // std::cout << "debug FVD/NVD cluster input check" << std::endl;
         if (cluster_list.empty()) {
           print_error_message(("No points selected"));
@@ -334,7 +327,7 @@ typedef  HVD_Envelope_diagram_2 Envelope;
         }
 
         break;
-      case 10:
+      case 10: // L_2 FCVD Star
          if (cluster_list.empty()) {
                      print_error_message(("No points selected"));
 		     }
@@ -346,8 +339,10 @@ typedef  HVD_Envelope_diagram_2 Envelope;
     //slightly increase the size of the Bbox
     bbox = Iso_rectangle_2(
       bbox.min()+Kernel::Vector_2(-incr_len,-incr_len),
-      bbox.max()+Kernel::Vector_2(incr_len,incr_len));
+      bbox.max()+Kernel::Vector_2(incr_len,incr_len)
+    );
 
+    /* L_2 BISECTOR (two points) */
     if (fn == 0) {
       std::list<Point_2>::iterator it;
       it = pt_list.begin();
@@ -359,7 +354,8 @@ typedef  HVD_Envelope_diagram_2 Envelope;
       draw_in_ipe(l.perpendicular(midp));
     }
 
-    if(fn == 1){
+    /* L_INF BISECTOR (two points) */
+    if (fn == 1) {
       std::list<Point_2>::iterator it;
       it = pt_list.begin();
       Point_2 p = *it;
@@ -369,7 +365,7 @@ typedef  HVD_Envelope_diagram_2 Envelope;
       Site_2 sq = Site_2::construct_site_2(q);
       Inf_bis::Polychainline pcl = bisector_linf(sp, sq) ;
       Inf_bis::Polychainline::Vertex_const_iterator it1 = pcl.vertices_begin();
-      if(pcl.size() == 1) {
+      if (pcl.size() == 1) {
         Point_2 firstpt = *it1;
         CGAL::Direction_2<Kernel> incomingDir = pcl.get_incoming();
         CGAL::Direction_2<Kernel> outgoingDir = pcl.get_outgoing();
@@ -378,7 +374,7 @@ typedef  HVD_Envelope_diagram_2 Envelope;
 
       }
 
-      else if(pcl.size() == 2) {
+      else if (pcl.size() == 2) {
         Point_2 firstpt = *it1;
         ++it1;
         Point_2 lastpt = *it1;
@@ -401,7 +397,8 @@ typedef  HVD_Envelope_diagram_2 Envelope;
 
     }
 
-    if(fn==2) {
+    /* L_INF PARABOLA (one point and one segment) */
+    if (fn == 2) {
       std::list<Point_2>::iterator it;
       it = pt_list.begin();
       Point_2 p = *it;
@@ -424,7 +421,8 @@ typedef  HVD_Envelope_diagram_2 Envelope;
 
     }
 
-    if(fn==3) {
+    /* L_INF BISECTOR (two sites; a site can be a point or a segment) */
+    if (fn == 3) {
       std::list<Point_2>::iterator ptIt;
       ptIt = pt_list.begin();
 
@@ -433,7 +431,7 @@ typedef  HVD_Envelope_diagram_2 Envelope;
 
       Site_2 sp, sq;
       //PP
-      if(pt_list.size() <= 2 and sg_list.empty()) {
+      if (pt_list.size() <= 2 and sg_list.empty()) {
         Point_2 p = *ptIt;
         sp = Site_2::construct_site_2(p);
         ++ptIt;
@@ -448,7 +446,7 @@ typedef  HVD_Envelope_diagram_2 Envelope;
         Segment_2 q = *segIt;
         sq = Site_2::construct_site_2(q.source(), q.target());
       }
-    //SS
+      //SS
       else if (pt_list.empty() and sg_list.size() == 2) {
         Segment_2 p = *segIt;
         sp = Site_2::construct_site_2(p.source(), p.target());
@@ -456,19 +454,21 @@ typedef  HVD_Envelope_diagram_2 Envelope;
         Segment_2 q = *segIt;
         sq = Site_2::construct_site_2(q.source(), q.target());
       }
-        Inf_bis::Polychainline pcl = bisector_linf(sp, sq) ;
-        Inf_bis::Polychainline::Vertex_const_iterator it2 = pcl.vertices_begin();
-        Point_2 pt = *it2;
-        draw_in_ipe(Ray_2(pt, pcl.get_incoming()));
-        Inf_bis::Polychainline::Vertex_const_iterator it3 = it2+1;
-        for(; it3!=pcl.vertices_end(); ++it2, ++it3) {
-          draw_in_ipe(Segment_2(*it2, *it3));
-        }
-        draw_in_ipe(Ray_2(*it2, pcl.get_outgoing()));
+
+      Inf_bis::Polychainline pcl = bisector_linf(sp, sq) ;
+      Inf_bis::Polychainline::Vertex_const_iterator it2 = pcl.vertices_begin();
+      Point_2 pt = *it2;
+      draw_in_ipe(Ray_2(pt, pcl.get_incoming()));
+      Inf_bis::Polychainline::Vertex_const_iterator it3 = it2+1;
+      for(; it3!=pcl.vertices_end(); ++it2, ++it3) {
+        draw_in_ipe(Segment_2(*it2, *it3));
+      }
+      draw_in_ipe(Ray_2(*it2, pcl.get_outgoing()));
 
     }
 
-    if (fn==4) {
+    /* L_INF VD (points) */
+    if (fn == 4) {
       VD_Envelope_diagram_2 *m_envelope_diagram;
       m_envelope_diagram = new VD_Envelope_diagram_2();
       CGAL::lower_envelope_3
@@ -509,21 +509,25 @@ typedef  HVD_Envelope_diagram_2 Envelope;
                 Point_2 p1 (to_double(eit->curve().segment().source().x()), to_double(eit->curve().segment().source().y()));
                 Point_2 p2 (to_double(eit->curve().segment().target().x()), to_double(eit->curve().segment().target().y()));
                 draw_in_ipe(Segment_2(p1, p2), bbox);
-        }else if (eit->curve().is_ray()){
+        } else if (eit->curve().is_ray()){
                 Point_2 p (to_double(eit->curve().ray().source().x()), to_double(eit->curve().ray().source().y()));
                 CGAL::Direction_2<Kernel> d (to_double(eit->curve().ray().direction().dx()), to_double(eit->curve().ray().direction().dy()));
                 draw_in_ipe(Ray_2(p, d), bbox);
-        }else if(eit->curve().is_line()){
+        } else if(eit->curve().is_line()){
                 Line_2 l (to_double(eit->curve().line().a()), to_double(eit->curve().line().b()), to_double(eit->curve().line().c()));
                 draw_in_ipe(l, bbox);
         }
       }
-    } // end of case: fn==4
+    } // end of case: fn == 4
 
-    if ((fn==5) or (fn==7) or (fn==9)) {
+    /* 5: L_2 FVD (points)
+       7: L_2 FVD (polygonal input)
+       9: L_2 VD (polygonal input)
+    */
+    if ((fn == 5) or (fn == 7) or (fn == 9)) {
       L2_VD_Envelope_diagram_2 *m_envelope_diagram;
       m_envelope_diagram = new L2_VD_Envelope_diagram_2();
-      if ((fn==5) or (fn==7)) {
+      if ((fn == 5) or (fn == 7)) {
         CGAL::upper_envelope_3
           (vd_pt_list.begin(), vd_pt_list.end(), *m_envelope_diagram);
       } else {
@@ -589,12 +593,12 @@ typedef  HVD_Envelope_diagram_2 Envelope;
           draw_in_ipe(l, bbox);
         }
       } // end of draw edges
-    } // end of case: fn==5
+    } // end of case: fn == 5 or fn == 7 or fn == 9
 
-    if (fn==6) { // HVD
+    /* Hausdorff VD */
+    if (fn == 6) {
       HVD_Envelope_diagram_2 *m_envelope_diagram;
       m_envelope_diagram = new HVD_Envelope_diagram_2();
-
 
       CGAL::lower_envelope_3
         (vd_cluster_list.begin(), vd_cluster_list.end(), *m_envelope_diagram);
@@ -656,9 +660,10 @@ typedef  HVD_Envelope_diagram_2 Envelope;
           draw_in_ipe(l, bbox);
         }
       } // end of draw edges
-    } // end of case: fn==6
+    } // end of case: fn == 6
 
-    if (fn==8) { // FCVD
+    /* L_2 F Color VD (FDVC) */
+    if (fn == 8) {
       FCVD_Envelope_diagram_2 *m_envelope_diagram;
       m_envelope_diagram = new FCVD_Envelope_diagram_2();
 
@@ -722,7 +727,7 @@ typedef  HVD_Envelope_diagram_2 Envelope;
           draw_in_ipe(l, bbox);
         }
       } // end of draw edges
-    } // end of case: fn==8
+    } // end of case: fn == 8
   }
   // end of void bisectorIpelet::protected_run(int fn)
 
