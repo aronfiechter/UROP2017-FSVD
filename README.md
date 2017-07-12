@@ -112,3 +112,7 @@ Copied example `simple_triangulation.cpp` ipelet from documentation and tried to
 compile it and add it to Ipe. It works.
 Took `min_cricle.cpp` example from CGAL documentation, converted it into Ipelet.
 Both Ipelets are in `Test_Ipelets/`.
+
+### 2017-07-12
+Created `OurGroupIpelets/FSVD_L2/` folder with usual `lua/libCGAL_fsvd_l2.lua`,
+`fsvd_l2.cpp` and copied `CMakeLists.txt` from other Ipelets.
