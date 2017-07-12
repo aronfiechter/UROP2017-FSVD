@@ -36,6 +36,7 @@ Papadopoulou, Ioannis Mantas, Martin Suderland).
   - [ ] read documentation
   - [x] compile copy of an ipelet myself
   - [x] implement simple test ipelet
+- [ ] move this TODO list and perhaps also the temporal log to github wiki
 - [ ] read into C++ and CGAL
   - [ ] read about C++ generic programming and templates
   - [ ] read parts of CGAL developer manual
@@ -120,3 +121,5 @@ Both Ipelets are in `Test_Ipelets/`.
 Created `OurGroupIpelets/FSVD_L2/` folder with usual `lua/libCGAL_fsvd_l2.lua`,
 `fsvd_l2.cpp` and copied `CMakeLists.txt` from other Ipelets.
 Back to given FCVD_HVD_Bisectors Ipelet: implement FSVD here using envelopes.
+Moved function `FCVDStar` to number 11, inserted `FSVD` as number 10. Added
+comments everywhere and corrected some spacing and indentation.
