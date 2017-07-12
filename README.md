@@ -40,6 +40,9 @@ Papadopoulou, Ioannis Mantas, Martin Suderland).
   - [ ] read about C++ generic programming and templates
   - [ ] read parts of CGAL developer manual
   - [ ] read shortly about namespaces, new C++ features
+- [ ] implement FSVD using envelopes
+  - [ ] add function to given FCVD_HVD_Bisectors Ipelet
+  - [ ] make new function similar to FVD for points, but using segments
 - [ ] start implementing algorithm from Aurenhammer paper
 
 
@@ -116,3 +119,4 @@ Both Ipelets are in `Test_Ipelets/`.
 ### 2017-07-12
 Created `OurGroupIpelets/FSVD_L2/` folder with usual `lua/libCGAL_fsvd_l2.lua`,
 `fsvd_l2.cpp` and copied `CMakeLists.txt` from other Ipelets.
+Back to given FCVD_HVD_Bisectors Ipelet: implement FSVD here using envelopes.
