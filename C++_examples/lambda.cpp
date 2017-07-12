@@ -1,20 +1,18 @@
 #include <iostream>
 #include <cstring>
 
-using namespace std;
-
-int main(int argc, char const *argv[]) {
+int main() {
 
   char s[1000];
 
-  cin >> s;
+  std::cin >> s;
 
   int Uppercase = 0; //modified by the lambda
 
-  for_each(s, s + strlen(s), [&Uppercase] (char c) {
+  std::for_each(s, s + strlen(s), [&Uppercase] (char c) {
     if (isupper(c))
       Uppercase++;
   });
 
-  cout << Uppercase << " uppercase letters in: " << s << endl;
+  std::cout << Uppercase << " uppercase letters in: " << s << std::endl;
 }

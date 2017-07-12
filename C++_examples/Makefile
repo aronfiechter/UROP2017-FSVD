@@ -1,9 +1,9 @@
 CC = g++
-CFLAGS = -Weverything
+CFLAGS = -Weverything -Wno-c++98-compat
 LIBS = -std=c++11 -stdlib=libc++
 
-PROGS = lambda
-OBJS = lambda.o
+PROGS = lambda reference
+OBJS = lambda.o reference.o
 
 .PHONY: ALL clean
 
@@ -16,4 +16,4 @@ $(PROGS): %: %.o
 	$(CC) -c $(LIBS) $(CFLAGS) $< -o $@
 
 clean:
-	rm $(PROGS) $(PROGS).o
+	rm $(PROGS) $(OBJS)
