@@ -17,7 +17,7 @@ Papadopoulou, Ioannis Mantas, Martin Suderland).
 
 ## TODO list
 
-- [x] Read David Mount notes on Computational geometry:
+- [x] read David Mount notes on Computational geometry:
   - [x] Introduction
   - [x] Convex hulls
   - [x] Line segment intersections
@@ -25,18 +25,22 @@ Papadopoulou, Ioannis Mantas, Martin Suderland).
   - [x] Halfplane intersection and point-line duality
   - [ ] Linear Programming
   - [x] Voronoi diagrams and Fortune's algorithm
-- [x] Read chapter 7 of Computational Geometry book
+- [x] read chapter 7 of Computational Geometry book
   - [x] Definitions and properties
   - [x] Computing the Voronoi diagram
   - [ ] Voronoi diagram of line segments (TODO: read again)
   - [x] Farthest-point Voronoi diagram
-- [x] Read and understand Aurenhammer 2006 paper
-- [ ] Understand how Ipelets work
+- [x] read and understand Aurenhammer 2006 paper
+- [ ] understand how Ipelets work
   - [x] walk through the build process
   - [ ] read documentation
   - [x] compile copy of an ipelet myself
-  - [ ] implement simple test ipelet
-- [ ] Start implementing algorithm from Aurenhammer paper
+  - [x] implement simple test ipelet
+- [ ] read into C++ and CGAL
+  - [ ] read about C++ generic programming and templates
+  - [ ] read parts of CGAL developer manual
+  - [ ] read shortly about namespaces, new C++ features
+- [ ] start implementing algorithm from Aurenhammer paper
 
 
 --------------------------------------------------------------------------------
@@ -57,7 +61,8 @@ To compile an Ipelet copy the file `CMakeLists.txt` from
 `.../CGAL-X.X/demo/CGAL_Ipelets/CMakeLists.txt`, then after
 `set(CGAL_IPELETS ${CGAL_IPELETS})` delete the other Ipelets and add own. Don't
 forget to create a `lua/` folder where to put the `libCGAL_ipeletname.lua`
-files.
+files (as described on the
+[Ipelets manual](http://ipe.otfried.org/manual/cpp-ipelets.html)).
 
 ### CGAL
 
@@ -66,7 +71,7 @@ To install: `brew install cgal`
 Then download the source code from the official website (get the same version
 as in `brew`), extract it where you need it, and:
 ```shell
-cd CGAL-X.Y # version
+cd CGAL-X.Y # e.g. CGAL-4.9.1
 cmake .
 make
 ```

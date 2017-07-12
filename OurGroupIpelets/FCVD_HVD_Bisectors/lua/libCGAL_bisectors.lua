@@ -2,7 +2,7 @@
 -- CGAL bisectors ipelet description
 ----------------------------------------------------------------------
 
-label = "Bisectors"
+label = "FDVD HVD Bisectors"
 
 about = [[
 This ipelet is based on the CGAL_ipelet package. See www.cgal.org.
