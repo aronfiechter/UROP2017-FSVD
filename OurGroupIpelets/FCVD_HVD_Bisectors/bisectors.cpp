@@ -97,8 +97,8 @@ namespace CGAL_bisectors{
     "L2 FVD with polygonal input",              // 7
     "L2 farthest color Voronoi diagram (FCVD)", // 8
     "L2 NVD with polygonal input",              // 9
-    "L2 FCVDstar",                              // 10
-    "L2 farthest segment Voronoi Diagram",      // 11
+    "L2 farthest segment Voronoi Diagram",      // 10
+    "L2 FCVDstar",                              // 11
     "Help"
   };
   const std::string helpmsg[] = {
@@ -112,8 +112,8 @@ namespace CGAL_bisectors{
     "Draw the L2 FVD for points of given clusters",
     "Draw the farthest color Voronoi diagram for points",
     "Draw the L2 NVD for points of given clusters",
-    "Draw the L2 FCVDstar for points of given clusters",
     "Draw the L2 farthest Voronoi diagram for segments",
+    "Draw the L2 FCVDstar for points of given clusters",
   };
 
   class bisectorIpelet
@@ -144,8 +144,8 @@ namespace CGAL_bisectors{
     };
   // --------------------------------------------------------------------
 
-  void bisectorIpelet::protected_run(int fn)
-  {
+  void bisectorIpelet::protected_run(int fn) {
+
     Delaunay dt;        // Voronoi of points
     Regular rt;         // power diagram
     Apollonius apo;     // apollonius
@@ -155,8 +155,8 @@ namespace CGAL_bisectors{
       return;
     }
 
-    std::list<Point_2> pt_list;
-    std::list<Segment_2> sg_list;
+    std::list<Point_2>    pt_list;
+    std::list<Segment_2>  sg_list;
     std::list<VD_Point_2> vd_pt_list;
 
     typedef CGAL::Polygon_2<Kernel>               Cluster_2;
@@ -167,13 +167,13 @@ namespace CGAL_bisectors{
 
     Iso_rectangle_2 bbox;
 
-    if ((fn == 6) or (fn == 7) or (fn == 8) or (fn == 9) or (fn == 10)) {
+    if ((fn == 6) or (fn == 7) or (fn == 8) or (fn == 9) or (fn == 11)) {
       // HVD, FVD from clusters, FCVD, NVD, FCVDstar from clusters
       // use cluster grabber:
       // a 1-point cluster {p}   is denoted by a point p (mark in ipe);
       // a 2-point cluster {p,q} is denoted by a segment pq;
       // a cluster with more than two points
-      //   is denoted by a polygon with these points as vertices
+      // is denoted by a polygon with these points as vertices
       bbox = read_active_objects(
         CGAL::dispatch_or_drop_output<Point_2,Segment_2,Polygon_2>(
           cluster_grabber(std::back_inserter(cluster_list)),
@@ -194,74 +194,66 @@ namespace CGAL_bisectors{
 
 
 
-    switch(fn) {
+    switch (fn) {
       case 0: // L_2 BISECTOR (two points)
-        if (pt_list.empty()){
+        if (pt_list.empty()) {
           print_error_message(("No mark selected"));
           return;
         }
-
-        if (pt_list.size() != 2){
+        if (pt_list.size() != 2) {
           print_error_message(("Exactly two points should be selected"));
           return;
         }
-
         break;
+
       case 1: // L_INF BISECTOR (two points)
-        if (pt_list.empty()){
+        if (pt_list.empty()) {
           print_error_message(("No mark selected"));
           return;
         }
-
-        if(pt_list.size() != 2) {
+        if (pt_list.size() != 2) {
           print_error_message(("Exactly two points should be selected"));
           return;
         }
-
         break;
 
       case 2: // L_INF PARABOLA (one point and one segment)
-        if (pt_list.empty() && sg_list.empty()){
+        if (pt_list.empty() && sg_list.empty()) {
           print_error_message(("No mark, no segment and no polygon selected"));
           return;
         }
-
-        if(pt_list.size() + sg_list.size() != 2) {
+        if (pt_list.size() + sg_list.size() != 2) {
           print_error_message(("Exactly two components should be selected"));
           return;
         }
-
-        if(pt_list.size() != 1) {
+        if (pt_list.size() != 1) {
           print_error_message(
-              ("Exactly one point and one segment should be selected"));
+            ("Exactly one point and one segment should be selected")
+          );
           return;
         }
-
         break;
 
       case 3: // L_INF BISECTOR (two sites; a site can be a point or a segment)
-        if (pt_list.empty() && sg_list.empty()){
+        if (pt_list.empty() && sg_list.empty()) {
           print_error_message(("No mark, no segment and no polygon selected"));
           return;
         }
-
-        if(pt_list.size() + sg_list.size() != 2) {
+        if (pt_list.size() + sg_list.size() != 2) {
           print_error_message(("Exactly two components should be selected"));
           return;
         }
-
         break;
 
       case 4: // L_INF VD (points)
       case 5: // L_2 FVD (points)
         {
           std::list<Point_2>::iterator it;
-          for(it = pt_list.begin(); it != pt_list.end(); ++it) {
+          for (it = pt_list.begin(); it != pt_list.end(); ++it) {
             vd_pt_list.push_back(VD_Point_2(it->x(), it->y()));
           }
-
           // Voronoi diagram for points
-          if (vd_pt_list.empty()){
+          if (vd_pt_list.empty()) {
             print_error_message(("No mark selected"));
             return;
           }
@@ -274,7 +266,8 @@ namespace CGAL_bisectors{
         if (cluster_list.empty()) {
           print_error_message(("No cluster selected"));
           return;
-        } else {
+        }
+        else {
           std::list<Cluster_2>::iterator clusterit;
           for (clusterit = cluster_list.begin();
                clusterit != cluster_list.end();
@@ -283,14 +276,11 @@ namespace CGAL_bisectors{
             Cluster_2::Vertex_iterator it;
             for (it = clusterit->vertices_begin();
                  it != clusterit->vertices_end();
-                 it++)
-            {
+                 it++) {
               tempcluster.push_back(VD_Point_2(it->x(), it->y()));
             } // individual cluster for end
             vd_cluster_list.push_back(tempcluster);
-          }
-	  // family of clusters for end
-
+          } // family of clusters for end
         }
         break;
 
@@ -300,46 +290,47 @@ namespace CGAL_bisectors{
         if (cluster_list.empty()) {
           print_error_message(("No points selected"));
           return;
-        } else {
-          if (cluster_list.size() > 2) {
-            print_error_message(("Too many polygons selected"));
-            return;
-          }
-
-          std::list<Cluster_2>::iterator clusterit;
-          for (clusterit = cluster_list.begin();
-               clusterit != cluster_list.end();
-               clusterit++) {
-            Cluster_2::Vertex_iterator it;
-            for (it = clusterit->vertices_begin();
-                 it != clusterit->vertices_end();
-                 it++)
-            {
-              vd_pt_list.push_back(VD_Point_2(it->x(), it->y()));
-            }
-          }
-
-          //Voronoi diagram for points.
-          if (vd_pt_list.empty()){
-            print_error_message(("No mark selected"));
-            return;
+        }
+        else if (cluster_list.size() > 2) {
+          print_error_message(("Too many polygons selected"));
+          return;
+        }
+        std::list<Cluster_2>::iterator clusterit;
+        for (clusterit = cluster_list.begin();
+             clusterit != cluster_list.end();
+             clusterit++) {
+          Cluster_2::Vertex_iterator it;
+          for (it = clusterit->vertices_begin();
+               it != clusterit->vertices_end();
+               it++) {
+            vd_pt_list.push_back(VD_Point_2(it->x(), it->y()));
           }
         }
-
+        // Voronoi diagram for points.
+        if (vd_pt_list.empty()) {
+          print_error_message(("No mark selected"));
+          return;
+        }
         break;
-      case 10: // L_2 FCVD Star
-         if (cluster_list.empty()) {
-                     print_error_message(("No points selected"));
-		     }
-         break;
-	 }
-     //end of switch
 
-    Kernel::FT incr_len=(fn<2)?50:75;
-    //slightly increase the size of the Bbox
+      case 10: // L2 FSVD (segments)
+        if (sg_list.empty()) {
+          print_error_message(("No segments selected"));
+        }
+        break;
+
+      case 11: // L_2 FCVD Star
+        if (cluster_list.empty()) {
+          print_error_message(("No points selected"));
+		    }
+        break;
+    } // end of switch
+
+    Kernel::FT incr_len = (fn < 2) ? 50 : 75;
+    // slightly increase the size of the Bbox
     bbox = Iso_rectangle_2(
-      bbox.min()+Kernel::Vector_2(-incr_len,-incr_len),
-      bbox.max()+Kernel::Vector_2(incr_len,incr_len)
+      bbox.min() + Kernel::Vector_2(-incr_len, -incr_len),
+      bbox.max() + Kernel::Vector_2(incr_len, incr_len)
     );
 
     /* L_2 BISECTOR (two points) */
@@ -365,13 +356,13 @@ namespace CGAL_bisectors{
       Site_2 sq = Site_2::construct_site_2(q);
       Inf_bis::Polychainline pcl = bisector_linf(sp, sq) ;
       Inf_bis::Polychainline::Vertex_const_iterator it1 = pcl.vertices_begin();
+      
       if (pcl.size() == 1) {
         Point_2 firstpt = *it1;
         CGAL::Direction_2<Kernel> incomingDir = pcl.get_incoming();
         CGAL::Direction_2<Kernel> outgoingDir = pcl.get_outgoing();
         draw_in_ipe(Ray_2(firstpt, incomingDir));
         draw_in_ipe(Ray_2(firstpt, outgoingDir));
-
       }
 
       else if (pcl.size() == 2) {
