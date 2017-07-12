@@ -291,25 +291,27 @@ namespace CGAL_bisectors{
           print_error_message(("No points selected"));
           return;
         }
-        else if (cluster_list.size() > 2) {
-          print_error_message(("Too many polygons selected"));
-          return;
-        }
-        std::list<Cluster_2>::iterator clusterit;
-        for (clusterit = cluster_list.begin();
-             clusterit != cluster_list.end();
-             clusterit++) {
-          Cluster_2::Vertex_iterator it;
-          for (it = clusterit->vertices_begin();
-               it != clusterit->vertices_end();
-               it++) {
-            vd_pt_list.push_back(VD_Point_2(it->x(), it->y()));
+        else {
+          if (cluster_list.size() > 2) {
+            print_error_message(("Too many polygons selected"));
+            return;
           }
-        }
-        // Voronoi diagram for points.
-        if (vd_pt_list.empty()) {
-          print_error_message(("No mark selected"));
-          return;
+          std::list<Cluster_2>::iterator clusterit;
+          for (clusterit = cluster_list.begin();
+               clusterit != cluster_list.end();
+               clusterit++) {
+            Cluster_2::Vertex_iterator it;
+            for (it = clusterit->vertices_begin();
+                 it != clusterit->vertices_end();
+                 it++) {
+              vd_pt_list.push_back(VD_Point_2(it->x(), it->y()));
+            }
+          }
+          // Voronoi diagram for points.
+          if (vd_pt_list.empty()) {
+            print_error_message(("No mark selected"));
+            return;
+          }
         }
         break;
 
@@ -356,7 +358,7 @@ namespace CGAL_bisectors{
       Site_2 sq = Site_2::construct_site_2(q);
       Inf_bis::Polychainline pcl = bisector_linf(sp, sq) ;
       Inf_bis::Polychainline::Vertex_const_iterator it1 = pcl.vertices_begin();
-      
+
       if (pcl.size() == 1) {
         Point_2 firstpt = *it1;
         CGAL::Direction_2<Kernel> incomingDir = pcl.get_incoming();
