@@ -61,6 +61,19 @@ files.
 
 ### CGAL
 
+To see prerequisites: `brew info cgal`
+To install: `brew install cgal`
+Then download the source code from the official website (get the same version
+as in `brew`), extract it where you need it, and:
+```shell
+cd CGAL-X.Y # version
+cmake .
+make
+```
+
+### Ipe and Ipelets
+
+
 ### C++
 
 
@@ -92,4 +105,5 @@ needed files are:
 ### 2017-07-11
 Copied example `simple_triangulation.cpp` ipelet from documentation and tried to
 compile it and add it to Ipe. It works.
-Took `min_cricle.cpp` example from CGAL documentation, TODO converted it into Ipelet.
+Took `min_cricle.cpp` example from CGAL documentation, converted it into Ipelet.
+Both Ipelets are in `Test_Ipelets/`.

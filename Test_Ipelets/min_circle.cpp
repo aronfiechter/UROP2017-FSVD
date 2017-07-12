@@ -26,44 +26,49 @@ namespace CGAL_min_circle {
   };
 
   class minCircleIpelet
-  : public CGAL::Ipelet_base<Kernel, num_entries> {
-    public:
-      // declare an ipelet called Enclosing circle, with 2 functions (including help message).
-      minCircleIpelet()
-        :CGAL::Ipelet_base<Kernel,num_entries>("Enclosing circle", sublabel, helpmsg) {}
-      void protected_run(int);
+    : public CGAL::Ipelet_base<Kernel, num_entries> {
+  public:
+    // declare an ipelet called Enclosing circle, with 2 functions (including help message).
+    minCircleIpelet()
+      :CGAL::Ipelet_base<Kernel,num_entries>("Enclosing circle", sublabel, helpmsg) {}
+    void protected_run(int);
   };
 
 
   void minCircleIpelet::protected_run(int fn) {
 
     switch (fn) {
-    case 1:
-      show_help(); // print an help message
-      return;
-
-    case 0:
-      std::list<Point_2> pt_lst;
-
-      /* Recovering points using output iterator of type */
-      /* Dispatch_or_drop_output_iterator */
-      read_active_objects(
-        CGAL::dispatch_or_drop_output<Point_2>(std::back_inserter(pt_lst))
-      );
-
-      if (pt_lst.empty()) {
-        print_error_message("No mark selected");
+      case 1:
+        show_help(); // print an help message
         return;
-      }
 
-      /* Create Min_circle object with the given points */
-      Min_circle mc2(pt_lst.begin(), pt_lst.end(), true);
-      const T_Circle min_c = mc2.circle(); // get the circle
-      Circle c(min_c.center(), min_c.squared_radius());
+      case 0:
+        std::list<Point_2> pt_lst;
 
-      /* Draw the minimum enclosing circle */
-      draw_in_ipe(c);
-  };
+        /* Recovering points using output iterator of type */
+        /* Dispatch_or_drop_output_iterator */
+        read_active_objects(
+          CGAL::dispatch_or_drop_output<Point_2>(std::back_inserter(pt_lst))
+        );
+
+        if (pt_lst.empty()) {
+          print_error_message("No mark selected");
+          return;
+        }
+
+        if (pt_lst.size() == 1) {
+          print_error_message("Select at least two marks");
+          return;
+        }
+
+        /* Create Min_circle object with the given points */
+        Min_circle mc2(pt_lst.begin(), pt_lst.end(), true);
+        const T_Circle min_c = mc2.circle(); // get the circle
+        Circle c(min_c.center(), min_c.squared_radius());
+
+        /* Draw the minimum enclosing circle */
+        draw_in_ipe(c);
+    };
 
   }
 

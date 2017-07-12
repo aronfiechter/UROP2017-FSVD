@@ -7,5 +7,6 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 
-# ignore junk
+# ignore production files etc.
 *.DS_Store
+*.so
