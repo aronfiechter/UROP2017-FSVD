@@ -10,3 +10,5 @@ Makefile
 # ignore production files etc.
 *.DS_Store
 *.so
+.idea/
+Project.cbp
