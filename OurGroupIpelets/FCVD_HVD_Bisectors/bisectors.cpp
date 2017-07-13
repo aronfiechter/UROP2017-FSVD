@@ -64,6 +64,7 @@ namespace CGAL_bisectors{
   typedef VD_Kernel::FT                                   Number_type;
   typedef VD_Kernel::Iso_rectangle_2                      Iso_rectangle_2;
   typedef VD_Kernel::Point_2                              VD_Point_2;
+  typedef VD_Kernel::Segment_2                            VD_Segment_2;
   typedef std::vector<VD_Point_2>                         Points;
 
   typedef CGAL::Linf2D_voronoi_traits_2<VD_Kernel>        VD_Traits_3;
@@ -155,9 +156,10 @@ namespace CGAL_bisectors{
       return;
     }
 
-    std::list<Point_2>    pt_list;
-    std::list<Segment_2>  sg_list;
-    std::list<VD_Point_2> vd_pt_list;
+    std::list<Point_2>      pt_list;
+    std::list<Segment_2>    sg_list;
+    std::list<VD_Point_2>   vd_pt_list;
+    std::list<VD_Segment_2> vd_sg_list;
 
     typedef CGAL::Polygon_2<Kernel>               Cluster_2;
     typedef CGAL::Polygon_2<VD_Kernel>            VD_Cluster_2;
@@ -315,9 +317,18 @@ namespace CGAL_bisectors{
         }
         break;
 
-      case 10: // L2 FSVD (segments)
+      case 10: // L_2 FSVD (segments)
         if (sg_list.empty()) {
           print_error_message(("No segments selected"));
+        }
+        else {
+          std::list<Segment_2>::iterator sgit;
+          for (sgit = sg_list.begin(); sgit != sg_list.end(); ++sgit) {
+            vd_sg_list.push_back(VD_Segment_2(
+              VD_Point_2(sgit->source().x(), sgit->source().y()),
+              VD_Point_2(sgit->target().x(), sgit->target().y())
+            ));
+          }
         }
         break;
 
@@ -721,6 +732,17 @@ namespace CGAL_bisectors{
         }
       } // end of draw edges
     } // end of case: fn == 8
+
+    /* L_2 FSVD (segments) */
+    if (fn == 10) {
+      // Create envelope diagram object
+      L2_VD_Envelope_diagram_2 *m_envelope_diagram;
+      m_envelope_diagram = new L2_VD_Envelope_diagram_2();
+
+//      CGAL::upper_envelope_3(vd_sg_list.begin(), vd_sg_list.end(), *m_envelope_diagram);
+
+    } // enf of case: fn == 10
+
   }
   // end of void bisectorIpelet::protected_run(int fn)
 
