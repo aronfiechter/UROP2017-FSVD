@@ -31,6 +31,7 @@
 #include <CGAL/L2_coarse_HVD_traits_2.h>
 #include <CGAL/L2_coarse_FCVD_traits_2.h>
 #include <CGAL/envelope_3.h>
+#include <CGAL/L2_segment_voronoi_traits_2.h> // added for FSVD
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/point_generators_2.h>
@@ -74,6 +75,12 @@ namespace CGAL_bisectors{
   typedef CGAL::L2_voronoi_traits_2<VD_Kernel>            L2_VD_Traits_3;
   typedef L2_VD_Traits_3::Surface_3                       L2_VD_Surface_3;
   typedef CGAL::Envelope_diagram_2<L2_VD_Traits_3>        L2_VD_Envelope_diagram_2;
+
+  /* Added for FSVD, fn == 10 */
+  typedef CGAL::L2_segment_voronoi_traits_2<VD_Kernel>    L2_FSVD_Traits_3;
+  typedef L2_FSVD_Traits_3::Surface_3                     L2_FSVD_Surface_3;
+  typedef CGAL::Envelope_diagram_2<L2_FSVD_Traits_3>      L2_FSVD_Envelope_diagram_2;
+
 
   typedef CGAL::L2_HVD_traits_2<VD_Kernel>                HVD_Traits_3;
   typedef HVD_Traits_3::Surface_3                         HVD_Surface_3;
@@ -249,6 +256,7 @@ namespace CGAL_bisectors{
 
       case 4: // L_INF VD (points)
       case 5: // L_2 FVD (points)
+      case 10:// TODO remove line
         {
           std::list<Point_2>::iterator it;
           for (it = pt_list.begin(); it != pt_list.end(); ++it) {
@@ -317,20 +325,20 @@ namespace CGAL_bisectors{
         }
         break;
 
-      case 10: // L_2 FSVD (segments)
-        if (sg_list.empty()) {
-          print_error_message(("No segments selected"));
-        }
-        else {
-          std::list<Segment_2>::iterator sgit;
-          for (sgit = sg_list.begin(); sgit != sg_list.end(); ++sgit) {
-            vd_sg_list.push_back(VD_Segment_2(
-              VD_Point_2(sgit->source().x(), sgit->source().y()),
-              VD_Point_2(sgit->target().x(), sgit->target().y())
-            ));
-          }
-        }
-        break;
+      // case 10: // L_2 FSVD (segments)
+      //   if (sg_list.empty()) {
+      //     print_error_message(("No segments selected"));
+      //   }
+      //   else {
+      //     std::list<Segment_2>::iterator sgit;
+      //     for (sgit = sg_list.begin(); sgit != sg_list.end(); ++sgit) {
+      //       vd_sg_list.push_back(VD_Segment_2(
+      //         VD_Point_2(sgit->source().x(), sgit->source().y()),
+      //         VD_Point_2(sgit->target().x(), sgit->target().y())
+      //       ));
+      //     }
+      //   }
+      //   break;
 
       case 11: // L_2 FCVD Star
         if (cluster_list.empty()) {
@@ -736,10 +744,72 @@ namespace CGAL_bisectors{
     /* L_2 FSVD (segments) */
     if (fn == 10) {
       // Create envelope diagram object
-      L2_VD_Envelope_diagram_2 *m_envelope_diagram;
-      m_envelope_diagram = new L2_VD_Envelope_diagram_2();
+      L2_FSVD_Envelope_diagram_2 *m_envelope_diagram;
+      m_envelope_diagram = new L2_FSVD_Envelope_diagram_2();
 
-//      CGAL::upper_envelope_3(vd_sg_list.begin(), vd_sg_list.end(), *m_envelope_diagram);
+      // CGAL::upper_envelope_3(vd_sg_list.begin(), vd_sg_list.end(), *m_envelope_diagram);
+
+      // TODO remove. Test to see if using a copy of the file is ok
+      CGAL::upper_envelope_3
+        (vd_pt_list.begin(), vd_pt_list.end(), *m_envelope_diagram);
+
+      //computes the bounding box
+      VD_Point_2 bottom_left (bbox.min().x(), bbox.min().y());
+      VD_Point_2 top_right (bbox.max().x(), bbox.max().y());
+
+      for(L2_FSVD_Envelope_diagram_2::Vertex_const_iterator vit =
+            m_envelope_diagram->vertices_begin();
+          vit != m_envelope_diagram->vertices_end();
+          vit++) {
+          VD_Point_2 vp = VD_Point_2(vit->point());
+        if(CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
+          bottom_left = VD_Point_2(vp.x(), bottom_left.y());
+        if(CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER)
+          bottom_left = VD_Point_2(bottom_left.x(), vp.y());
+        if(CGAL::compare(vp.x(), top_right.x()) == CGAL::LARGER)
+          top_right = VD_Point_2(vp.x(), top_right.y());
+        if(CGAL::compare(vp.y(), top_right.y()) == CGAL::LARGER)
+          top_right = VD_Point_2(top_right.x(), vp.y());
+
+        //if one wants to display vertices of the VD as well, that's it
+        //Point_2 p (to_double(vp.x()), to_double(vp.y()));
+        //draw_in_ipe(p, bbox);
+      }
+
+      Point_2 bl (to_double(bottom_left.x()), to_double(bottom_left.y()));
+      Point_2 tr (to_double(top_right.x()), to_double(top_right.y()));
+
+      Kernel::FT incr_len = 50;
+
+      bbox = Iso_rectangle_2(
+                    bl + Kernel::Vector_2(-incr_len,-incr_len),
+                    tr + Kernel::Vector_2(incr_len,incr_len));
+
+      // draws edges
+      for(L2_FSVD_Envelope_diagram_2::Edge_const_iterator eit =
+            m_envelope_diagram->edges_begin();
+          eit != m_envelope_diagram->edges_end();
+          eit++) {
+        if (eit->curve().is_segment()) {
+          Point_2 p1 (to_double(eit->curve().segment().source().x()),
+                      to_double(eit->curve().segment().source().y()));
+          Point_2 p2 (to_double(eit->curve().segment().target().x()),
+                      to_double(eit->curve().segment().target().y()));
+          draw_in_ipe(Segment_2(p1, p2), bbox);
+        } else if (eit->curve().is_ray()) {
+          Point_2 p (to_double(eit->curve().ray().source().x()),
+                     to_double(eit->curve().ray().source().y()));
+          CGAL::Direction_2<Kernel> d
+            (to_double(eit->curve().ray().direction().dx()),
+             to_double(eit->curve().ray().direction().dy()));
+          draw_in_ipe(Ray_2(p, d), bbox);
+        } else if (eit->curve().is_line()) {
+          Line_2 l (to_double(eit->curve().line().a()),
+                    to_double(eit->curve().line().b()),
+                    to_double(eit->curve().line().c()));
+          draw_in_ipe(l, bbox);
+        }
+      } // end of draw edges
 
     } // enf of case: fn == 10
 
