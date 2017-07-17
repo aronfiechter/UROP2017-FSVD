@@ -88,17 +88,22 @@ protected:
 
   /* Returns the squared distance between a point and a segment in L2 metric. */
   static Rational sqdistance(const Point_2& p, const Rat_segment_2& s){
-    // find projection of p on supporting line of s
+    /* find projection of p on supporting line of s */
+    Rat_line_2 l = s.supporting_line();
+    Point_2 proj = l.projection(p);
 
+    /* if the projection is on s, the distance is d(p,proj) */
+    if (s.has_on(proj)) {
+      return sqdistance(p, proj);
+    }
+    /* otherwise, the distance is min(d(p,s1),d(p,s2)), where s1 and s2 are the
+    endpoints of the segment s */
+    else {
+      return CGAL::min(sqdistance(p, s.source()), sqdistance(p, s.target()));
+    }
   }
 
 public:
-  static Comparison_result compare_z_at_xy (const X_monotone_curve_2& cv,
-                                            const Xy_monotone_surface_3& h1,
-                                            const Xy_monotone_surface_3& h2,
-                                            bool above) {
-    return CGAL::EQUAL;
-  }
 
   class Make_xy_monotone_3 {
   public:
@@ -106,13 +111,33 @@ public:
       OutputIterator operator()(const Surface_3& s,
                                 bool /* is_lower */,
                                 OutputIterator o) const {
-      *o++ = s;
+      /* the surfaces we are considering are distance functions from line
+       * segments and are already xy_monotone because there is only one possible
+       * distance value for any point on the plane */
+      *o++ = s; // just insert the surface in o, return o one past the end
       return o;
     }
   };
 
   Make_xy_monotone_3 make_xy_monotone_3_object() const {
     return Make_xy_monotone_3();
+  }
+
+  class Construct_projected_boundary_2 {
+  public:
+    template <class OutputIterator>
+    OutputIterator operator()(const Xy_monotone_surface_3& s,
+                              OutputIterator o) const {
+      /* the surfaces we are considering are distance functions from line
+       * segments and are infinite, so they have no projected boundary */
+      return o; // the iterator remains empty
+    }
+  };
+
+  Construct_projected_boundary_2
+  construct_projected_boundary_2_object() const
+  {
+    return Construct_projected_boundary_2();
   }
 
   class Compare_z_at_xy_3 {
@@ -169,21 +194,6 @@ public:
 
   Compare_z_at_xy_below_3 compare_z_at_xy_below_3_object() const {
     return Compare_z_at_xy_below_3();
-  }
-
-  class Construct_projected_boundary_2 {
-  public:
-    template <class OutputIterator>
-    OutputIterator operator()(const Xy_monotone_surface_3& s,
-                              OutputIterator o) const {
-      return o;
-    }
-  };
-
-  Construct_projected_boundary_2
-  construct_projected_boundary_2_object() const
-  {
-    return Construct_projected_boundary_2();
   }
 
 
