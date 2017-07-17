@@ -267,7 +267,6 @@ namespace CGAL_bisectors{
 
       case 4: // L_INF VD (points)
       case 5: // L_2 FVD (points)
-      case 10:// TODO remove line
         {
           std::list<Point_2>::iterator it;
           for (it = pt_list.begin(); it != pt_list.end(); ++it) {
@@ -336,20 +335,20 @@ namespace CGAL_bisectors{
         }
         break;
 
-      // case 10: // L_2 FSVD (segments)
-      //   if (sg_list.empty()) {
-      //     print_error_message(("No segments selected"));
-      //   }
-      //   else {
-      //     std::list<Segment_2>::iterator sgit;
-      //     for (sgit = sg_list.begin(); sgit != sg_list.end(); ++sgit) {
-      //       vd_sg_list.push_back(VD_Segment_2(
-      //         VD_Point_2(sgit->source().x(), sgit->source().y()),
-      //         VD_Point_2(sgit->target().x(), sgit->target().y())
-      //       ));
-      //     }
-      //   }
-      //   break;
+      case 10: // L_2 FSVD (segments)
+        if (sg_list.empty()) {
+          print_error_message(("No segments selected"));
+        }
+        else {
+          std::list<Segment_2>::iterator sgit;
+          for (sgit = sg_list.begin(); sgit != sg_list.end(); ++sgit) {
+            vd_sg_list.push_back(VD_Segment_2(
+              VD_Point_2(sgit->source().x(), sgit->source().y()),
+              VD_Point_2(sgit->target().x(), sgit->target().y())
+            ));
+          }
+        }
+        break;
 
       case 11: // L_2 FCVD Star
         if (cluster_list.empty()) {
@@ -758,7 +757,7 @@ namespace CGAL_bisectors{
       L2_FSVD_Envelope_diagram_2 *m_envelope_diagram;
       m_envelope_diagram = new L2_FSVD_Envelope_diagram_2();
 
-      // CGAL::upper_envelope_3(vd_sg_list.begin(), vd_sg_list.end(), *m_envelope_diagram);
+      CGAL::upper_envelope_3(vd_sg_list.begin(), vd_sg_list.end(), *m_envelope_diagram);
 
     } // enf of case: fn == 10
 

@@ -36,6 +36,9 @@
 #include <CGAL/Envelope_3/Envelope_base.h>
 #include <CGAL/Envelope_3/Env_plane_traits_3_functions.h>
 
+#include <CGAL/Parabola_2.h>
+#include <CGAL/Parabola_segment_2.h>
+
 namespace CGAL{
 
 template <class ConicTraits_2>
@@ -203,20 +206,20 @@ public:
       OutputIterator operator()(const Xy_monotone_surface_3& s1,
                                 const Xy_monotone_surface_3& s2,
                                 OutputIterator o) const {
+      /* if the two segments are the same, their distance function is the same,
+       * so there is no intersection */
       if (s1 == s2) {
-        Conic_arc_2   c6 = Conic_arc_2 (
-                1, 0, 0, 0, 1, 0,       // The parabola.
-                CGAL::CLOCKWISE,
-                Point_2 (-1.73, -3),    // Approximation of the source.
-                0, 0, 0, 0, 1, 3,       // The line: y = -3.
-                Point_2 (1.41, -2),     // Approximation of the target.
-                0, 0, 0, 0, 1, 2        // The line: y = -2.
-        );
-        return o;
-      } else {
-        *o++ = CGAL::make_object(Intersection_curve(CGAL::bisector(s1, s2), 1));
         return o;
       }
+      /* otherwise, for now just make bisector of the two source points of the
+       * segments, to test if this works */
+      else {
+        *o++ = CGAL::make_object(
+          Intersection_curve(CGAL::bisector(s1.source(), s2.source()), 0)
+        );
+        return o;
+      }
+
     }
   };
 
