@@ -1,6 +1,8 @@
 // created by Aron Fiechter on 2017-07-13.
 // This file is a copy of L2_voronoi_traits_2, except that it is for segments
 // instead of points.
+// Actually, it is more similar to Env_sphere_traits.h in the end, because for
+// intersections of segments we needed conics.
 
 // Copyright (c) 2005  Tel-Aviv University (Israel).
 // All rights reserved.
@@ -36,150 +38,66 @@
 
 namespace CGAL{
 
-template <class Kernel_>
-class L2_segment_voronoi_traits_2 : public Arr_linear_traits_2<Kernel_>
-{
+template <class ConicTraits_2>
+class L2_segment_voronoi_traits_2 : public ConicTraits_2 {
+
 public:
-  typedef Kernel_                              Kernel;
-  typedef typename Kernel::FT                  FT;
-  typedef Arr_linear_traits_2<Kernel>          Base;
-  //L1_voronoi_traits
-  typedef L2_voronoi_traits_2<Kernel>          Self;
-  typedef typename Base::Multiplicity          Multiplicity;
+  typedef ConicTraits_2                                     Traits_2;
 
-  typedef typename Base::Point_2               Point_2;
-  typedef typename Base::Curve_2               Curve_2;
-  typedef typename Base::X_monotone_curve_2    X_monotone_curve_2;
-  typedef typename Kernel::Segment_2           Segment_2;
-  typedef typename Kernel::Ray_2               Ray_2;
-  typedef typename Kernel::Line_2              Line_2;
-  typedef typename Kernel::Direction_2         Direction_2;
-  typedef std::pair<Curve_2, Multiplicity>     Intersection_curve;
+  typedef typename Traits_2::Point_2                        Point_2;
+  typedef typename Traits_2::Curve_2                        Curve_2;
+  typedef typename Traits_2::X_monotone_curve_2             X_monotone_curve_2;
+  typedef typename Traits_2::Multiplicity                   Multiplicity;
 
-  typedef typename Base::Left_side_category    Left_side_category;
-  typedef typename Base::Bottom_side_category  Bottom_side_category;
-  typedef typename Base::Top_side_category     Top_side_category;
-  typedef typename Base::Right_side_category   Right_side_category;
+  typedef typename Traits_2::Rat_kernel                     Rat_kernel;
+  typedef typename Traits_2::Alg_kernel                     Alg_kernel;
+  typedef typename Traits_2::Nt_traits                      Nt_traits;
 
-  typedef Point_2                  Xy_monotone_surface_3;
-  typedef Point_2                  Surface_3;
+  /* For point-segment bisectors */
+  typedef typename Traits_2::Curve_2                        Conic_arc_2;
 
-  // Returns the squared distance between two points in L2 metric.
-  static FT sqdistance(const Point_2& p1, const Point_2& p2) {
-    FT diffx = p1.x() - p2.x();
-    FT diffy = p1.y() - p2.y();
-    FT sqdist = diffx*diffx + diffy*diffy;
+  typedef typename Rat_kernel::FT                           Rational;
+  typedef typename Rat_kernel::Point_2                      Rat_point_2;
+  typedef typename Rat_kernel::Segment_2                    Rat_segment_2;
+  typedef typename Rat_kernel::Line_2                       Rat_line_2;
+  // typedef typename Rat_kernel::Circle_2                     Rat_circle_2;
+  // typedef typename Rat_kernel::Point_3                      Rat_point_3;
+  typedef typename Rat_kernel::Ray_2                        Rat_ray_2;
+  typedef typename Rat_kernel::Direction_2                  Rat_direction_2;
+
+  typedef typename Alg_kernel::FT                           Algebraic;
+  typedef typename Alg_kernel::Point_2                      Alg_point_2;
+  // typedef typename Alg_kernel::Circle_2                     Alg_circle_2;
+
+  /* Define segments as surfaces for simplicity. Each segment should be thought
+   * of as a surface representing the function distance, with higher values on
+   * the z axis mean farthest points */
+  typedef Rat_segment_2                  Xy_monotone_surface_3;
+  typedef Rat_segment_2                  Surface_3;
+
+protected:
+  typedef std::pair<X_monotone_curve_2, Multiplicity>       Intersection_curve;
+
+  /* Returns the squared distance between two points in L2 metric. */
+  static Rational sqdistance(const Point_2& p1, const Point_2& p2) {
+    Rational diffx = p1.x() - p2.x();
+    Rational diffy = p1.y() - p2.y();
+    Rational sqdist = diffx*diffx + diffy*diffy;
     return sqdist;
   }
 
-  // Returns two enpoints of the middle (vertical/horizontal) part of the bisector,
-  //the index determines which point is returned. There are no conventions about how these endpoints situated
-  //depending on the index (like there was no in the oroginal traits)
-  static Point_2 mid_seg_endpoint(const Point_2& p1, const Point_2& p2, std::size_t index) {
-    const Point_2 *pp1;
-    const Point_2 *pp2;
+  /* Returns the squared distance between a point and a segment in L2 metric. */
+  static Rational sqdistance(const Point_2& p, const Rat_segment_2& s){
+    // find projection of p on supporting line of s
 
-    if (index % 2 == 0) {
-      pp1 = &p1;
-      pp2 = &p2;
-    } else {
-      pp1 = &p2;
-      pp2 = &p1;
-    }
-
-    FT delta_x = pp2->x() - pp1->x();
-    FT delta_y = pp2->y() - pp1->y();
-
-    FT sign_x = CGAL::sign(delta_x);
-    FT sign_y = CGAL::sign(delta_y);
-
-    FT abs_x = CGAL::abs(delta_x);
-    FT abs_y = CGAL::abs(delta_y);
-
-    //midpoint between pp1 and pp2
-    Point_2 mid = CGAL::midpoint(*pp1, *pp2);
-
-    //the case when bisector consists of only one line
-    if(abs_x == abs_y){
-        return mid;
-   }
-
-    FT mid_x = mid.x();
-    FT mid_y = mid.y();
-
-    //length of the middle part of bisector
-    FT len_mid = CGAL::abs(abs_x - abs_y);
-
-    CGAL_assertion(sign_x != CGAL::ZERO || sign_y !=CGAL::ZERO);
-
-    //sign_x (resp. sign_y) is not zero, and will be different for different indexes
-    //since the order of input points changes
-    if (abs_x < abs_y){
-      mid_x += sign_y * 0.5 * len_mid;
-    }else{
-      mid_y += sign_x * 0.5 * len_mid;
-    }
-
-    return Point_2(mid_x, mid_y);
   }
 
+public:
   static Comparison_result compare_z_at_xy (const X_monotone_curve_2& cv,
                                             const Xy_monotone_surface_3& h1,
                                             const Xy_monotone_surface_3& h2,
                                             bool above) {
-   // std::cout << "Entered compare_z_at_xy(cv, h1, h2), where " << std::endl << "cv = " << cv << std::endl << "h1 = " << h1 << std::endl << "h2 = " << h2 << std::endl;
-    CGAL::Comparison_result side = (above == true) ? CGAL::LARGER : CGAL::SMALLER;
-
-    Line_2 l;
-    if (cv.is_segment())
-      l = cv.segment().supporting_line();
-    else if (cv.is_ray())
-      l = cv.ray().supporting_line();
-    else
-      l = cv.line();
-
-      //std::cout << "l = " << l << std::endl;
-
-    if ((l.is_vertical())){
-      // To be "above" the curve, we actually need to have smaller x coordinate,
-      // the order of the comparison function here is opposite to the none vertical
-      // case.
-      side = CGAL::opposite(side);
-      CGAL::Comparison_result res = CGAL::compare_x_at_y(h1, l);
-      if (res == side)
-        return CGAL::SMALLER;
-      else{
-        CGAL_assertion(CGAL::compare_x_at_y(h2, l) == CGAL::opposite(res));
-        return CGAL::LARGER;
-      }
-    } else {
-
-      CGAL::Comparison_result res = CGAL::compare_y_at_x(h1, l);
-      //std::cout << "res = " << res << "; side = " << side << std::endl;
-
-      if (l.is_horizontal()) {
-        CGAL_assertion(CGAL::compare_y_at_x(h2, l) != res);
-        if (res == side)
-         return CGAL::SMALLER;
-        else{
-          CGAL_assertion(CGAL::compare_y_at_x(h2, l) == CGAL::opposite(res));
-          return CGAL::LARGER;
-        }
-      }
-
-     //Could be a tie: points can be equidistant from some query points not on the line
-     //(which are parts of 2d bisector). In that case it returns CGAL::EQUAL
-
-      if (res == side)
-        return CGAL::SMALLER;
-      res = CGAL::compare_y_at_x(h2, l);
-
-      if(res == side)
-        return CGAL::LARGER;
-
-     // std::cout << "compare returns EQUAL: " << "h1 = " << h1 << "; h2 = " << h2 << std::endl;
-      return CGAL::EQUAL;
-    }
+    return CGAL::EQUAL;
   }
 
   class Make_xy_monotone_3 {
@@ -202,31 +120,19 @@ public:
     Comparison_result operator()(const Point_2& p,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
-      return CGAL::compare(sqdistance(p, h1), sqdistance(p, h2));
+      return CGAL::EQUAL;
     }
 
     Comparison_result operator()(const X_monotone_curve_2& cv,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
-      Kernel k;
-      Point_2 p;
-      if(cv.is_segment())
-        p = k.construct_midpoint_2_object()(cv.left(), cv.right());
-      else
-        if(cv.is_ray())
-          p = k.construct_point_on_2_object()(cv.ray(), 1);
-        else {
-          CGAL_assertion(cv.is_line());
-          p = k.construct_point_on_2_object()(cv.line(), 1);
-        }
-      return this->operator()(p, h1, h2);
+      return CGAL::EQUAL;
     }
 
     Comparison_result operator()(const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
       // should happen only if the points are equal.
-      CGAL_assertion(h1 == h2);
-      return EQUAL;
+      return CGAL::EQUAL;
     }
   };
 
@@ -241,7 +147,7 @@ public:
     Comparison_result operator()(const X_monotone_curve_2& cv,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
-      return compare_z_at_xy (cv, h1, h2, true);
+      return CGAL::EQUAL;
     }
 
   };
@@ -257,7 +163,7 @@ public:
     Comparison_result operator()(const X_monotone_curve_2& cv,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
-      return compare_z_at_xy (cv, h1, h2, false);
+      return CGAL::EQUAL;
     }
   };
 
@@ -288,6 +194,14 @@ public:
                                 const Xy_monotone_surface_3& s2,
                                 OutputIterator o) const {
       if (s1 == s2) {
+        Conic_arc_2   c6 = Conic_arc_2 (
+                1, 0, 0, 0, 1, 0,       // The parabola.
+                CGAL::CLOCKWISE,
+                Point_2 (-1.73, -3),    // Approximation of the source.
+                0, 0, 0, 0, 1, 3,       // The line: y = -3.
+                Point_2 (1.41, -2),     // Approximation of the target.
+                0, 0, 0, 0, 1, 2        // The line: y = -2.
+        );
         return o;
       } else {
         *o++ = CGAL::make_object(Intersection_curve(CGAL::bisector(s1, s2), 1));
