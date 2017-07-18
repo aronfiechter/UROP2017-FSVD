@@ -1,8 +1,7 @@
 // created by Aron Fiechter on 2017-07-13.
 // This file is a copy of L2_voronoi_traits_2, except that it is for segments
 // instead of points.
-// Actually, it is more similar to Env_sphere_traits.h in the end, because for
-// intersections of segments we needed conics.
+// We import CGAL/Parabola_segment_2.h because we need it for segment bisectors.
 
 // Copyright (c) 2005  Tel-Aviv University (Israel).
 // All rights reserved.
@@ -41,58 +40,44 @@
 
 namespace CGAL{
 
-template <class ConicTraits_2>
-class L2_segment_voronoi_traits_2 : public ConicTraits_2 {
+template <class Kernel_>
+class L2_segment_voronoi_traits_2 : public Arr_linear_traits_2<Kernel_> {
 
 public:
-  typedef ConicTraits_2                                     Traits_2;
+  typedef Kernel_                                           Kernel;
+  typedef Arr_linear_traits_2<Kernel>                       Base;
+  typedef typename Kernel::FT                               FT;
+  typedef typename Base::Multiplicity                       Multiplicity;
 
-  typedef typename Traits_2::Point_2                        Point_2;
-  typedef typename Traits_2::Curve_2                        Curve_2;
-  typedef typename Traits_2::X_monotone_curve_2             X_monotone_curve_2;
-  typedef typename Traits_2::Multiplicity                   Multiplicity;
-
-  typedef typename Traits_2::Rat_kernel                     Rat_kernel;
-  typedef typename Traits_2::Alg_kernel                     Alg_kernel;
-  typedef typename Traits_2::Nt_traits                      Nt_traits;
-
-  /* For point-segment bisectors */
-  typedef typename Traits_2::Curve_2                        Conic_arc_2;
-
-  typedef typename Rat_kernel::FT                           Rational;
-  typedef typename Rat_kernel::Point_2                      Rat_point_2;
-  typedef typename Rat_kernel::Segment_2                    Rat_segment_2;
-  typedef typename Rat_kernel::Line_2                       Rat_line_2;
-  // typedef typename Rat_kernel::Circle_2                     Rat_circle_2;
-  // typedef typename Rat_kernel::Point_3                      Rat_point_3;
-  typedef typename Rat_kernel::Ray_2                        Rat_ray_2;
-  typedef typename Rat_kernel::Direction_2                  Rat_direction_2;
-
-  typedef typename Alg_kernel::FT                           Algebraic;
-  typedef typename Alg_kernel::Point_2                      Alg_point_2;
-  // typedef typename Alg_kernel::Circle_2                     Alg_circle_2;
+  typedef typename Base::Point_2                            Point_2;
+  typedef typename Base::Curve_2                            Curve_2;
+  typedef typename Base::X_monotone_curve_2                 X_monotone_curve_2;
+  typedef typename Kernel::Segment_2                        Segment_2;
+  typedef typename Kernel::Ray_2                            Ray_2;
+  typedef typename Kernel::Line_2                           Line_2;
+  typedef typename Kernel::Direction_2                      Direction_2;
 
   /* Define segments as surfaces for simplicity. Each segment should be thought
    * of as a surface representing the function distance, with higher values on
    * the z axis mean farthest points */
-  typedef Rat_segment_2                  Xy_monotone_surface_3;
-  typedef Rat_segment_2                  Surface_3;
+  typedef Segment_2                  Xy_monotone_surface_3;
+  typedef Segment_2                  Surface_3;
 
 protected:
   typedef std::pair<X_monotone_curve_2, Multiplicity>       Intersection_curve;
 
   /* Returns the squared distance between two points in L2 metric. */
-  static Rational sqdistance(const Point_2& p1, const Point_2& p2) {
-    Rational diffx = p1.x() - p2.x();
-    Rational diffy = p1.y() - p2.y();
-    Rational sqdist = diffx*diffx + diffy*diffy;
+  static FT sqdistance(const Point_2& p1, const Point_2& p2) {
+    FT diffx = p1.x() - p2.x();
+    FT diffy = p1.y() - p2.y();
+    FT sqdist = CGAL::square(diffx) + CGAL::square(diffy);
     return sqdist;
   }
 
   /* Returns the squared distance between a point and a segment in L2 metric. */
-  static Rational sqdistance(const Point_2& p, const Rat_segment_2& s){
+  static FT sqdistance(const Point_2& p, const Segment_2& s){
     /* find projection of p on supporting line of s */
-    Rat_line_2 l = s.supporting_line();
+    Line_2 l = s.supporting_line();
     Point_2 proj = l.projection(p);
 
     /* if the projection is on s, the distance is d(p,proj) */

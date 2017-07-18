@@ -33,8 +33,6 @@
 #include <CGAL/envelope_3.h>
 
 // added for FSVD, fn == 10
-#include <CGAL/CORE_algebraic_number_traits.h>
-#include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/L2_segment_voronoi_traits_2.h>
 // end added for FSVD
 
@@ -82,13 +80,7 @@ namespace CGAL_bisectors{
   typedef CGAL::Envelope_diagram_2<L2_VD_Traits_3>        L2_VD_Envelope_diagram_2;
 
   /* Added for FSVD, fn == 10 */
-  typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
-  typedef Nt_traits::Rational                             Rational;
-  typedef Nt_traits::Algebraic                            Algebraic;
-  typedef CGAL::Cartesian<Rational>                       Rat_kernel;
-  typedef CGAL::Cartesian<Algebraic>                      Alg_kernel;
-  typedef CGAL::Arr_conic_traits_2<Rat_kernel, Alg_kernel, Nt_traits> Conic_traits_2;
-  typedef CGAL::L2_segment_voronoi_traits_2<Conic_traits_2> L2_FSVD_Traits_3;
+  typedef CGAL::L2_segment_voronoi_traits_2<VD_Kernel>    L2_FSVD_Traits_3;
   typedef L2_FSVD_Traits_3::Surface_3                     L2_FSVD_Surface_3;
   typedef CGAL::Envelope_diagram_2<L2_FSVD_Traits_3>      L2_FSVD_Envelope_diagram_2;
   /* end added for FSVD */
