@@ -173,7 +173,7 @@ public:
     Comparison_result operator()(const Point_2& p,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
-      return CGAL::EQUAL;
+      return CGAL::compare(sqdistance(p, h1), sqdistance(p, h2));
     }
 
     Comparison_result operator()(const X_monotone_curve_2& cv,
@@ -184,7 +184,8 @@ public:
 
     Comparison_result operator()(const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
-      // should happen only if the points are equal.
+      /* if the two unbounded surfaces do not intersect, then they must
+       * represent the same segment's distance function */
       return CGAL::EQUAL;
     }
   };
