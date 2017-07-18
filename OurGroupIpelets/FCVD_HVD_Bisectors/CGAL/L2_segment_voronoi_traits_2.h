@@ -1,7 +1,7 @@
 // created by Aron Fiechter on 2017-07-13.
-// This file is a copy of L2_voronoi_traits_2, except that it is for segments
+// This file implements a model of the concept EnvelopeTraits_3.
+// It is mostly is a copy of L2_voronoi_traits_2, except that it is for segments
 // instead of points.
-// We import CGAL/Parabola_segment_2.h because we need it for segment bisectors.
 
 // Copyright (c) 2005  Tel-Aviv University (Israel).
 // All rights reserved.
@@ -30,59 +30,67 @@
 #include <CGAL/representation_tags.h>
 #include <CGAL/enum.h>
 #include <CGAL/Arr_tags.h>
-#include <CGAL/Arr_linear_traits_2.h>
 #include <CGAL/number_utils.h>
 #include <CGAL/Envelope_3/Envelope_base.h>
-#include <CGAL/Envelope_3/Env_plane_traits_3_functions.h>
 
 #include <CGAL/Parabola_segment_2.h>
 
 namespace CGAL {
 
-template <class Kernel_>
-class L2_segment_voronoi_traits_2 : public Arr_linear_traits_2<Kernel_> {
+template <class Polycurve_traits_2, class Conic_traits_2, class Kernel_>
+class L2_segment_voronoi_traits_2 : public Polycurve_traits_2 {
 
 public:
-  typedef Kernel_                                           Kernel;
-  typedef Arr_linear_traits_2<Kernel>                       Base;
-  typedef typename Kernel::FT                               FT;
-  typedef typename Base::Multiplicity                       Multiplicity;
+  typedef Kernel_                                   Kernel;
+  typedef Conic_traits_2                            C_traits_2;
+  typedef Polycurve_traits_2                        Polycv_traits_2;
+  typedef L2_segment_voronoi_traits_2<Polycv_traits_2, C_traits_2, Kernel>
+                                                    Self;
 
-  typedef typename Base::Point_2                            Point_2;
-  typedef typename Base::Curve_2                            Curve_2;
-  typedef typename Base::X_monotone_curve_2                 X_monotone_curve_2;
-  typedef typename Kernel::Segment_2                        Segment_2;
-  typedef typename Kernel::Ray_2                            Ray_2;
-  typedef typename Kernel::Line_2                           Line_2;
-  typedef typename Kernel::Direction_2                      Direction_2;
+  typedef typename Polycv_traits_2::Point_2         Point_2;
+  typedef typename Polycv_traits_2::Curve_2         Poly_Curve_2;
+  typedef typename Polycv_traits_2::X_monotone_curve_2
+                                                    X_monotone_curve_2;
+  typedef typename Polycv_traits_2::Construct_x_monotone_curve_2
+                                                    Construct_xmono_cd_2;
+  typedef typename Polycv_traits_2::Multiplicity    Multiplicity;
 
-  /* For parts of segment bisectors */
-  typedef CGAL::Parabola_segment_2<Kernel>                  Parabola_segment_2;
+  typedef typename C_traits_2::Rat_kernel           Rat_kernel;
+  typedef typename C_traits_2::Alg_kernel           Alg_kernel;
+  typedef typename C_traits_2::Nt_traits            Nt_traits;
+
+  typedef typename Rat_kernel::FT                   Rational;
+  typedef typename Rat_kernel::Point_2              Rat_point_2;
+  typedef typename Rat_kernel::Segment_2            Rat_segment_2;
+  typedef typename Rat_kernel::Line_2               Rat_line_2;
+  typedef typename Rat_kernel::Ray_2                Rat_ray_2;
+
+  typedef typename Alg_kernel::FT                   Algebraic;
+  typedef typename Alg_kernel::Point_2              Alg_point_2;
 
   /* Define segments as surfaces for simplicity. Each segment should be thought
    * of as a surface representing the function distance, with higher values on
    * the z axis mean farthest points */
-  typedef Segment_2       Xy_monotone_surface_3;
-  typedef Segment_2       Surface_3;
-
-
+  typedef Rat_segment_2                             Surface_3;
+  typedef Surface_3                                 Xy_monotone_surface_3;
 
 protected:
-  typedef std::pair<X_monotone_curve_2, Multiplicity>       Intersection_curve;
+  typedef std::pair<X_monotone_curve_2,
+                    Multiplicity>                   Intersection_curve;
 
   /* Returns the squared distance between two points in L2 metric. */
-  static FT sqdistance(const Point_2& p1, const Point_2& p2) {
-    FT diffx = p1.x() - p2.x();
-    FT diffy = p1.y() - p2.y();
-    FT sqdist = CGAL::square(diffx) + CGAL::square(diffy);
+  static Rational sqdistance(const Rat_point_2& p1, const Rat_point_2& p2) {
+    Rational diffx = p1.x() - p2.x();
+    Rational diffy = p1.y() - p2.y();
+    Rational sqdist = CGAL::square(diffx) + CGAL::square(diffy);
     return sqdist;
   }
 
   /* Returns the squared distance between a point and a segment in L2 metric. */
-  static FT sqdistance(const Point_2& p, const Segment_2& s) {
+  static Rational sqdistance(const Rat_point_2& p, const Rat_segment_2& s) {
     /* find projection of p on supporting line of s */
-    Line_2 l = s.supporting_line();
-    Point_2 proj = l.projection(p);
+    Rat_line_2 l = s.supporting_line();
+    Rat_point_2 proj = l.projection(p);
 
     /* if the projection is on s, the distance is d(p,proj) */
     if (s.has_on(proj)) {
@@ -95,19 +103,19 @@ protected:
     }
   }
 
-  /* Converts a parabola segment (a parabolic arc) into a series of segments.
-   * This is needed because we're using a linear Kernel, and because the CGAL
-   * Ipelet interface does not allow to draw parabolic arcs (yet). */
-  void par_arc_to_segments(const Parabola_segment_2& pb_arc, const std::list<Segment_2>& segments) {
-    /* generate points on the parabolic arc */
-    std::vector<Point_2> points;
-    pb_arc.generate_points(points);
-
-    /* create segments from points */
-    for (auto i = 0; i < points.size() - 1; ++i) {
-      segments.push_back(Segment_2(points[i], points[i + 1]));
-    }
-  }
+  // /* Converts a parabola segment (a parabolic arc) into a series of segments.
+  //  * This is needed because we're using a linear Kernel, and because the CGAL
+  //  * Ipelet interface does not allow to draw parabolic arcs (yet). */
+  // void par_arc_to_segments(const Parabola_segment_2& pb_arc, const std::list<Segment_2>& segments) {
+  //   /* generate points on the parabolic arc */
+  //   std::vector<Point_2> points;
+  //   pb_arc.generate_points(points);
+  //
+  //   /* create segments from points */
+  //   for (auto i = 0; i < points.size() - 1; ++i) {
+  //     segments.push_back(Segment_2(points[i], points[i + 1]));
+  //   }
+  // }
 
 
 
@@ -167,8 +175,22 @@ public:
       /* otherwise, for now just make bisector of the two source points of the
        * segments, to test if this works */
       else {
+        /* get constructor */
+        Polycv_traits_2 traits;
+        Construct_xmono_cd_2
+          constr_xmono_polycv = traits.construct_x_monotone_curve_2_object();
+
+        /* make a list */
+        std::vector<X_monotone_curve_2> xmono_curves;
+        Curve_2 c1(
+          1, 0, 0, 0, -1, 0, CGAL::COUNTERCLOCKWISE,
+          Point_2(Algebraic(0), Algebraic(0)),
+          Point_2(Algebraic(3), Algebraic(9))
+        );
+        xmono_curves.push_back(c1);
+        X_monotone_curve_2 curve = constr_xmono_polycv(xmono_curves.begin(), xmono_curves.end());
         *o++ = CGAL::make_object(
-          Intersection_curve(CGAL::bisector(s1.source(), s2.source()), 0)
+          Intersection_curve(curve, 0)
         );
         return o;
       }
