@@ -138,6 +138,36 @@ public:
 
 
 
+  class Construct_projected_intersections_2 {
+  public:
+    template <class OutputIterator>
+      OutputIterator operator()(const Xy_monotone_surface_3& s1,
+                                const Xy_monotone_surface_3& s2,
+                                OutputIterator o) const {
+      /* if the two segments are the same, their distance function is the same,
+       * so there is no intersection */
+      if (s1 == s2) {
+        return o;
+      }
+      /* otherwise, for now just make bisector of the two source points of the
+       * segments, to test if this works */
+      else {
+        *o++ = CGAL::make_object(
+          Intersection_curve(CGAL::bisector(s1.source(), s2.source()), 0)
+        );
+        return o;
+      }
+
+    }
+  };
+
+  Construct_projected_intersections_2
+  construct_projected_intersections_2_object() const {
+    return Construct_projected_intersections_2();
+  }
+
+
+
   class Compare_z_at_xy_3 {
   public:
     Comparison_result operator()(const Point_2& p,
@@ -196,36 +226,6 @@ public:
 
   Compare_z_at_xy_below_3 compare_z_at_xy_below_3_object() const {
     return Compare_z_at_xy_below_3();
-  }
-
-
-
-  class Construct_projected_intersections_2 {
-  public:
-    template <class OutputIterator>
-      OutputIterator operator()(const Xy_monotone_surface_3& s1,
-                                const Xy_monotone_surface_3& s2,
-                                OutputIterator o) const {
-      /* if the two segments are the same, their distance function is the same,
-       * so there is no intersection */
-      if (s1 == s2) {
-        return o;
-      }
-      /* otherwise, for now just make bisector of the two source points of the
-       * segments, to test if this works */
-      else {
-        *o++ = CGAL::make_object(
-          Intersection_curve(CGAL::bisector(s1.source(), s2.source()), 0)
-        );
-        return o;
-      }
-
-    }
-  };
-
-  Construct_projected_intersections_2
-  construct_projected_intersections_2_object() const {
-    return Construct_projected_intersections_2();
   }
 
 }; // class L2_segment_voronoi_traits_2
