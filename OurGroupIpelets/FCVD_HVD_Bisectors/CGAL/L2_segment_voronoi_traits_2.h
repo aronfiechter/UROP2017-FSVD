@@ -95,6 +95,20 @@ protected:
     }
   }
 
+  /* Converts a parabola segment (a parabolic arc) into a series of segments.
+   * This is needed because we're using a linear Kernel, and because the CGAL
+   * Ipelet interface does not allow to draw parabolic arcs (yet). */
+  void par_arc_to_segments(const Parabola_segment_2& pb_arc, const std::list<Segment_2>& segments) {
+    /* generate points on the parabolic arc */
+    std::vector<Point_2> points;
+    pb_arc.generate_points(points);
+
+    /* create segments from points */
+    for (auto i = 0; i < points.size() - 1; ++i) {
+      segments.push_back(Segment_2(points[i], points[i + 1]));
+    }
+  }
+
 
 
 public:
