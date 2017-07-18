@@ -35,10 +35,9 @@
 #include <CGAL/Envelope_3/Envelope_base.h>
 #include <CGAL/Envelope_3/Env_plane_traits_3_functions.h>
 
-#include <CGAL/Parabola_2.h>
 #include <CGAL/Parabola_segment_2.h>
 
-namespace CGAL{
+namespace CGAL {
 
 template <class Kernel_>
 class L2_segment_voronoi_traits_2 : public Arr_linear_traits_2<Kernel_> {
@@ -57,11 +56,16 @@ public:
   typedef typename Kernel::Line_2                           Line_2;
   typedef typename Kernel::Direction_2                      Direction_2;
 
+  /* For parts of segment bisectors */
+  typedef CGAL::Parabola_segment_2<Kernel>                  Parabola_segment_2;
+
   /* Define segments as surfaces for simplicity. Each segment should be thought
    * of as a surface representing the function distance, with higher values on
    * the z axis mean farthest points */
-  typedef Segment_2                  Xy_monotone_surface_3;
-  typedef Segment_2                  Surface_3;
+  typedef Segment_2       Xy_monotone_surface_3;
+  typedef Segment_2       Surface_3;
+
+
 
 protected:
   typedef std::pair<X_monotone_curve_2, Multiplicity>       Intersection_curve;
@@ -91,6 +95,8 @@ protected:
     }
   }
 
+
+
 public:
 
   class Make_xy_monotone_3 {
@@ -111,6 +117,8 @@ public:
     return Make_xy_monotone_3();
   }
 
+
+
   class Construct_projected_boundary_2 {
   public:
     template <class OutputIterator>
@@ -127,6 +135,8 @@ public:
   {
     return Construct_projected_boundary_2();
   }
+
+
 
   class Compare_z_at_xy_3 {
   public:
@@ -154,6 +164,8 @@ public:
     return Compare_z_at_xy_3();
   }
 
+
+
   class Compare_z_at_xy_above_3
   {
   public:
@@ -170,6 +182,8 @@ public:
     return Compare_z_at_xy_above_3();
   }
 
+
+
   class Compare_z_at_xy_below_3
   {
   public:
@@ -183,6 +197,7 @@ public:
   Compare_z_at_xy_below_3 compare_z_at_xy_below_3_object() const {
     return Compare_z_at_xy_below_3();
   }
+
 
 
   class Construct_projected_intersections_2 {
@@ -213,8 +228,7 @@ public:
     return Construct_projected_intersections_2();
   }
 
-};
-
-} //namespace CGAL
+}; // class L2_segment_voronoi_traits_2
+} // namespace CGAL
 
 #endif // CGAL_L2_SEGMENT_VORONOI_TRAITS_2_H
