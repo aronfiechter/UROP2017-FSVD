@@ -751,6 +751,71 @@ namespace CGAL_bisectors{
 
       CGAL::upper_envelope_3(vd_sg_list.begin(), vd_sg_list.end(), *m_envelope_diagram);
 
+
+      // TODO remove, is opy paste
+      //computes the bounding box
+      VD_Point_2 bottom_left (bbox.min().x(), bbox.min().y());
+      VD_Point_2 top_right (bbox.max().x(), bbox.max().y());
+
+      for(L2_FSVD_Envelope_diagram_2::Vertex_const_iterator vit =
+            m_envelope_diagram->vertices_begin();
+          vit != m_envelope_diagram->vertices_end();
+          vit++) {
+          VD_Point_2 vp = VD_Point_2(vit->point());
+        if(CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
+          bottom_left = VD_Point_2(vp.x(), bottom_left.y());
+        if(CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER)
+          bottom_left = VD_Point_2(bottom_left.x(), vp.y());
+        if(CGAL::compare(vp.x(), top_right.x()) == CGAL::LARGER)
+          top_right = VD_Point_2(vp.x(), top_right.y());
+        if(CGAL::compare(vp.y(), top_right.y()) == CGAL::LARGER)
+          top_right = VD_Point_2(top_right.x(), vp.y());
+
+        //if one wants to display vertices of the VD as well, that's it
+        //Point_2 p (to_double(vp.x()), to_double(vp.y()));
+        //draw_in_ipe(p, bbox);
+      }
+
+      Point_2 bl (to_double(bottom_left.x()), to_double(bottom_left.y()));
+      Point_2 tr (to_double(top_right.x()), to_double(top_right.y()));
+
+      Kernel::FT incr_len = 50;
+
+      bbox = Iso_rectangle_2(
+                    bl + Kernel::Vector_2(-incr_len,-incr_len),
+                    tr + Kernel::Vector_2(incr_len,incr_len));
+
+      unsigned long n = m_envelope_diagram->number_of_edges();
+      char message[100];
+      sprintf(message, "There are %ld edges", n);
+      print_error_message(message);
+
+      // draws edges
+      for(L2_FSVD_Envelope_diagram_2::Edge_const_iterator eit =
+            m_envelope_diagram->edges_begin();
+          eit != m_envelope_diagram->edges_end();
+          eit++) {
+        if (eit->curve().is_segment()) {
+          Point_2 p1 (to_double(eit->curve().segment().source().x()),
+                      to_double(eit->curve().segment().source().y()));
+          Point_2 p2 (to_double(eit->curve().segment().target().x()),
+                      to_double(eit->curve().segment().target().y()));
+          draw_in_ipe(Segment_2(p1, p2), bbox);
+        } else if (eit->curve().is_ray()) {
+          Point_2 p (to_double(eit->curve().ray().source().x()),
+                     to_double(eit->curve().ray().source().y()));
+          CGAL::Direction_2<Kernel> d
+            (to_double(eit->curve().ray().direction().dx()),
+             to_double(eit->curve().ray().direction().dy()));
+          draw_in_ipe(Ray_2(p, d), bbox);
+        } else if (eit->curve().is_line()) {
+          Line_2 l (to_double(eit->curve().line().a()),
+                    to_double(eit->curve().line().b()),
+                    to_double(eit->curve().line().c()));
+          draw_in_ipe(l, bbox);
+        }
+      } // end of draw edges
+
     } // enf of case: fn == 10
 
   }
