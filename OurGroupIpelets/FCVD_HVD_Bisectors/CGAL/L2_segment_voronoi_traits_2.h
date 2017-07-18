@@ -79,7 +79,7 @@ protected:
   }
 
   /* Returns the squared distance between a point and a segment in L2 metric. */
-  static FT sqdistance(const Point_2& p, const Segment_2& s){
+  static FT sqdistance(const Point_2& p, const Segment_2& s) {
     /* find projection of p on supporting line of s */
     Line_2 l = s.supporting_line();
     Point_2 proj = l.projection(p);
@@ -144,6 +144,7 @@ public:
       OutputIterator operator()(const Xy_monotone_surface_3& s1,
                                 const Xy_monotone_surface_3& s2,
                                 OutputIterator o) const {
+      //TODO fake
       /* if the two segments are the same, their distance function is the same,
        * so there is no intersection */
       if (s1 == s2) {
@@ -179,14 +180,30 @@ public:
     Comparison_result operator()(const X_monotone_curve_2& cv,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
-      return CGAL::EQUAL;
+
+      Kernel k;
+      Point_2 p;
+      /* get any point on cv, then just compare using the above operator */
+      if (cv.is_segment()) {
+        p = k.construct_midpoint_2_object()(cv.left(), cv.right());
+      }
+      else if (cv.is_ray()) {
+        p = k.construct_point_on_2_object()(cv.ray(), 1);
+      }
+      else {
+        CGAL_assertion(cv.is_line());
+        p = k.construct_point_on_2_object()(cv.line(), 1);
+      }
+
+      /* compare using the arbitrary point */
+      return this->operator()(p, h1, h2);
     }
 
     Comparison_result operator()(const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
       /* if the two unbounded surfaces do not intersect, then they must
        * represent the same segment's distance function */
-      return CGAL::EQUAL;
+      return CGAL::EQUAL; // they are literally the same surface
     }
   };
 
@@ -203,7 +220,7 @@ public:
     Comparison_result operator()(const X_monotone_curve_2& cv,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
-      return CGAL::EQUAL;
+      return CGAL::LARGER; //TODO fake
     }
 
   };
@@ -221,7 +238,7 @@ public:
     Comparison_result operator()(const X_monotone_curve_2& cv,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
-      return CGAL::EQUAL;
+      return CGAL::LARGER; //TODO fake
     }
   };
 
