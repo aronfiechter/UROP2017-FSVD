@@ -93,6 +93,7 @@ typedef typename Alg_kernel::Point_2                    Alg_point_2;
 typedef CGAL::Arr_conic_traits_2<Rat_kernel, Alg_kernel, Nt_traits> Conic_traits_2;
 typedef CGAL::L2_segment_voronoi_traits_2<Conic_traits_2, VD_Kernel> L2_FSVD_Traits_3;
 typedef CGAL::Envelope_diagram_2<L2_FSVD_Traits_3>      L2_FSVD_Envelope_diagram_2;
+typedef Conic_traits_2::X_monotone_curve_2              X_monotone_curve_2;
 /* end added for FSVD */
 
 typedef CGAL::L2_HVD_traits_2<VD_Kernel>                HVD_Traits_3;
@@ -139,28 +140,30 @@ const std::string helpmsg[] = {
 
 class bisectorIpelet
   : public CGAL::Ipelet_base<Kernel,num_entries> {
-    public:
-      bisectorIpelet()
-        :CGAL::Ipelet_base<Kernel,num_entries>
-           ("Bisectors",sublabel,helpmsg){}
-      void protected_run(int);
+public:
+  bisectorIpelet()
+    :CGAL::Ipelet_base<Kernel,num_entries>("Bisectors",sublabel,helpmsg){}
+  void protected_run(int);
 
-      // cluster grabber
+  // cluster grabber
+  template <class output_iterator>
+  struct Cluster_grabber
+    : public CGAL::internal::Cluster_grabber<Kernel,output_iterator>{
+    Cluster_grabber(output_iterator it):
+      CGAL::internal::Cluster_grabber<Kernel,output_iterator>(it){}
+  };
 
-      template <class output_iterator>
-      struct
-      Cluster_grabber:public
-      CGAL::internal::Cluster_grabber<Kernel,output_iterator>{
-        Cluster_grabber(output_iterator it):
-          CGAL::internal::Cluster_grabber<Kernel,output_iterator>(it){}
-      };
+  template<class output_iterator>
+  boost::function_output_iterator<Cluster_grabber<output_iterator> >
+  cluster_grabber(output_iterator it){
+    return boost::make_function_output_iterator(
+      Cluster_grabber<output_iterator>(it));
+  }
 
-      template<class output_iterator>
-      boost::function_output_iterator<Cluster_grabber<output_iterator> >
-      cluster_grabber(output_iterator it){
-        return boost::make_function_output_iterator(
-            Cluster_grabber<output_iterator>(it));
-      }
+private:
+  std::list<Segment_2> arc_to_segments(X_monotone_curve_2& cv) {
+    
+  }
 
   };
 // --------------------------------------------------------------------

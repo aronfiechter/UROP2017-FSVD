@@ -187,7 +187,6 @@ public:
        * segments, to test if this works */
       // TODO fake
       else {
-
         Curve_2 c1(
           1, 0, 0, 0, -1, 0, CGAL::COUNTERCLOCKWISE,
           Point_2(Algebraic(0), Algebraic(0)),
