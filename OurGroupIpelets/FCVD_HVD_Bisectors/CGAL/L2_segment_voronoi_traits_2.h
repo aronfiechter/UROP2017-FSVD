@@ -158,15 +158,16 @@ public:
       OutputIterator operator()(const Xy_monotone_surface_3& s1,
                                 const Xy_monotone_surface_3& s2,
                                 OutputIterator o) const {
-      //TODO fake
       /* if the two segments are the same, their distance function is the same,
        * so there is no intersection */
       if (s1 == s2) {
         return o;
       }
-      /* otherwise, for now just make bisector of the two source points of the
-       * segments, to test if this works */
+      /* otherwise, add all parts of the plane bisector for the two segments */
       else {
+        /* a bisector of two disjoint segments is made of up to seven parts,
+         * usually two rays, three parabolic arcs and two segments */
+         //TODO
         *o++ = CGAL::make_object(
           Intersection_curve(CGAL::bisector(s1.source(), s2.source()), 0)
         );
