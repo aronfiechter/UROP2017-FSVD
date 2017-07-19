@@ -37,23 +37,18 @@
 
 namespace CGAL {
 
-template <class Polycurve_traits_2, class Conic_traits_2, class Kernel_>
-class L2_segment_voronoi_traits_2 : public Polycurve_traits_2 {
+template <class Conic_traits_2, class Kernel_>
+class L2_segment_voronoi_traits_2 : public Conic_traits_2 {
 
 public:
   typedef Kernel_                                   Kernel;
   typedef Conic_traits_2                            C_traits_2;
-  typedef Polycurve_traits_2                        Polycv_traits_2;
-  typedef L2_segment_voronoi_traits_2<Polycv_traits_2, C_traits_2, Kernel>
-                                                    Self;
+  typedef L2_segment_voronoi_traits_2<C_traits_2, Kernel> Self;
 
-  typedef typename Polycv_traits_2::Point_2         Point_2;
-  typedef typename Polycv_traits_2::Curve_2         Poly_Curve_2;
-  typedef typename Polycv_traits_2::X_monotone_curve_2
-                                                    X_monotone_curve_2;
-  typedef typename Polycv_traits_2::Construct_x_monotone_curve_2
-                                                    Construct_xmono_cd_2;
-  typedef typename Polycv_traits_2::Multiplicity    Multiplicity;
+  typedef typename C_traits_2::Point_2              Point_2;
+  typedef typename C_traits_2::Curve_2              Curve_2;
+  typedef typename C_traits_2::X_monotone_curve_2   X_monotone_curve_2;
+  typedef typename C_traits_2::Multiplicity         Multiplicity;
 
   typedef typename C_traits_2::Rat_kernel           Rat_kernel;
   typedef typename C_traits_2::Alg_kernel           Alg_kernel;
@@ -67,30 +62,31 @@ public:
 
   typedef typename Alg_kernel::FT                   Algebraic;
   typedef typename Alg_kernel::Point_2              Alg_point_2;
+  typedef typename Alg_kernel::Segment_2            Alg_segment_2;
+  typedef typename Alg_kernel::Line_2               Alg_line_2;
 
   /* Define segments as surfaces for simplicity. Each segment should be thought
    * of as a surface representing the function distance, with higher values on
    * the z axis mean farthest points */
-  typedef Rat_segment_2                             Surface_3;
+  typedef Alg_segment_2                             Surface_3;
   typedef Surface_3                                 Xy_monotone_surface_3;
 
 protected:
-  typedef std::pair<X_monotone_curve_2,
-                    Multiplicity>                   Intersection_curve;
+  typedef std::pair<X_monotone_curve_2, Multiplicity>    Intersection_curve;
 
   /* Returns the squared distance between two points in L2 metric. */
-  static Rational sqdistance(const Rat_point_2& p1, const Rat_point_2& p2) {
-    Rational diffx = p1.x() - p2.x();
-    Rational diffy = p1.y() - p2.y();
-    Rational sqdist = CGAL::square(diffx) + CGAL::square(diffy);
+  static Algebraic sqdistance(const Alg_point_2& p1, const Alg_point_2& p2) {
+    Algebraic diffx = p1.x() - p2.x();
+    Algebraic diffy = p1.y() - p2.y();
+    Algebraic sqdist = CGAL::square(diffx) + CGAL::square(diffy);
     return sqdist;
   }
 
   /* Returns the squared distance between a point and a segment in L2 metric. */
-  static Rational sqdistance(const Rat_point_2& p, const Rat_segment_2& s) {
+  static Algebraic sqdistance(const Alg_point_2& p, const Alg_segment_2& s) {
     /* find projection of p on supporting line of s */
-    Rat_line_2 l = s.supporting_line();
-    Rat_point_2 proj = l.projection(p);
+    Alg_line_2 l = s.supporting_line();
+    Alg_point_2 proj = l.projection(p);
 
     /* if the projection is on s, the distance is d(p,proj) */
     if (s.has_on(proj)) {
@@ -101,6 +97,22 @@ protected:
     else {
       return CGAL::min(sqdistance(p, s.source()), sqdistance(p, s.target()));
     }
+  }
+
+  /* Construct a point in the middle of the curve cv. This function is copied
+   * from Env_sphere_traits_3.h */
+  static Alg_point_2 construct_middle_point(const X_monotone_curve_2& cv) {
+    /* get the x-value of the middle point */
+    Alg_kernel k;
+    Alg_point_2 mid_x = k.construct_midpoint_2_object()(
+      cv.source(),
+      cv.target()
+    );
+
+    /* if cv is vertical, it is just a segment */
+    if (cv.is_vertical()) return Alg_point_2(mid_x);
+    /* otherwise take the point with the same x coordinate but on cv */
+    else return Alg_point_2(cv.point_at_x(mid_x));
   }
 
   // /* Converts a parabola segment (a parabolic arc) into a series of segments.
@@ -166,31 +178,24 @@ public:
       OutputIterator operator()(const Xy_monotone_surface_3& s1,
                                 const Xy_monotone_surface_3& s2,
                                 OutputIterator o) const {
-      //TODO fake
       /* if the two segments are the same, their distance function is the same,
        * so there is no intersection */
       if (s1 == s2) {
         return o;
       }
-      /* otherwise, for now just make bisector of the two source points of the
+      /* otherwise, for now just make a random polycurve between the two
        * segments, to test if this works */
+      // TODO fake
       else {
-        /* get constructor */
-        Polycv_traits_2 traits;
-        Construct_xmono_cd_2
-          constr_xmono_polycv = traits.construct_x_monotone_curve_2_object();
 
-        /* make a list */
-        std::vector<X_monotone_curve_2> xmono_curves;
         Curve_2 c1(
           1, 0, 0, 0, -1, 0, CGAL::COUNTERCLOCKWISE,
           Point_2(Algebraic(0), Algebraic(0)),
           Point_2(Algebraic(3), Algebraic(9))
         );
-        xmono_curves.push_back(c1);
-        X_monotone_curve_2 curve = constr_xmono_polycv(xmono_curves.begin(), xmono_curves.end());
+        X_monotone_curve_2 mc1(c1);
         *o++ = CGAL::make_object(
-          Intersection_curve(curve, 0)
+          Intersection_curve(mc1, 0)
         );
         return o;
       }
@@ -210,28 +215,26 @@ public:
     Comparison_result operator()(const Point_2& p,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
-      return CGAL::compare(sqdistance(p, h1), sqdistance(p, h2));
+      Alg_point_2 ap(p);
+      return CGAL::compare(sqdistance(ap, h1), sqdistance(ap, h2));
     }
 
     Comparison_result operator()(const X_monotone_curve_2& cv,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
+      // if (cv.is_segment()) {
+      //   p = k.construct_midpoint_2_object()(cv.left(), cv.right());
+      // }
+      // else if (cv.is_ray()) {
+      //   p = k.construct_point_on_2_object()(cv.ray(), 1);
+      // }
+      // else {
+      //   CGAL_assertion(cv.is_line());
+      //   p = k.construct_point_on_2_object()(cv.line(), 1);
+      // }
 
-      Kernel k;
-      Point_2 p;
-      /* get any point on cv, then just compare using the above operator */
-      if (cv.is_segment()) {
-        p = k.construct_midpoint_2_object()(cv.left(), cv.right());
-      }
-      else if (cv.is_ray()) {
-        p = k.construct_point_on_2_object()(cv.ray(), 1);
-      }
-      else {
-        CGAL_assertion(cv.is_line());
-        p = k.construct_point_on_2_object()(cv.line(), 1);
-      }
-
-      /* compare using the arbitrary point */
+      /* compare using the middle point */
+      Alg_point_2 p = construct_middle_point(cv);
       return this->operator()(p, h1, h2);
     }
 

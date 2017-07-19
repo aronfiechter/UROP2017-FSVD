@@ -34,7 +34,6 @@
 
 // added for FSVD, fn == 10
 #include <CGAL/CORE_algebraic_number_traits.h>
-#include <CGAL/Arr_polycurve_traits_2.h>
 #include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/L2_segment_voronoi_traits_2.h>
 // end added for FSVD
@@ -88,14 +87,11 @@ namespace CGAL_bisectors{
   typedef Nt_traits::Algebraic                            Algebraic;
   typedef CGAL::Cartesian<Rational>                       Rat_kernel;
   typedef CGAL::Cartesian<Algebraic>                      Alg_kernel;
-  typedef typename Rat_kernel::Segment_2                  Rat_segment_2;
-  typedef typename Rat_kernel::Point_2                    Rat_point_2;
+  typedef typename Alg_kernel::Segment_2                  Alg_segment_2;
+  typedef typename Alg_kernel::Point_2                    Alg_point_2;
 
-  typedef CGAL::Arr_conic_traits_2<Rat_kernel, Alg_kernel, Nt_traits>
-                                                          Conic_traits_2;
-  typedef CGAL::Arr_polycurve_traits_2<Conic_traits_2>    Polycurve_traits_2;
-  typedef CGAL::L2_segment_voronoi_traits_2<Polycurve_traits_2, Conic_traits_2, VD_Kernel>
-                                                          L2_FSVD_Traits_3;
+  typedef CGAL::Arr_conic_traits_2<Rat_kernel, Alg_kernel, Nt_traits> Conic_traits_2;
+  typedef CGAL::L2_segment_voronoi_traits_2<Conic_traits_2, VD_Kernel> L2_FSVD_Traits_3;
   typedef CGAL::Envelope_diagram_2<L2_FSVD_Traits_3>      L2_FSVD_Envelope_diagram_2;
   /* end added for FSVD */
 
@@ -183,7 +179,7 @@ namespace CGAL_bisectors{
     std::list<Point_2>        pt_list;
     std::list<Segment_2>      sg_list;
     std::list<VD_Point_2>     vd_pt_list;
-    std::list<Rat_segment_2>  vd_sg_list;
+    std::list<Alg_segment_2>  vd_sg_list;
 
     typedef CGAL::Polygon_2<Kernel>               Cluster_2;
     typedef CGAL::Polygon_2<VD_Kernel>            VD_Cluster_2;
@@ -348,9 +344,9 @@ namespace CGAL_bisectors{
         else {
           std::list<Segment_2>::iterator sgit;
           for (sgit = sg_list.begin(); sgit != sg_list.end(); ++sgit) {
-            vd_sg_list.push_back(Rat_segment_2(
-              Rat_point_2(sgit->source().x(), sgit->source().y()),
-              Rat_point_2(sgit->target().x(), sgit->target().y())
+            vd_sg_list.push_back(Alg_segment_2(
+              Alg_point_2(sgit->source().x(), sgit->source().y()),
+              Alg_point_2(sgit->target().x(), sgit->target().y())
             ));
           }
         }
@@ -360,6 +356,7 @@ namespace CGAL_bisectors{
         if (cluster_list.empty()) {
           print_error_message(("No points selected"));
 		    }
+        print_error_message(("Not implemented"));
         break;
     } // end of switch
 
@@ -766,7 +763,7 @@ namespace CGAL_bisectors{
       CGAL::upper_envelope_3(vd_sg_list.begin(), vd_sg_list.end(), *m_envelope_diagram);
 
 
-      // TODO remove, is opy paste
+      // TODO remove, is copy paste
       //computes the bounding box
       // VD_Point_2 bottom_left (bbox.min().x(), bbox.min().y());
       // VD_Point_2 top_right (bbox.max().x(), bbox.max().y());
