@@ -76,10 +76,7 @@ protected:
 
   /* Returns the squared distance between two points in L2 metric. */
   static Algebraic sqdistance(const Alg_point_2& p1, const Alg_point_2& p2) {
-    Algebraic diffx = p1.x() - p2.x();
-    Algebraic diffy = p1.y() - p2.y();
-    Algebraic sqdist = CGAL::square(diffx) + CGAL::square(diffy);
-    return sqdist;
+    return CGAL::squared_distance(p1, p2);
   }
 
   /* Returns the squared distance between a point and a segment in L2 metric. */
@@ -188,10 +185,11 @@ public:
       // TODO fake
       else {
         Curve_2 c1(
-          1, 0, 0, 0, -1, 0, CGAL::COUNTERCLOCKWISE,
+          1, 1, 1, 4, -1, 0, CGAL::COUNTERCLOCKWISE,
           Point_2(s1.source().x(), s1.source().y()),
           Point_2(s2.target().x(), s2.target().y())
         );
+        CGAL_assertion(c1.is_valid());
         X_monotone_curve_2 mc1(c1);
         *o++ = CGAL::make_object(
           Intersection_curve(mc1, 0)

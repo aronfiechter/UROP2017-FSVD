@@ -161,7 +161,42 @@ public:
   }
 
 private:
+  const Algebraic PRECISION = Algebraic(0.5);
+  /* Find a number of points on the curve cv such that they are all close enough
+   * to approximate the curve. Then create segments between these points and add
+   * them to the provided list. */
   void arc_to_segments(const X_monotone_curve_2& cv, std::list<Segment_2> segments) {
+
+    /* compute approximate number of points to sample on the arc */
+    Algebraic approx_length = Algebraic(
+      CGAL::sqrt(CGAL::squared_distance(cv.source(), cv.target()))
+    );
+    Algebraic n_points = Algebraic(std::floor(CGAL::to_double(approx_length / PRECISION)))
+                         + Algebraic(1);
+
+    /* create points on the arc, create segments between them and push segments */
+    Alg_point_2 prev = Alg_point_2(cv.left().x(), 0);
+    for (auto i = 1; i < n_points; ++i) {
+      Alg_point_2 current = Alg_point_2(prev.x() + PRECISION, 0);
+      /* project points on arc */
+      Alg_point_2 arc_segment_start_pt = cv.point_at_x(prev);
+      /* create segment between two points */
+      Alg_point_2 arc_segment_end_pt = cv.point_at_x(current);
+      Segment_2 arc_segment = new Segment_2(
+        Point_2(
+          CGAL::to_double(arc_segment_start_pt.x()),
+          CGAL::to_double(arc_segment_start_pt.y())
+        ),
+        Point_2(
+          CGAL::to_double(arc_segment_end_pt.x()),
+          CGAL::to_double(arc_segment_end_pt.y())
+        )
+      );
+      segments.push_back(arc_segment);
+    }
+
+
+
     return;
   }
 
@@ -789,10 +824,10 @@ void bisectorIpelet::protected_run(int fn) {
         top_right = Alg_point_2(top_right.x(), vp.y());
 
       /* if one wants to display vertices of the VD as well, that's it */
-      draw_in_ipe(Point_2(
-        CGAL::to_double(vit->point().x()),
-        CGAL::to_double(vit->point().y())
-      ));
+      // draw_in_ipe(Point_2(
+      //   CGAL::to_double(vit->point().x()),
+      //   CGAL::to_double(vit->point().y())
+      // ));
       // draw_in_ipe(p);
     }
 
