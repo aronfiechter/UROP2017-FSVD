@@ -189,8 +189,8 @@ public:
       else {
         Curve_2 c1(
           1, 0, 0, 0, -1, 0, CGAL::COUNTERCLOCKWISE,
-          Point_2(Algebraic(0), Algebraic(0)),
-          Point_2(Algebraic(3), Algebraic(9))
+          Point_2(s1.source().x(), s1.source().y()),
+          Point_2(s2.target().x(), s2.target().y())
         );
         X_monotone_curve_2 mc1(c1);
         *o++ = CGAL::make_object(
