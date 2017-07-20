@@ -518,7 +518,7 @@ void bisectorIpelet::protected_run(int fn) {
 
        //if one wants to display vertices of the VD as well, that's it
       //Point_2 p (to_double(vp.x()), to_double(vp.y()));
-      //draw_in_ipe(p, bbox);
+      //draw_in_ipe(p);
     }
 
     Point_2 bl (to_double(bottom_left.x()), to_double(bottom_left.y()));
@@ -584,7 +584,7 @@ void bisectorIpelet::protected_run(int fn) {
 
       //if one wants to display vertices of the VD as well, that's it
       //Point_2 p (to_double(vp.x()), to_double(vp.y()));
-      //draw_in_ipe(p, bbox);
+      //draw_in_ipe(p);
     }
 
     Point_2 bl (to_double(bottom_left.x()), to_double(bottom_left.y()));
@@ -651,7 +651,7 @@ void bisectorIpelet::protected_run(int fn) {
 
       //if one wants to display vertices of the VD as well, that's it
       //Point_2 p (to_double(vp.x()), to_double(vp.y()));
-      //draw_in_ipe(p, bbox);
+      //draw_in_ipe(p);
     }
 
     Point_2 bl (to_double(bottom_left.x()), to_double(bottom_left.y()));
@@ -718,7 +718,7 @@ void bisectorIpelet::protected_run(int fn) {
 
       //if one wants to display vertices of the VD as well, that's it
       //Point_2 p (to_double(vp.x()), to_double(vp.y()));
-      //draw_in_ipe(p, bbox);
+      //draw_in_ipe(p);
     }
 
     Point_2 bl (to_double(bottom_left.x()), to_double(bottom_left.y()));
@@ -778,14 +778,21 @@ void bisectorIpelet::protected_run(int fn) {
          vit != m_envelope_diagram->vertices_end();
          ++vit) {
       Alg_point_2 vp = Alg_point_2(vit->point());
-      if(CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
+      if (CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
         bottom_left = Alg_point_2(vp.x(), bottom_left.y());
-      if(CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER)
+      if (CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER)
         bottom_left = Alg_point_2(bottom_left.x(), vp.y());
-      if(CGAL::compare(vp.x(), top_right.x()) == CGAL::LARGER)
+      if (CGAL::compare(vp.x(), top_right.x()) == CGAL::LARGER)
         top_right = Alg_point_2(vp.x(), top_right.y());
-      if(CGAL::compare(vp.y(), top_right.y()) == CGAL::LARGER)
+      if (CGAL::compare(vp.y(), top_right.y()) == CGAL::LARGER)
         top_right = Alg_point_2(top_right.x(), vp.y());
+
+      /* if one wants to display vertices of the VD as well, that's it */
+      Point_2 p (
+        CGAL::to_double(vit->point().x()),
+        CGAL::to_double(vit->point().y())
+      );
+      draw_in_ipe(p);
     }
 
     Point_2 bl (CGAL::to_double(bottom_left.x()), CGAL::to_double(bottom_left.y()));
@@ -798,19 +805,8 @@ void bisectorIpelet::protected_run(int fn) {
       tr + Kernel::Vector_2(incr_len,incr_len)
     );
 
-    /* draw bbox because it looks suspect */
-    draw_in_ipe(bbox);
-
-    /* if one wants to display vertices of the VD as well, that's it */
-    for (vit = m_envelope_diagram->vertices_begin();
-         vit != m_envelope_diagram->vertices_end();
-         ++vit) {
-      Point_2 p (
-        CGAL::to_double(vit->point().x()),
-        CGAL::to_double(vit->point().y())
-      );
-      draw_in_ipe(p, bbox);
-    }
+    /* draw bbox if needed */
+    // draw_in_ipe(bbox);
 
     //
     // unsigned long n = m_envelope_diagram->number_of_edges();
