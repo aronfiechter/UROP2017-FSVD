@@ -161,7 +161,7 @@ public:
   }
 
 private:
-  void arc_to_segments(X_monotone_curve_2& cv, std::list<Segment_2> segments) {
+  void arc_to_segments(const X_monotone_curve_2& cv, std::list<Segment_2> segments) {
     return;
   }
 
@@ -764,15 +764,16 @@ void bisectorIpelet::protected_run(int fn) {
     m_envelope_diagram = new L2_FSVD_Envelope_diagram_2();
 
     CGAL::upper_envelope_3(vd_sg_list.begin(), vd_sg_list.end(), *m_envelope_diagram);
+    char message[100];
+    unsigned long ne = m_envelope_diagram->number_of_edges();
+    unsigned long nv = m_envelope_diagram->number_of_vertices();
+    sprintf(message, "There are %ld edges and %lu vertices", ne, nv);
+    print_error_message(message);
 
     /* Compute the bounding box */
     Alg_point_2 bottom_left (bbox.min().x(), bbox.min().y());
     Alg_point_2 top_right (bbox.max().x(), bbox.max().y());
 
-    // TODO remove, is copy paste
-    char message[1000];
-    sprintf(message, "There are %lu vertexes in the diagram.", m_envelope_diagram->number_of_vertices());
-    print_error_message(message);
     L2_FSVD_Envelope_diagram_2::Vertex_const_iterator vit;
     for (vit = m_envelope_diagram->vertices_begin();
          vit != m_envelope_diagram->vertices_end();
@@ -788,11 +789,11 @@ void bisectorIpelet::protected_run(int fn) {
         top_right = Alg_point_2(top_right.x(), vp.y());
 
       /* if one wants to display vertices of the VD as well, that's it */
-      Point_2 p (
+      draw_in_ipe(Point_2(
         CGAL::to_double(vit->point().x()),
         CGAL::to_double(vit->point().y())
-      );
-      draw_in_ipe(p);
+      ));
+      // draw_in_ipe(p);
     }
 
     Point_2 bl (CGAL::to_double(bottom_left.x()), CGAL::to_double(bottom_left.y()));
@@ -808,37 +809,35 @@ void bisectorIpelet::protected_run(int fn) {
     /* draw bbox if needed */
     // draw_in_ipe(bbox);
 
-    //
-    // unsigned long n = m_envelope_diagram->number_of_edges();
-    // char message[100];
-    // sprintf(message, "There are %ld edges", n);
-    // print_error_message(message);
-    //
-    // // draws edges
-    // for(L2_FSVD_Envelope_diagram_2::Edge_const_iterator eit =
-    //       m_envelope_diagram->edges_begin();
-    //     eit != m_envelope_diagram->edges_end();
-    //     eit++) {
-    //   if (eit->curve().is_segment()) {
-    //     Point_2 p1 (to_double(eit->curve().segment().source().x()),
-    //                 to_double(eit->curve().segment().source().y()));
-    //     Point_2 p2 (to_double(eit->curve().segment().target().x()),
-    //                 to_double(eit->curve().segment().target().y()));
-    //     draw_in_ipe(Segment_2(p1, p2), bbox);
-    //   } else if (eit->curve().is_ray()) {
-    //     Point_2 p (to_double(eit->curve().ray().source().x()),
-    //                to_double(eit->curve().ray().source().y()));
-    //     CGAL::Direction_2<Kernel> d
-    //       (to_double(eit->curve().ray().direction().dx()),
-    //        to_double(eit->curve().ray().direction().dy()));
-    //     draw_in_ipe(Ray_2(p, d), bbox);
-    //   } else if (eit->curve().is_line()) {
-    //     Line_2 l (to_double(eit->curve().line().a()),
-    //               to_double(eit->curve().line().b()),
-    //               to_double(eit->curve().line().c()));
-    //     draw_in_ipe(l, bbox);
-    //   }
-    // } // end of draw edges
+    /* draw FSVD edges. It's Voronice! */
+    L2_FSVD_Envelope_diagram_2::Edge_const_iterator eit;
+    for (eit = m_envelope_diagram->edges_begin();
+         eit != m_envelope_diagram->edges_end();
+         ++eit) {
+      /* the edge is a straight segment */
+      if (eit->curve().r() == 0 && eit->curve().s() == 0) {
+        Point_2 p1 (
+          CGAL::to_double(eit->curve().source().x()),
+          CGAL::to_double(eit->curve().source().y())
+        );
+        Point_2 p2 (
+          CGAL::to_double(eit->curve().target().x()),
+          CGAL::to_double(eit->curve().target().y())
+        );
+        draw_in_ipe(Segment_2(p1, p2), bbox);
+      }
+      /* the edge is a parabolic arc */
+      else {
+        std::list<Segment_2> segments;
+        arc_to_segments(eit->curve(), segments);
+        std::list<Segment_2>::iterator sit;
+        for (sit = segments.begin();
+             sit != segments.end();
+             ++sit) {
+          draw_in_ipe(*sit, bbox);
+        }
+      }
+    } // end of draw FSVD edges
 
   } // enf of case: fn == 10
 
