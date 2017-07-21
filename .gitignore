@@ -12,3 +12,9 @@ Makefile
 *.so
 .idea/
 Project.cbp
+
+# ignore LaTeX typsetting files
+*.aux
+*.log
+*.out
+*.synctex.gz

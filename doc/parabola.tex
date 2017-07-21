@@ -1,0 +1,85 @@
+\documentclass[11pt,a4paper,english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{babel}
+\usepackage{geometry}
+    \geometry{
+    	left=2cm,
+	right=2cm,
+	includeheadfoot, top=1cm, bottom=1cm,
+    headsep=2cm,
+    footskip=2.5cm
+    }
+\usepackage{fancyhdr}
+\usepackage{lipsum}
+\usepackage{import}
+
+% Extensions file
+\import{"/Users/aron/Google Drive/TEMPLATES/"}{falcon.tex} % path filled by fasttex in .zprofile
+
+% Setup for page layout (fancyhdr)
+\fancyhf{}
+\lhead{Aron Fiechter}
+\chead{Analitic geometry}
+\rhead{\today}
+\cfoot{\thepage}
+\pagestyle{fancy}
+
+\begin{document}
+
+    {\centering\huge\textbf{Parabola equation from directrix and focus}\par}
+
+    \vspace{1cm}
+
+    \section*{Parabola equation}
+    The equation of the parabola \(\phi\) has the form:
+    \[
+    	\phi =: \{\;(x,y) \St rx^{2} + sy^{2} + txy + ux + vy + w = 0\;\}
+    \]
+
+    \section*{Line equation and point coordinates}
+    The equation of a line \(l\) is given as:
+    \[
+    	l =: \{\;(x,y) \St ax + by + c = 0\;\}
+    \]
+    the point coordinates for the focus are:
+    \[
+    	f(f_{x},f_{y})
+    \]
+
+    \section*{Definition of a parabola}
+    A parabola is defined as the set of all points \((x,y)\) that are equidistant from a line (the directrix \(l\)) and a point (the focus \(f\)):
+    \[
+    	\phi := \{\;(x,y) \St d\left((x,y),l\right) = d\left((x,y),f\right)\;\}
+    \]
+    therefore we can find the equation of a parabola in function of its directrix and focus.
+    \begin{align*}
+    d\left((x,y),l\right) &= d\left((x,y),f\right) \\
+	\left[d\left((x,y),l\right)\right]^2 &= \left[d\left((x,y),f\right)\right]^2 \\
+	\left(\frac{\abs{ax + by + c}}{\sqrt{a^{2} + b^{2}}}\right)^{2} &= \left(\sqrt{\abs{x - f_{x}}^{2} + \abs{y - f_{y}}^{2}}\right)^{2} \\
+	a^{2}x^{2} + b^{2}y^{2} + 2abxy + 2acx + 2bcy + c^{2} &= \left(x^{2} - 2f_{x}x + f_{x}^{2} + y^{2} - 2f_{y}y + f_{y}^{2}\right) \cdot \left(a^{2} + b^{2}\right)
+	\end{align*}
+	\[
+		2abxy + 2acx + 2bcy + c^{2} = b^{2}x^{2} + a^{2}y^{2} + (-2a^{2}f_{x}-2b^{2}f_{x})x + (-2a^{2}f_{y}-2b^{2}f_{y})y + a^{2}f_{x}^{2} + a^{2}f_{y}^{2} + b^{2}f_{x}^{2} + b^{2}f_{y}^{2}
+	\]
+	\[
+		0 = b^{2}x^{2} + a^{2}y^{2} + (-2ab)xy + (-2ac-2a^{2}f_{x}-2b^{2}f_{x})x + (-2bc-2a^{2}f_{y}-2b^{2}f_{y})y + a^{2}f_{x}^{2} + a^{2}f_{y}^{2} + b^{2}f_{x}^{2} + b^{2}f_{y}^{2} - c^{2}
+	\]
+	\ppar\bigskip
+
+	We get an equation for the parabola \(\;\;
+		\phi : rx^{2} + sy^{2} + txy + ux + vy + w = 0
+	\;\;\)
+	with coefficients:
+
+	\begin{itemize}[label=\(\triangleright\)]\setlength{\itemsep}{-2pt}
+    \item \(r = b^{2}\)
+    \item \(s = a^{2}\)
+    \item \(t = -2ab\)
+    \item \(u = -2ac-2a^{2}f_{x}-2b^{2}f_{x}\)
+    \item \(v = -2bc-2a^{2}f_{y}-2b^{2}f_{y}\)
+    \item \(w = a^{2}f_{x}^{2} + a^{2}f_{y}^{2} + b^{2}f_{x}^{2} + b^{2}f_{y}^{2} - c^{2}\)
+    \end{itemize}
+
+
+\end{document}
