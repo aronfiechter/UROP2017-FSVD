@@ -182,7 +182,7 @@ private:
       Alg_point_2 arc_segment_start_pt = cv.point_at_x(prev);
       /* create segment between two points */
       Alg_point_2 arc_segment_end_pt = cv.point_at_x(current);
-      Segment_2 arc_segment = new Segment_2(
+      Segment_2 * arc_segment = new Segment_2(
         Point_2(
           CGAL::to_double(arc_segment_start_pt.x()),
           CGAL::to_double(arc_segment_start_pt.y())
@@ -192,7 +192,7 @@ private:
           CGAL::to_double(arc_segment_end_pt.y())
         )
       );
-      segments.push_back(arc_segment);
+      segments.push_back(*arc_segment);
     }
 
 
