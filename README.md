@@ -41,7 +41,8 @@ files (as described on the
 To see prerequisites: `brew info cgal`
 To install: `brew install cgal`
 Then download the source code from the official website (get the same version
-as in `brew`), extract it where you need it, and:
+as in `brew`), extract it where you need it (for example your home directory),
+and:
 ```shell
 cd CGAL-X.Y # e.g. CGAL-4.9.1
 cmake .
