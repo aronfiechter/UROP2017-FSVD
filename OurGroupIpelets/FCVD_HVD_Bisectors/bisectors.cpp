@@ -87,7 +87,8 @@ typedef Nt_traits::Rational                             Rational;
 typedef Nt_traits::Algebraic                            Algebraic;
 typedef CGAL::Cartesian<Rational>                       Rat_kernel;
 typedef CGAL::Cartesian<Algebraic>                      Alg_kernel;
-typedef typename Alg_kernel::Segment_2                  Alg_segment_2;
+typedef typename Rat_kernel::Segment_2                  Rat_segment_2;
+typedef typename Rat_kernel::Point_2                    Rat_point_2;
 typedef typename Alg_kernel::Point_2                    Alg_point_2;
 
 typedef CGAL::Arr_conic_traits_2<Rat_kernel, Alg_kernel, Nt_traits> Conic_traits_2;
@@ -161,27 +162,28 @@ public:
   }
 
 private:
-  const Algebraic PRECISION = Algebraic(0.5);
+  Algebraic PRECISION = Algebraic(0.5);
+  int counter = 0;
+  int arc_converter_called = 0;
   /* Find a number of points on the curve cv such that they are all close enough
    * to approximate the curve. Then create segments between these points and add
    * them to the provided list. */
   void arc_to_segments(const X_monotone_curve_2& cv, std::list<Segment_2> segments) {
 
-    /* compute approximate number of points to sample on the arc */
-    Algebraic approx_length = Algebraic(
-      CGAL::sqrt(CGAL::squared_distance(cv.source(), cv.target()))
-    );
-    Algebraic n_points = Algebraic(std::floor(CGAL::to_double(approx_length / PRECISION)))
-                         + Algebraic(1);
+    this->arc_converter_called++;
 
     /* create points on the arc, create segments between them and push segments */
-    Alg_point_2 prev = Alg_point_2(cv.left().x(), 0);
-    for (auto i = 1; i < n_points; ++i) {
-      Alg_point_2 current = Alg_point_2(prev.x() + PRECISION, 0);
+    Algebraic current_x = cv.left().x();
+    Algebraic end_x = cv.right().x();
+
+    for (; current_x + PRECISION < end_x; current_x += PRECISION) {
+      this->counter++;
+      Alg_point_2 current = Alg_point_2(current_x, 0);
+      Alg_point_2 next = Alg_point_2(current_x + PRECISION, 0);
       /* project points on arc */
-      Alg_point_2 arc_segment_start_pt = cv.point_at_x(prev);
+      Alg_point_2 arc_segment_start_pt = cv.point_at_x(current);
+      Alg_point_2 arc_segment_end_pt = cv.point_at_x(next);
       /* create segment between two points */
-      Alg_point_2 arc_segment_end_pt = cv.point_at_x(current);
       Segment_2 * arc_segment = new Segment_2(
         Point_2(
           CGAL::to_double(arc_segment_start_pt.x()),
@@ -195,7 +197,21 @@ private:
       segments.push_back(*arc_segment);
     }
 
-
+    /* push last segment */
+    Alg_point_2 current = Alg_point_2(current_x, 0);
+    Alg_point_2 last_arc_segment_start_pt = cv.point_at_x(current);
+    Alg_point_2 last_arc_segment_end_pt = cv.right();
+    Segment_2 * last_arc_segment = new Segment_2(
+      Point_2(
+        CGAL::to_double(last_arc_segment_start_pt.x()),
+        CGAL::to_double(last_arc_segment_start_pt.y())
+      ),
+      Point_2(
+        CGAL::to_double(last_arc_segment_end_pt.x()),
+        CGAL::to_double(last_arc_segment_end_pt.y())
+      )
+    );
+    segments.push_back(*last_arc_segment);
 
     return;
   }
@@ -217,7 +233,7 @@ void bisectorIpelet::protected_run(int fn) {
   std::list<Point_2>        pt_list;
   std::list<Segment_2>      sg_list;
   std::list<VD_Point_2>     vd_pt_list;
-  std::list<Alg_segment_2>  vd_sg_list;
+  std::list<Rat_segment_2>  vd_sg_list;
 
   typedef CGAL::Polygon_2<Kernel>               Cluster_2;
   typedef CGAL::Polygon_2<VD_Kernel>            VD_Cluster_2;
@@ -382,9 +398,9 @@ void bisectorIpelet::protected_run(int fn) {
       else {
         std::list<Segment_2>::iterator sgit;
         for (sgit = sg_list.begin(); sgit != sg_list.end(); ++sgit) {
-          vd_sg_list.push_back(Alg_segment_2(
-            Alg_point_2(sgit->source().x(), sgit->source().y()),
-            Alg_point_2(sgit->target().x(), sgit->target().y())
+          vd_sg_list.push_back(Rat_segment_2(
+            Rat_point_2(sgit->source().x(), sgit->source().y()),
+            Rat_point_2(sgit->target().x(), sgit->target().y())
           ));
         }
       }
@@ -865,6 +881,8 @@ void bisectorIpelet::protected_run(int fn) {
       else {
         std::list<Segment_2> segments;
         arc_to_segments(eit->curve(), segments);
+        sprintf(message, "The arc has been converted into %lu segments in %d loops. Converter called %d times.\"", segments.size(), this->counter, this->arc_converter_called);
+        print_error_message(message);
         std::list<Segment_2>::iterator sit;
         for (sit = segments.begin();
              sit != segments.end();
