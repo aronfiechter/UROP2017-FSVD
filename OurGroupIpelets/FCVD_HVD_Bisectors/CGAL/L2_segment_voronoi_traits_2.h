@@ -112,21 +112,20 @@ protected:
     else return Alg_point_2(cv.point_at_x(mid_x));
   }
 
-  // /* Converts a parabola segment (a parabolic arc) into a series of segments.
-  //  * This is needed because we're using a linear Kernel, and because the CGAL
-  //  * Ipelet interface does not allow to draw parabolic arcs (yet). */
-  // void par_arc_to_segments(const Parabola_segment_2& pb_arc, const std::list<Segment_2>& segments) {
-  //   /* generate points on the parabolic arc */
-  //   std::vector<Point_2> points;
-  //   pb_arc.generate_points(points);
-  //
-  //   /* create segments from points */
-  //   for (auto i = 0; i < points.size() - 1; ++i) {
-  //     segments.push_back(Segment_2(points[i], points[i + 1]));
-  //   }
-  // }
 
 
+private:
+  enum Rel_position {
+    NO_INFLUENCE,
+    PARTIAL_INFLUENCE,
+    COMPLETE_INFLUENCE
+  };
+
+  /* Determine the relative position of two segments in R_2. */
+  static Rel_position relative_position(Alg_segment_2 s1, Alg_segment_2 s2) {
+    //TODO fake
+    return COMPLETE_INFLUENCE;
+  }
 
 public:
 
@@ -175,15 +174,45 @@ public:
       OutputIterator operator()(const Xy_monotone_surface_3& s1,
                                 const Xy_monotone_surface_3& s2,
                                 OutputIterator o) const {
+      Alg_kernel alg_kernel;
       /* if the two segments are the same, their distance function is the same,
        * so there is no intersection */
       if (s1 == s2) {
         return o;
       }
-      /* otherwise, for now just make a random polycurve between the two
-       * segments, to test if this works */
-      // TODO fake
+      /* if they do not intersect, there are three main cases:
+       * - the areas of the points closest to the inner parts of both segments
+       *   do not intersect at all (the bisector has 5 parts)
+       * - the area of the points closest to the inner part of one segment
+       *   intersects the other segment (the bisector has 5 parts)
+       * - the area of the points closest to the inner part of one segment
+       *   completely contains the other segment (the bisector has 7 parts)
+       *
+       * each one of the cases has many subcases, depending also on the distance
+       * between the segments and their length
+       */
       else {
+        switch (relative_position(s1, s2)) {
+          case NO_INFLUENCE: {
+            //TODO not implemented
+            break;
+          }
+
+          case PARTIAL_INFLUENCE: {
+            //TODO not implemented
+            break;
+          }
+
+          case COMPLETE_INFLUENCE: {
+            //TODO not implemented
+            break;
+          }
+
+          default: {
+            break;
+          }
+        }
+
         Curve_2 c1(
           1, 1, 1, 4, -1, 0, CGAL::COUNTERCLOCKWISE,
           Point_2(s1.source().x(), s1.source().y()),
