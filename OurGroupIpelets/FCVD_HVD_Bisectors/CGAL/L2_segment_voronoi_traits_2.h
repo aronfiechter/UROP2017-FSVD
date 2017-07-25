@@ -33,7 +33,8 @@
 #include <CGAL/number_utils.h>
 #include <CGAL/Envelope_3/Envelope_base.h>
 
-#include <CGAL/Parabola_segment_2.h>
+/* to compute bisector of two segments */
+#include <CGAL/ch_akl_toussaint.h> // convex hull
 
 namespace CGAL {
 
@@ -265,19 +266,54 @@ public:
        */
       else if (!CGAL::do_intersect(s1, s2)) {
         /* first of all compute the two unbounded edges of the bisector, which
-         * have to be saved as two very long segments */
+         * have to be saved as two very long segments. To do this, first compute
+         * the convex hull of the endpoints of the segments. The two pairs of
+         * vertices of the hull that are not of the same segment are the pairs
+         * of which the bisector lines contain the two unbouded rays that are
+         * the unbounded rays of the plane bisector of the two segments */
+        std::vector<Rat_point_2> hull_points;
+        std::vector<Rat_point_2> points = {
+          s1.source(), s1.target(), s2.source(), s2.target()
+        };
+        // CGAL::ch_akl_toussaint(points.begin(), points.end(), hull_points.begin());
 
-
+        //TODO fake from here
+        /* for now just draw the hull */
+//
+//        /* get iterator and first point */
+//        typename std::vector<Rat_point_2>::iterator pit = hull_points.begin();
+//        Rat_point_2 prev = *pit++;
+//
+//        /* add last segment */
+//        Rat_segment_2 last(*(hull_points.rbegin()), prev);
+//        X_monotone_curve_2 curve_last(last);
+//        *o++ = CGAL::make_object(
+//           Intersection_curve(curve_last, 0)
+//        );
+//
+//        /* add other segments */
+//        for (; pit != hull_points.end(); ++pit) {
+//          Rat_segment_2 edge(prev, *pit);
+//          X_monotone_curve_2 curve_edge(edge);
+//          *o++ = CGAL::make_object(
+//            Intersection_curve(curve_edge, 0)
+//          );
+//          prev = *pit;
+//        }
 
         // Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
 
         /* critical, if the curve is not valid, abort immediately */
         // if (!c2.is_valid()) return o;
         // *o++ = CGAL::make_object(
-        //   Intersection_curve(curr, 0)
+        //   Intersection_curve(c2, 0)
         // );
 
-        return o; //TODO finish it
+        *o++ = CGAL::make_object(
+          Intersection_curve(X_monotone_curve_2(Rat_segment_2(s1.source(), s2.source())), 0)
+        );
+
+        return o;
       }
       /* if instead they do intersect, assert it, then proceed to computing then
        * intersection in this case */
@@ -306,17 +342,6 @@ public:
     Comparison_result operator()(const X_monotone_curve_2& cv,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
-      // if (cv.is_segment()) {
-      //   p = k.construct_midpoint_2_object()(cv.left(), cv.right());
-      // }
-      // else if (cv.is_ray()) {
-      //   p = k.construct_point_on_2_object()(cv.ray(), 1);
-      // }
-      // else {
-      //   CGAL_assertion(cv.is_line());
-      //   p = k.construct_point_on_2_object()(cv.line(), 1);
-      // }
-
       /* compare using the middle point */
       Point_2 p = construct_middle_point(cv);
       return this->operator()(p, h1, h2);
