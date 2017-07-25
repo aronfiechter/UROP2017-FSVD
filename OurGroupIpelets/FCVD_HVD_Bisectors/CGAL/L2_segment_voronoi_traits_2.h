@@ -180,7 +180,7 @@ protected:
 
     /* call the provided function */
     std::vector<CGAL::Object> pre_x_mono_curves;
-    make_x_monotone(cv0,std::back_inserter(pre_x_mono_curves));
+    make_x_monotone(cv, std::back_inserter(pre_x_mono_curves));
 
     /* cast all CGAL::Objects into X_monotone_segment_2 and add to list */
     for(size_t i = 0; i < pre_x_mono_curves.size(); i++ ) {
