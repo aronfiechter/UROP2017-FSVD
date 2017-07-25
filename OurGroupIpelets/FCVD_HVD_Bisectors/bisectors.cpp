@@ -168,7 +168,7 @@ private:
   /* Find a number of points on the curve cv such that they are all close enough
    * to approximate the curve. Then create segments between these points and add
    * them to the provided list. */
-  void arc_to_segments(const X_monotone_curve_2& cv, std::list<Segment_2> segments) {
+  void arc_to_segments(const X_monotone_curve_2& cv, std::list<Segment_2>& segments) {
 
     this->arc_converter_called++;
 
