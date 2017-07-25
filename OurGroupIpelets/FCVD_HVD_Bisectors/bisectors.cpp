@@ -883,12 +883,13 @@ void bisectorIpelet::protected_run(int fn) {
         arc_to_segments(eit->curve(), segments);
         sprintf(message, "The arc has been converted into %lu segments in %d loops. Converter called %d times.\"", segments.size(), this->counter, this->arc_converter_called);
         print_error_message(message);
-        std::list<Segment_2>::iterator sit;
-        for (sit = segments.begin();
-             sit != segments.end();
-             ++sit) {
-          draw_in_ipe(*sit, bbox);
-        }
+        draw_in_ipe(segments.begin(), segments.end(), true);
+//        std::list<Segment_2>::iterator sit;
+//        for (sit = segments.begin();
+//             sit != segments.end();
+//             ++sit) {
+//          draw_in_ipe(*sit, bbox);
+//        }
       }
     } // end of draw FSVD edges
 
