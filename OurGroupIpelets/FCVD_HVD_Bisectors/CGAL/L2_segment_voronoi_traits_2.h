@@ -119,11 +119,16 @@ protected:
     else return Point_2(cv.point_at_x(mid_x));
   }
 
-  /* Construct a parabolic arc that is the bisector between one endpoint of one
-   * segment and the inner part of the other. //TODO fake */
-  static Curve_2 construct_parabolic_arc(Rat_segment_2 s1, Rat_segment_2 s2) {
-    Rat_line_2 directrix = s1.supporting_line();
-    Rat_point_2 focus = s2.target();
+  /* Construct a parabolic arc on the parabola with a directrix that is the line
+   * that supports the segment seg and a focus that is the point f. The arc goes
+   * from points p1 to p2.
+   * Precondition: p1 and p2 are on the parabola */
+  static Curve_2 construct_parabolic_arc(Rat_segment_2 seg, Rat_point_2 f,
+    Point_2 p1, Point_2 p2) {
+
+    /* get supporting_line of seg */
+    Rat_line_2 directrix = seg.supporting_line();
+    Rat_point_2 focus = f;
 
     Rational a = directrix.a();
     Rational b = directrix.b();
@@ -153,7 +158,9 @@ protected:
       CGAL::square(c)
     ;
 
-    Curve_2 arc(r, s, t, u, v, w);
+    /* construct the curve using the parameters and the endpoints; the
+     * orientation is clockwise becuase probably it doesn't matter at all */
+    Curve_2 arc(r, s, t, u, v, w, CGAL::CLOCKWISE, p1, p2);
 
     CGAL_assertion(arc.is_valid()); // valid arc
     CGAL_assertion(4 * r * s - CGAL::square(t) == 0); // curve is a parabola
@@ -240,51 +247,50 @@ public:
        * between the segments and their length
        */
       else {
-        switch (relative_position(s1, s2)) {
-          case NO_INFLUENCE: {
-            //TODO not implemented
-            break;
-          }
+        // switch (relative_position(s1, s2)) {
+        //   case NO_INFLUENCE: {
+        //     //TODO not implemented
+        //     break;
+        //   }
+        //
+        //   case PARTIAL_INFLUENCE: {
+        //     //TODO not implemented
+        //     break;
+        //   }
+        //
+        //   case COMPLETE_INFLUENCE: {
+        //     //TODO not implemented
+        //     break;
+        //   }
+        //
+        //   default: {
+        //     break;
+        //   }
+        // }
 
-          case PARTIAL_INFLUENCE: {
-            //TODO not implemented
-            break;
-          }
+        /* for now just compute the point segment bisector */
 
-          case COMPLETE_INFLUENCE: {
-            //TODO not implemented
-            construct_parabolic_arc(s1, s2);
-            break;
-          }
+        Rat_line_2 supp_line = s1.supporting_line();
 
-          default: {
-            break;
-          }
-        }
+        Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
 
-        // Curve_2 c1(
-        //   1, 1, 1, 4, -1, 0, CGAL::COUNTERCLOCKWISE,
-        //   Point_2(s1.source().x(), s1.source().y()),
-        //   Point_2(s2.target().x(), s2.target().y())
-        // );
-        // CGAL_assertion(c1.is_valid());
-        // X_monotone_curve_2 mc1(c1);
-        // *o++ = CGAL::make_object(
-        //   Intersection_curve(mc1, 0)
-        // );
         C_traits_2 c_traits;
         typename C_traits_2::Make_x_monotone_2 make_x_monotone = c_traits.make_x_monotone_2_object();
+
+        Rat_point_2 p = CGAL::circumcenter(s1.source(), s1.target(), s2.source());
+
 
         Curve_2 c2(
           Rat_point_2(s1.source()),
           Rat_point_2(s2.source()),
-          Rat_point_2(s1.target())
+          p,
+          Rat_point_2(s1.target()),
+          Rat_point_2(s2.target())
         );
 
         /* critical, if the curve is not valid, abort immediately */
         if (!c2.is_valid()) return o;
 
-        // std::vector<X_monotone_curve_2> segs;
         std::vector<CGAL::Object> pre_segs;
         make_x_monotone(c2, std::back_inserter(pre_segs));
 
@@ -292,16 +298,12 @@ public:
           X_monotone_curve_2 curr;
           bool check = CGAL::assign(curr, pre_segs[i]);
           assert(check); CGAL_USE(check);
-          // segs.push_back(curr);
 
           *o++ = CGAL::make_object(
             Intersection_curve(curr, 0)
           );
         }
 
-        // *o++ = CGAL::make_object(
-        //   Intersection_curve(mc2, 0)
-        // );
         return o;
       }
 

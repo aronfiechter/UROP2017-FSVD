@@ -866,7 +866,7 @@ void bisectorIpelet::protected_run(int fn) {
          eit != m_envelope_diagram->edges_end();
          ++eit) {
       /* the edge is a straight segment */
-      if (eit->curve().r() == 0 && eit->curve().s() == 0) {
+      if (eit->curve().r() == 0 && eit->curve().s() == 0 && eit->curve().t() == 0) {
         Point_2 p1 (
           CGAL::to_double(eit->curve().source().x()),
           CGAL::to_double(eit->curve().source().y())
@@ -879,17 +879,15 @@ void bisectorIpelet::protected_run(int fn) {
       }
       /* the edge is a parabolic arc */
       else {
+        CGAL_assertion( // curve must be a parabola
+          4 *  eit->curve().r() *   eit->curve().s() -  CGAL::square(t)
+          == 0
+        );
         std::list<Segment_2> segments;
         arc_to_segments(eit->curve(), segments);
         sprintf(message, "The arc has been converted into %lu segments in %d loops. Converter called %d times.\"", segments.size(), this->counter, this->arc_converter_called);
         print_error_message(message);
         draw_in_ipe(segments.begin(), segments.end(), true);
-//        std::list<Segment_2>::iterator sit;
-//        for (sit = segments.begin();
-//             sit != segments.end();
-//             ++sit) {
-//          draw_in_ipe(*sit, bbox);
-//        }
       }
     } // end of draw FSVD edges
 
