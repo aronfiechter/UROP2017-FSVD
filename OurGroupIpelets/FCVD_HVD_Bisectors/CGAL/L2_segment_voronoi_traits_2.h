@@ -167,20 +167,45 @@ protected:
     return arc;
   }
 
+  /* Convert the Curve_2 cv into multiple X_monotone_curve_2 using the provided
+   * make_x_monotone function. Store the results into the list x_mono_curves.
+   * Precondition: cv is a valid curve. */
+  static void make_curve_2_into_many_x_monotone_curve_2(Curve_2& cv,
+    std::vector<X_monotone_curve_2>& x_mono_curves) {
+
+    /* instantiate traits, we need the provided function */
+    C_traits_2 c_traits;
+    typename C_traits_2::Make_x_monotone_2 make_x_monotone =
+      c_traits.make_x_monotone_2_object();
+
+    /* call the provided function */
+    std::vector<CGAL::Object> pre_x_mono_curves;
+    make_x_monotone(cv0,std::back_inserter(pre_x_mono_curves));
+
+    /* cast all CGAL::Objects into X_monotone_segment_2 and add to list */
+    for(size_t i = 0; i < pre_x_mono_curves.size(); i++ ) {
+      X_monotone_curve_2 curr;
+      bool check = CGAL::assign(curr, pre_x_mono_curves[i]);
+      assert(check); CGAL_USE(check);
+      x_mono_curves.push_back(curr);
+    }
+  }
+
 
 
 private:
-  enum Rel_position {
-    NO_INFLUENCE,
-    PARTIAL_INFLUENCE,
-    COMPLETE_INFLUENCE
-  };
-
-  /* Determine the relative position of two segments in R_2. */
-  static Rel_position relative_position(Rat_segment_2 s1, Rat_segment_2 s2) {
-    //TODO fake
-    return COMPLETE_INFLUENCE;
-  }
+  //TODO remove if unused
+  // enum Rel_position {
+  //   NO_INFLUENCE,
+  //   PARTIAL_INFLUENCE,
+  //   COMPLETE_INFLUENCE
+  // };
+  //
+  // /* Determine the relative position of two segments in R_2. */
+  // static Rel_position relative_position(Rat_segment_2 s1, Rat_segment_2 s2) {
+  //   //TODO fake
+  //   return COMPLETE_INFLUENCE;
+  // }
 
 public:
 
@@ -235,76 +260,29 @@ public:
       if (s1 == s2) {
         return o;
       }
-      /* if they do not intersect, there are three main cases:
-       * - the areas of the points closest to the inner parts of both segments
-       *   do not intersect at all (the bisector has 5 parts)
-       * - the area of the points closest to the inner part of one segment
-       *   intersects the other segment (the bisector has 5 parts)
-       * - the area of the points closest to the inner part of one segment
-       *   completely contains the other segment (the bisector has 7 parts)
-       *
-       * each one of the cases has many subcases, depending also on the distance
-       * between the segments and their length
+      /* if the two segments do not intersect, construct the bisector starting
+       * from one unbounded
        */
-      else {
-        // switch (relative_position(s1, s2)) {
-        //   case NO_INFLUENCE: {
-        //     //TODO not implemented
-        //     break;
-        //   }
-        //
-        //   case PARTIAL_INFLUENCE: {
-        //     //TODO not implemented
-        //     break;
-        //   }
-        //
-        //   case COMPLETE_INFLUENCE: {
-        //     //TODO not implemented
-        //     break;
-        //   }
-        //
-        //   default: {
-        //     break;
-        //   }
-        // }
-
-        /* for now just compute the point segment bisector */
-
-        Rat_line_2 supp_line = s1.supporting_line();
-
-        Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
-
-        C_traits_2 c_traits;
-        typename C_traits_2::Make_x_monotone_2 make_x_monotone = c_traits.make_x_monotone_2_object();
-
-        Rat_point_2 p = CGAL::circumcenter(s1.source(), s1.target(), s2.source());
+      else if (!CGAL::do_intersect(s1, s2)) {
+        /* first of all compute the two unbounded edges of the bisector, which
+         * have to be saved as two very long segments */
 
 
-        Curve_2 c2(
-          Rat_point_2(s1.source()),
-          Rat_point_2(s2.source()),
-          p,
-          Rat_point_2(s1.target()),
-          Rat_point_2(s2.target())
-        );
+
+        // Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
 
         /* critical, if the curve is not valid, abort immediately */
-        if (!c2.is_valid()) return o;
+        // if (!c2.is_valid()) return o;
+        // *o++ = CGAL::make_object(
+        //   Intersection_curve(curr, 0)
+        // );
 
-        std::vector<CGAL::Object> pre_segs;
-        make_x_monotone(c2, std::back_inserter(pre_segs));
-
-        for (size_t i = 0; i < pre_segs.size(); i++ ) {
-          X_monotone_curve_2 curr;
-          bool check = CGAL::assign(curr, pre_segs[i]);
-          assert(check); CGAL_USE(check);
-
-          *o++ = CGAL::make_object(
-            Intersection_curve(curr, 0)
-          );
-        }
-
-        return o;
+        return o; //TODO finish it
+      }
+      /* if instead they do intersect, assert it, then proceed to computing then
+       * intersection in this case */
+      else {
+        return o; //TODO fake
       }
 
     }
