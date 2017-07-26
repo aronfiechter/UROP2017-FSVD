@@ -318,6 +318,7 @@ public:
       /* if instead they do intersect, assert it, then proceed to computing then
        * intersection in this case */
       else {
+        CGAL_assertion(CGAL::do_intersect(s1, s2)); // they HAVE to intersect
         return o; //TODO fake
       }
 

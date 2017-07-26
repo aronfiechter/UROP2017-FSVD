@@ -810,16 +810,26 @@ void bisectorIpelet::protected_run(int fn) {
 
   /* L_2 FSVD (segments) */
   if (fn == 10) {
-    /* Create envelope diagram object */
+    /* create envelope diagram object */
     L2_FSVD_Envelope_diagram_2 *m_envelope_diagram;
     m_envelope_diagram = new L2_FSVD_Envelope_diagram_2();
 
+    /* compute the diagram */
     CGAL::upper_envelope_3(vd_sg_list.begin(), vd_sg_list.end(), *m_envelope_diagram);
+
+    /* print informative message */
     char message[100];
     unsigned long ne = m_envelope_diagram->number_of_edges();
     unsigned long nv = m_envelope_diagram->number_of_vertices();
-    sprintf(message, "There are %ld edges and %lu vertices", ne, nv);
-    print_error_message(message);
+    if (ne == 0) {
+      sprintf(message, "The diagram is empty!");
+      print_error_message(message);
+      return;
+    }
+    else {
+      sprintf(message, "There are %ld edges and %lu vertices", ne, nv);
+      print_error_message(message);
+    }
 
     /* Compute the bounding box */
     Alg_point_2 bottom_left (bbox.min().x(), bbox.min().y());
