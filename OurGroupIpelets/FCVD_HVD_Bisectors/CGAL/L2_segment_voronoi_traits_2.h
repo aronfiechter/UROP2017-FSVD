@@ -60,6 +60,8 @@ public:
   typedef typename Rat_kernel::Segment_2            Rat_segment_2;
   typedef typename Rat_kernel::Line_2               Rat_line_2;
   typedef typename Rat_kernel::Ray_2                Rat_ray_2;
+  typedef typename CGAL::Polygon_2<Rat_kernel>        Rat_polygon_2;
+  typedef typename Rat_polygon_2::Edge_const_iterator Edge_iterator;
 
   typedef typename Alg_kernel::FT                   Algebraic;
   typedef typename Alg_kernel::Point_2              Alg_point_2;
@@ -192,6 +194,21 @@ protected:
     }
   }
 
+  /* Check if a given segment called edge connects two the other segments s1 and
+   * s2 by any of their endpoints.
+   * Return true if this is the case, return false if edge is actyally just
+   * connecting s1's endpoints (or s2's). We cannot just check for equality
+   * because edge could be just the same as one segment but in the other
+   * direction. */
+  static bool edge_connects_segments(Rat_segment_2 edge, Rat_segment_2 s1,
+    Rat_segment_2 s2) {
+
+    /* create a copy of edge but in the other direction, then check equality for
+     * both versions of edge */
+    Rat_segment_2 rev_edge(edge.target(), edge.source());
+    return !(edge == s1 || edge == s2 || rev_edge == s1 || rev_edge == s2);
+  }
+
 
 
 private:
@@ -271,35 +288,34 @@ public:
          * vertices of the hull that are not of the same segment are the pairs
          * of which the bisector lines contain the two unbouded rays that are
          * the unbounded rays of the plane bisector of the two segments */
-        std::vector<Rat_point_2> hull_points(4);
-        std::vector<Rat_point_2> points = {
+
+        /* compute hull of endpoints */
+        std::list<Rat_point_2> ch_points;
+        std::list<Rat_point_2> points = {
           s1.source(), s1.target(), s2.source(), s2.target()
         };
-        CGAL::ch_akl_toussaint(points.begin(), points.end(), hull_points.begin());
+        CGAL::ch_akl_toussaint(
+          points.begin(), points.end(),
+          std::back_insert_iterator<std::list<Rat_point_2>>(ch_points)
+        );
 
-        //TODO fake from here
-        /* for now just draw the hull */
-
-       /* get iterator and first point */
-       typename std::vector<Rat_point_2>::iterator pit = hull_points.begin();
-       Rat_point_2 prev = *pit++;
-
-       /* add last segment */
-       Rat_segment_2 last(*(hull_points.rbegin()), prev);
-       X_monotone_curve_2 curve_last(last);
-       *o++ = CGAL::make_object(
-          Intersection_curve(curve_last, 0)
-       );
-
-       /* add other segments */
-       for (; pit != hull_points.end(); ++pit) {
-         Rat_segment_2 edge(prev, *pit);
-         X_monotone_curve_2 curve_edge(edge);
-         *o++ = CGAL::make_object(
-           Intersection_curve(curve_edge, 0)
-         );
-         prev = *pit;
-       }
+        /* make a polygon out of the hull points, iterate over vetrices to find
+         * pairs to make rays, directed towards outside of polygon */
+        Rat_polygon_2 ch_polygon(ch_points.begin(), ch_points.end());
+        CGAL_assertion(ch_polygon.is_convex()); // it is a hull
+        for ( // for all edges
+          Edge_iterator eit = ch_polygon.edges_begin();
+          eit != ch_polygon.edges_end();
+          ++eit
+        ) {
+          if (edge_connects_segments(*eit, s1, s2)) {
+            Rat_segment_2 seg = *eit;
+            X_monotone_curve_2 curve_seg(seg);
+            *o++ = CGAL::make_object(
+              Intersection_curve(curve_seg, 0)
+            ); //TODO this just draws on Ipe all connecting edges of the hull
+          }
+        }
 
         // Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
 
