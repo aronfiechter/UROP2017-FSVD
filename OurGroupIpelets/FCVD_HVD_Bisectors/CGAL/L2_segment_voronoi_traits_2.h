@@ -42,40 +42,40 @@ template <class Conic_traits_2, class Kernel_>
 class L2_segment_voronoi_traits_2 : public Conic_traits_2 {
 
 public:
-  typedef Kernel_                                   Kernel;
-  typedef Conic_traits_2                            C_traits_2;
+  typedef Kernel_                                     Kernel;
+  typedef Conic_traits_2                              C_traits_2;
   typedef L2_segment_voronoi_traits_2<C_traits_2, Kernel> Self;
 
-  typedef typename C_traits_2::Point_2              Point_2;
-  typedef typename C_traits_2::Curve_2              Curve_2;
-  typedef typename C_traits_2::X_monotone_curve_2   X_monotone_curve_2;
-  typedef typename C_traits_2::Multiplicity         Multiplicity;
+  typedef typename C_traits_2::Point_2                Point_2;
+  typedef typename C_traits_2::Curve_2                Curve_2;
+  typedef typename C_traits_2::X_monotone_curve_2     X_monotone_curve_2;
+  typedef typename C_traits_2::Multiplicity           Multiplicity;
 
-  typedef typename C_traits_2::Rat_kernel           Rat_kernel;
-  typedef typename C_traits_2::Alg_kernel           Alg_kernel;
-  typedef typename C_traits_2::Nt_traits            Nt_traits;
+  typedef typename C_traits_2::Rat_kernel             Rat_kernel;
+  typedef typename C_traits_2::Alg_kernel             Alg_kernel;
+  typedef typename C_traits_2::Nt_traits              Nt_traits;
 
-  typedef typename Rat_kernel::FT                   Rational;
-  typedef typename Rat_kernel::Point_2              Rat_point_2;
-  typedef typename Rat_kernel::Segment_2            Rat_segment_2;
-  typedef typename Rat_kernel::Line_2               Rat_line_2;
-  typedef typename Rat_kernel::Ray_2                Rat_ray_2;
+  typedef typename Rat_kernel::FT                     Rational;
+  typedef typename Rat_kernel::Point_2                Rat_point_2;
+  typedef typename Rat_kernel::Segment_2              Rat_segment_2;
+  typedef typename Rat_kernel::Line_2                 Rat_line_2;
+  typedef typename Rat_kernel::Ray_2                  Rat_ray_2;
   typedef typename CGAL::Polygon_2<Rat_kernel>        Rat_polygon_2;
   typedef typename Rat_polygon_2::Edge_const_iterator Edge_iterator;
 
-  typedef typename Alg_kernel::FT                   Algebraic;
-  typedef typename Alg_kernel::Point_2              Alg_point_2;
-  typedef typename Alg_kernel::Segment_2            Alg_segment_2;
-  typedef typename Alg_kernel::Line_2               Alg_line_2;
+  typedef typename Alg_kernel::FT                     Algebraic;
+  typedef typename Alg_kernel::Point_2                Alg_point_2;
+  typedef typename Alg_kernel::Segment_2              Alg_segment_2;
+  typedef typename Alg_kernel::Line_2                 Alg_line_2;
 
   /* Define segments as surfaces for simplicity. Each segment should be thought
    * of as a surface representing the function distance, with higher values on
    * the z axis mean farthest points */
-  typedef Rat_segment_2                             Surface_3;
-  typedef Surface_3                                 Xy_monotone_surface_3;
+  typedef Rat_segment_2                               Surface_3;
+  typedef Surface_3                                   Xy_monotone_surface_3;
 
 protected:
-  typedef std::pair<X_monotone_curve_2, Multiplicity>    Intersection_curve;
+  typedef std::pair<X_monotone_curve_2, Multiplicity> Intersection_curve;
 
   /* Returns the squared distance between two points in L2 metric. */
   static Algebraic sqdistance(const Point_2& p1, const Point_2& p2) {
@@ -128,7 +128,6 @@ protected:
    * Precondition: p1 and p2 are on the parabola */
   static Curve_2 construct_parabolic_arc(Rat_segment_2 seg, Rat_point_2 f,
     Point_2 p1, Point_2 p2) {
-
     /* get supporting_line of seg */
     Rat_line_2 directrix = seg.supporting_line();
     Rat_point_2 focus = f;
@@ -175,7 +174,6 @@ protected:
    * Precondition: cv is a valid curve. */
   static void make_curve_2_into_many_x_monotone_curve_2(Curve_2& cv,
     std::vector<X_monotone_curve_2>& x_mono_curves) {
-
     /* instantiate traits, we need the provided function */
     C_traits_2 c_traits;
     typename C_traits_2::Make_x_monotone_2 make_x_monotone =
@@ -202,7 +200,6 @@ protected:
    * direction. */
   static bool edge_connects_segments(Rat_segment_2 edge, Rat_segment_2 s1,
     Rat_segment_2 s2) {
-
     /* create a copy of edge but in the other direction, then check equality for
      * both versions of edge */
     Rat_segment_2 rev_edge(edge.target(), edge.source());
