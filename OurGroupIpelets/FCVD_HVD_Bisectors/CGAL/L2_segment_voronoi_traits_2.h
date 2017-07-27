@@ -218,7 +218,6 @@ private:
   //
   // /* Determine the relative position of two segments in R_2. */
   // static Rel_position relative_position(Rat_segment_2 s1, Rat_segment_2 s2) {
-  //   //TODO fake
   //   return COMPLETE_INFLUENCE;
   // }
 
@@ -249,7 +248,7 @@ public:
     template <class OutputIterator>
     OutputIterator operator()(const Xy_monotone_surface_3& s,
                               OutputIterator o) const {
-      /* the surfaces we are considering are distance functions from line
+      /* the surfaces we are considering are distance functions of line
        * segments and are infinite, so they have no projected boundary */
       return o; // the iterator remains empty
     }
@@ -270,21 +269,30 @@ public:
                                 const Xy_monotone_surface_3& s2,
                                 OutputIterator o) const {
       Rat_kernel rat_kernel;
-      /* if the two segments are the same, their distance function is the same,
-       * so there is no intersection */
-      if (s1 == s2) {
+      /* if the two segments are the same (also if one is just the other but
+       * reversed), their distance function is the same, so there is no
+       * intersection */
+      if (s1 == s2 || s1 == Rat_segment_2(s2.target(), s2.source())) {
         return o;
       }
-      /* if the two segments do not intersect, construct the bisector starting
-       * from one unbounded
-       */
-      else if (!CGAL::do_intersect(s1, s2)) {
-        /* first of all compute the two unbounded edges of the bisector, which
-         * have to be saved as two very long segments. To do this, first compute
-         * the convex hull of the endpoints of the segments. The two pairs of
-         * vertices of the hull that are not of the same segment are the pairs
-         * of which the bisector lines contain the two unbouded rays that are
-         * the unbounded rays of the plane bisector of the two segments */
+      /* if the two segments are not the same, compute all parts of their plane
+       * bisector */
+      else {
+        /* first of all, for each segment create the two lines that divide the
+         * plane in three areas: one of all points closest to the inner part of
+         * the segment, the other two of all points closest to the two endpoints
+         * of the segment. */
+        std::pair<
+          std::pair<Rat_line_2, Rat_line_2>,
+          std::pair<Rat_line_2, Rat_line_2>
+        > delimiter_lines = 
+
+        /* then compute the 2 or 4 unbounded edges of the bisector.
+         * To do this, first compute the convex hull of the endpoints of the
+         * segments. The pairs of vertices of the hull that are not of the same
+         * segment are the pairs of which the bisector lines contain the
+         * unbouded rays that are the unbounded rays of the plane bisector of
+         * the two segments */
 
         /* compute hull of endpoints */
         std::list<Rat_point_2> ch_points;
@@ -297,7 +305,7 @@ public:
         );
 
         /* make a polygon out of the hull points, iterate over vetrices to find
-         * pairs to make rays, directed towards outside of polygon */
+        * pairs to make rays, directed towards outside of polygon */
         Rat_polygon_2 ch_polygon(ch_points.begin(), ch_points.end());
         CGAL_assertion(ch_polygon.is_convex()); // it is a hull
         for ( // for all edges
@@ -314,27 +322,32 @@ public:
           }
         }
 
-        // Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
+        /* if the two segments do not intersect, construct the bisector starting
+         * from one unbounded edge, finding the correct intersection points with
+         * the lines normal to the segments' endpoints */
+        if (!CGAL::do_intersect(s1, s2)) {
+          // Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
 
-        /* critical, if the curve is not valid, abort immediately */
-        // if (!c2.is_valid()) return o;
-        // *o++ = CGAL::make_object(
-        //   Intersection_curve(c2, 0)
-        // );
+          /* critical, if the curve is not valid, abort immediately */
+          // if (!c2.is_valid()) return o;
+          // *o++ = CGAL::make_object(
+          //   Intersection_curve(c2, 0)
+          // );
 
-        // *o++ = CGAL::make_object(
-        //   Intersection_curve(X_monotone_curve_2(Rat_segment_2(s1.source(), s2.source())), 0)
-        // );
+          // *o++ = CGAL::make_object(
+          //   Intersection_curve(X_monotone_curve_2(Rat_segment_2(s1.source(), s2.source())), 0)
+          // );
 
-        return o;
-      }
-      /* if instead they do intersect, assert it, then proceed to computing then
-       * intersection in this case */
-      else {
-        CGAL_assertion(CGAL::do_intersect(s1, s2)); // they HAVE to intersect
-        return o; //TODO fake
-      }
+          return o;
+        } // end of segments do not intersect
+        /* if instead they do intersect, assert it, then proceed to computing then
+         * intersection in this case */
+        else {
+          CGAL_assertion(CGAL::do_intersect(s1, s2)); // they HAVE to intersect
+          return o;
+        } // end of segments intersect
 
+      } // end of segments are not the same
     }
   };
 
