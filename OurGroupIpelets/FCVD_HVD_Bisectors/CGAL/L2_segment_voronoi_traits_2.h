@@ -301,10 +301,11 @@ public:
          * To do this, first compute the convex hull of the endpoints of the
          * segments. The pairs of vertices of the hull that are not of the same
          * segment are the pairs of which the bisector lines contain the
-         * unbouded rays that are the unbounded rays of the plane bisector of
+         * unbounded rays that are the unbounded rays of the plane bisector of
          * the two segments */
 
-        /* compute hull of endpoints */
+        /* compute hull of endpoints; the hull points will be stored inside
+         * ch_points in counterclockwise order */
         std::list<Rat_point_2> ch_points;
         std::list<Rat_point_2> points = {
           s1.source(), s1.target(), s2.source(), s2.target()
@@ -314,10 +315,19 @@ public:
           std::back_insert_iterator<std::list<Rat_point_2>>(ch_points)
         );
 
-        /* make a polygon out of the hull points, iterate over vetrices to find
-        * pairs to make rays, directed towards outside of polygon */
+        /* make a polygon out of the hull points, iterate over vertices to find
+         * pairs to make rays, directed towards outside of polygon */
         Rat_polygon_2 ch_polygon(ch_points.begin(), ch_points.end());
         CGAL_assertion(ch_polygon.is_convex()); // it is a hull
+
+        /* TODO remove; check if the polygon is counterclockwise <=> area is
+         * positive */
+        if (ch_polygon.area() >= 0) {
+           *o++ = CGAL::make_object(
+             Intersection_curve(X_monotone_curve_2(Rat_segment_2(s1.source(), s1.source())), 0)
+           );
+        }
+
         for ( // for all edges
           Edge_iterator eit = ch_polygon.edges_begin();
           eit != ch_polygon.edges_end();
