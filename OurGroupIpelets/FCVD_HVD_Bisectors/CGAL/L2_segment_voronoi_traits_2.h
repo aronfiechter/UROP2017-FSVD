@@ -60,6 +60,7 @@ public:
   typedef typename Rat_kernel::Segment_2              Rat_segment_2;
   typedef typename Rat_kernel::Line_2                 Rat_line_2;
   typedef typename Rat_kernel::Ray_2                  Rat_ray_2;
+  typedef typename Rat_kernel::Vector_2               Rat_vector_2;
   typedef typename CGAL::Polygon_2<Rat_kernel>        Rat_polygon_2;
   typedef typename Rat_polygon_2::Edge_const_iterator Edge_iterator;
 
@@ -285,7 +286,16 @@ public:
         std::pair<
           std::pair<Rat_line_2, Rat_line_2>,
           std::pair<Rat_line_2, Rat_line_2>
-        > delimiter_lines = 
+        > delimiter_lines = {
+          {
+            Rat_line_2(s1.source(), Rat_vector_2(s1).perpendicular(POSITIVE)),
+            Rat_line_2(s1.target(), Rat_vector_2(s1).perpendicular(POSITIVE))
+          },
+          {
+            Rat_line_2(s2.source(), Rat_vector_2(s2).perpendicular(POSITIVE)),
+            Rat_line_2(s2.target(), Rat_vector_2(s2).perpendicular(POSITIVE))
+          }
+        };
 
         /* then compute the 2 or 4 unbounded edges of the bisector.
          * To do this, first compute the convex hull of the endpoints of the
