@@ -282,18 +282,32 @@ public:
         /* first of all, for each segment create the two lines that divide the
          * plane in three areas: one of all points closest to the inner part of
          * the segment, the other two of all points closest to the two endpoints
-         * of the segment. */
+         * of the segment.
+         * The lines are saved with an orientation such that they both have the
+         * inner part of the segment on their right. */
         std::pair<
           std::pair<Rat_line_2, Rat_line_2>,
           std::pair<Rat_line_2, Rat_line_2>
         > delimiter_lines = {
           {
-            Rat_line_2(s1.source(), Rat_vector_2(s1).perpendicular(POSITIVE)),
-            Rat_line_2(s1.target(), Rat_vector_2(s1).perpendicular(POSITIVE))
+            Rat_line_2(
+              s1.source(),
+              Rat_vector_2(s1).perpendicular(CGAL::COUNTERCLOCKWISE)
+            ),
+            Rat_line_2(
+              s1.target(),
+              Rat_vector_2(s1).perpendicular(CGAL::COUNTERCLOCKWISE)
+            )
           },
           {
-            Rat_line_2(s2.source(), Rat_vector_2(s2).perpendicular(POSITIVE)),
-            Rat_line_2(s2.target(), Rat_vector_2(s2).perpendicular(POSITIVE))
+            Rat_line_2(
+              s2.source(),
+              Rat_vector_2(s2).perpendicular(CGAL::COUNTERCLOCKWISE)
+            ),
+            Rat_line_2(
+              s2.target(),
+              Rat_vector_2(s2).perpendicular(CGAL::COUNTERCLOCKWISE)
+            )
           }
         };
 
@@ -319,14 +333,7 @@ public:
          * pairs to make rays, directed towards outside of polygon */
         Rat_polygon_2 ch_polygon(ch_points.begin(), ch_points.end());
         CGAL_assertion(ch_polygon.is_convex()); // it is a hull
-
-        /* TODO remove; check if the polygon is counterclockwise <=> area is
-         * positive */
-        if (ch_polygon.area() >= 0) {
-           *o++ = CGAL::make_object(
-             Intersection_curve(X_monotone_curve_2(Rat_segment_2(s1.source(), s1.source())), 0)
-           );
-        }
+        CGAL_assertion(ch_polygon.area() >= 0); // it is counterclockwise
 
         for ( // for all edges
           Edge_iterator eit = ch_polygon.edges_begin();
