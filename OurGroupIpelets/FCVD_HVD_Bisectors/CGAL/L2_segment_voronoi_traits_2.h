@@ -207,21 +207,6 @@ protected:
     return !(edge == s1 || edge == s2 || rev_edge == s1 || rev_edge == s2);
   }
 
-
-
-private:
-  //TODO remove if unused
-  // enum Rel_position {
-  //   NO_INFLUENCE,
-  //   PARTIAL_INFLUENCE,
-  //   COMPLETE_INFLUENCE
-  // };
-  //
-  // /* Determine the relative position of two segments in R_2. */
-  // static Rel_position relative_position(Rat_segment_2 s1, Rat_segment_2 s2) {
-  //   return COMPLETE_INFLUENCE;
-  // }
-
 public:
 
   class Make_xy_monotone_3 {
@@ -264,6 +249,9 @@ public:
 
 
   class Construct_projected_intersections_2 {
+  private:
+      Rational UNBOUNDED_RAY_LENGTH = Rational(10, 1);
+
   public:
     template <class OutputIterator>
       OutputIterator operator()(const Xy_monotone_surface_3& s1,
@@ -357,7 +345,7 @@ public:
               *eit, bisector_line
             ));
             Rat_point_2 end_point = intersection_point
-              + 1000 * bisector_line.to_vector();
+              + UNBOUNDED_RAY_LENGTH * bisector_line.to_vector();
 
 
 
