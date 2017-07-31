@@ -284,7 +284,14 @@ public:
          * the segment, the other two of all points closest to the two endpoints
          * of the segment.
          * The lines are saved with an orientation such that they both have the
-         * inner part of the segment on their right. */
+         * inner part of the segment on their right.
+         * Note: a vector constructed using a segment is oriented from source to
+         * target of that segment, so to build a line such that the segment lies
+         * on the right of it, we need to use:
+         * - the source of the segment and as direction the vector oriented 90
+         *   degrees clockwise from the segment vector
+         * - the target of the segment but as direction the vector oriented 90
+         *   degrees counterclockwise. */
         std::pair<
           std::pair<Rat_line_2, Rat_line_2>,
           std::pair<Rat_line_2, Rat_line_2>
