@@ -61,6 +61,7 @@ public:
   typedef typename Rat_kernel::Line_2                 Rat_line_2;
   typedef typename Rat_kernel::Ray_2                  Rat_ray_2;
   typedef typename Rat_kernel::Vector_2               Rat_vector_2;
+  typedef typename Rat_kernel::Direction_2            Rat_direction_2;
   typedef typename CGAL::Polygon_2<Rat_kernel>        Rat_polygon_2;
   typedef typename Rat_polygon_2::Edge_const_iterator Edge_iterator;
 
@@ -207,6 +208,48 @@ protected:
     return !(edge == s1 || edge == s2 || rev_edge == s1 || rev_edge == s2);
   }
 
+  /* Given a bisector finds the point that is the furthest intersection
+   * (following the direction of the bisector) of the bisector with the four
+   * lines saved in delimiters */
+  static Rat_point_2 find_unbounded_ray_start_point(
+    Rat_line_2 bisector,
+    std::pair<
+      std::pair<Rat_line_2, Rat_line_2>,
+      std::pair<Rat_line_2, Rat_line_2>
+    > delimiters
+  ) {
+
+    /* get the four intersection points, add them to two lists, sort one by x
+     * and the other one by y */
+    Rat_point_2 p1; // intersection between bisector and delimiters[0][0]
+    Rat_point_2 p2; // intersection between bisector and delimiters[0][1]
+    Rat_point_2 p3; // intersection between bisector and delimiters[1][0]
+    Rat_point_2 p4; // intersection between bisector and delimiters[1][1]
+    CGAL::assign(p1, CGAL::intersection(bisector, delimiters.first.first));
+    CGAL::assign(p2, CGAL::intersection(bisector, delimiters.first.second));
+    CGAL::assign(p3, CGAL::intersection(bisector, delimiters.second.first));
+    CGAL::assign(p4, CGAL::intersection(bisector, delimiters.second.second));
+    std::vector<Rat_point_2> intersection_x = { p1, p2, p3, p4 };
+    std::vector<Rat_point_2> intersection_y = { p1, p2, p3, p4 };
+    std::sort(intersection_x.begin(), intersection_x.end(),
+      [](Rat_point_2 a, Rat_point_2 b) {
+      return a.x() < b.x();
+    });
+    std::sort(intersection_y.begin(), intersection_y.end(),
+      [](Rat_point_2 a, Rat_point_2 b) {
+      return a.y() < b.y();
+    });
+
+    /* find the farthest point according to the direction of bisector */
+    Rat_direction_2 dir = bisector.direction();
+    if (dir.dx() == 0) {
+      return (dir.dy() > 0) ? intersection_y.back() : intersection_x.front();
+    }
+    else {
+      return (dir.dx() > 0) ? intersection_x.back() : intersection_x.front();
+    }
+  }
+
 public:
 
   class Make_xy_monotone_3 {
@@ -340,16 +383,15 @@ public:
             Rat_line_2 bisector_line = CGAL::bisector(
               eit->target(), eit->source()
             );
-            Rat_point_2 intersection_point;
-            CGAL::assign(intersection_point, CGAL::intersection(
-              *eit, bisector_line
-            ));
-            Rat_point_2 end_point = intersection_point
-              + UNBOUNDED_RAY_LENGTH * bisector_line.to_vector();
+            Rat_point_2 start_point = find_unbounded_ray_start_point(
+              bisector_line, delimiter_lines
+            );
+            Rat_point_2 end_point = start_point
+              + UNBOUNDED_RAY_LENGTH * bisector_line.direction().vector();
 
 
 
-            Rat_segment_2 seg(intersection_point, end_point);
+            Rat_segment_2 seg(start_point, end_point);
             X_monotone_curve_2 curve_seg(seg);
             *o++ = CGAL::make_object(
               Intersection_curve(curve_seg, 0)
