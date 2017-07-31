@@ -284,14 +284,14 @@ public:
          * the segment, the other two of all points closest to the two endpoints
          * of the segment.
          * The lines are saved with an orientation such that they both have the
-         * inner part of the segment on their right.
+         * inner part of the segment on their right side (negative side).
          * Note: a vector constructed using a segment is oriented from source to
          * target of that segment, so to build a line such that the segment lies
-         * on the right of it, we need to use:
+         * on the right side of it, we need to use:
          * - the source of the segment and as direction the vector oriented 90
-         *   degrees clockwise from the segment vector
+         *   degrees counterclockwise from the segment vector
          * - the target of the segment but as direction the vector oriented 90
-         *   degrees counterclockwise. */
+         *   degrees clockwise. */
         std::pair<
           std::pair<Rat_line_2, Rat_line_2>,
           std::pair<Rat_line_2, Rat_line_2>
@@ -299,21 +299,21 @@ public:
           {
             Rat_line_2(
               s1.source(),
-              Rat_vector_2(s1).perpendicular(CGAL::CLOCKWISE)
+              Rat_vector_2(s1).perpendicular(CGAL::COUNTERCLOCKWISE)
             ),
             Rat_line_2(
               s1.target(),
-              Rat_vector_2(s1).perpendicular(CGAL::COUNTERCLOCKWISE)
+              Rat_vector_2(s1).perpendicular(CGAL::CLOCKWISE)
             )
           },
           {
             Rat_line_2(
               s2.source(),
-              Rat_vector_2(s2).perpendicular(CGAL::CLOCKWISE)
+              Rat_vector_2(s2).perpendicular(CGAL::COUNTERCLOCKWISE)
             ),
             Rat_line_2(
               s2.target(),
-              Rat_vector_2(s2).perpendicular(CGAL::COUNTERCLOCKWISE)
+              Rat_vector_2(s2).perpendicular(CGAL::CLOCKWISE)
             )
           }
         };
@@ -347,12 +347,25 @@ public:
           eit != ch_polygon.edges_end();
           ++eit
         ) {
-          if (edge_connects_segments(*eit, s1, s2)) {
-            Rat_segment_2 seg = *eit;
+          if (edge_connects_segments(*eit, s1, s2)) { // if it's not s1 or s2
+            /* create line that bisects the segment, orient it outside */
+            Rat_line_2 bisector_line = CGAL::bisector(
+              eit->target(), eit->source()
+            );
+            Rat_point_2 intersection_point;
+            CGAL::assign(intersection_point, CGAL::intersection(
+              *eit, bisector_line
+            ));
+            Rat_point_2 end_point = intersection_point
+              + 1000 * bisector_line.to_vector();
+
+
+
+            Rat_segment_2 seg(intersection_point, end_point);
             X_monotone_curve_2 curve_seg(seg);
             *o++ = CGAL::make_object(
               Intersection_curve(curve_seg, 0)
-            ); //TODO this just draws on Ipe all connecting edges of the hull
+            );
           }
         }
 
