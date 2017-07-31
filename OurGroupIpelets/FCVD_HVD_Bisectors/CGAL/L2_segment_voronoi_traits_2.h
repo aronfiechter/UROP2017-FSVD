@@ -292,7 +292,7 @@ public:
           {
             Rat_line_2(
               s1.source(),
-              Rat_vector_2(s1).perpendicular(CGAL::COUNTERCLOCKWISE)
+              Rat_vector_2(s1).perpendicular(CGAL::CLOCKWISE)
             ),
             Rat_line_2(
               s1.target(),
@@ -302,7 +302,7 @@ public:
           {
             Rat_line_2(
               s2.source(),
-              Rat_vector_2(s2).perpendicular(CGAL::COUNTERCLOCKWISE)
+              Rat_vector_2(s2).perpendicular(CGAL::CLOCKWISE)
             ),
             Rat_line_2(
               s2.target(),
