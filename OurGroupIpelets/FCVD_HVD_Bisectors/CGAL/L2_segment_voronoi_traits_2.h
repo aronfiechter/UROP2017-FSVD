@@ -348,6 +348,11 @@ public:
             )
           }
         };
+        /* also save the lines in a vector for convenience */
+        std::vector<Rat_line_2> delimiter_lines_vector = {
+          delimiter_lines.first.first, delimiter_lines.first.second,
+          delimiter_lines.second.first, delimiter_lines.second.second
+        };
 
         /* then compute the 2 or 4 unbounded edges of the bisector.
          * To do this, first compute the convex hull of the endpoints of the
@@ -404,12 +409,14 @@ public:
           }
         }
 
-        /* if the two segments do not intersect, construct the bisector starting
+        /* if the two segments do NOT intersect, construct the bisector starting
          * from one unbounded edge, finding the correct intersection points
          * using the delimiter_lines.
          * In this case, the ray start points should be only two. */
-        if (!CGAL::do_intersect(s1, s2)) {
+        if (!CGAL::do_intersect(s1, s2)) { // segments do not intersect
           CGAL_assertion(ray_start_points.size() == 2);
+
+
           // Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
 
           /* critical, if the curve is not valid, abort immediately */
