@@ -373,6 +373,9 @@ public:
         CGAL_assertion(ch_polygon.is_convex()); // it is a hull
         CGAL_assertion(ch_polygon.area() >= 0); // it is counterclockwise
 
+        /* list to save starting points of unbounded rays */
+        std::list<Rat_point_2> ray_start_points;
+
         for ( // for all edges
           Edge_iterator eit = ch_polygon.edges_begin();
           eit != ch_polygon.edges_end();
@@ -386,11 +389,13 @@ public:
             Rat_point_2 start_point = find_unbounded_ray_start_point(
               bisector_line, delimiter_lines
             );
+            ray_start_points.push_back(start_point);
             Rat_point_2 end_point = start_point
               + UNBOUNDED_RAY_LENGTH * bisector_line.direction().vector();
 
-
-
+            /* make very long segment to represent an unbounded ray, so that it
+             * can be saved as an X_monotone_curve_2, because the Conic_traits
+             * require that curves are bounded */
             Rat_segment_2 seg(start_point, end_point);
             X_monotone_curve_2 curve_seg(seg);
             *o++ = CGAL::make_object(
@@ -400,9 +405,11 @@ public:
         }
 
         /* if the two segments do not intersect, construct the bisector starting
-         * from one unbounded edge, finding the correct intersection points with
-         * the lines normal to the segments' endpoints */
+         * from one unbounded edge, finding the correct intersection points
+         * using the delimiter_lines.
+         * In this case, the ray start points should be only two. */
         if (!CGAL::do_intersect(s1, s2)) {
+          CGAL_assertion(ray_start_points.size() == 2);
           // Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
 
           /* critical, if the curve is not valid, abort immediately */
@@ -417,10 +424,12 @@ public:
 
           return o;
         } // end of segments do not intersect
-        /* if instead they do intersect, assert it, then proceed to computing then
-         * intersection in this case */
+        /* if instead they do intersect, assert it, then proceed to computing
+         * the bisector in this case.
+         * In this case, the ray start points should be four. */
         else {
           CGAL_assertion(CGAL::do_intersect(s1, s2)); // they HAVE to intersect
+          CGAL_assertion(ray_start_points.size() == 4);
           return o;
         } // end of segments intersect
 
