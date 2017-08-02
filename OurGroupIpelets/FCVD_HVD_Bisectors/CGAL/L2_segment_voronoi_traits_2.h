@@ -416,6 +416,24 @@ public:
         if (!CGAL::do_intersect(s1, s2)) { // segments do not intersect
           CGAL_assertion(ray_start_points.size() == 2);
 
+          /* start from one point, find intersection line */
+          Rat_point_2 start = ray_start_points.front();
+          Rat_line_2 intersecting_delimiter;
+          bool found;
+          std::for_each(
+            delimiter_lines_vector.begin(),
+            delimiter_lines_vector.end(),
+            [&intersecting_delimiter, &start, &found] (Rat_line_2 delimiter) {
+            if (delimiter.has_on(start)) {
+              found = true;
+              intersecting_delimiter = delimiter;
+            }
+          });
+          CGAL_assertion(found);
+          // TODO revise this horrendous thing, could get lines already
+          // by returning a pair from find_unbounded_ray_start_point
+
+          
 
           // Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
 
