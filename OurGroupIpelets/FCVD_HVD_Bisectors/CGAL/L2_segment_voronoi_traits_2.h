@@ -79,8 +79,20 @@ public:
 protected:
   typedef std::pair<X_monotone_curve_2, Multiplicity> Intersection_curve;
 
+private:
+  enum SEG_ENDPOINT {
+    S1_SOURCE,
+    S1_TARGET,
+    S2_SOURCE,
+    S2_TARGET,
+  };
+  typedef typename std::pair<Rat_point_2, SEG_ENDPOINT> Point_info;
+
   /* Returns the squared distance between two points in L2 metric. */
   static Algebraic sqdistance(const Point_2& p1, const Point_2& p2) {
+    return CGAL::squared_distance(p1, p2);
+  }
+  static Algebraic sqdistance(const Rat_point_2& p1, const Rat_point_2& p2) {
     return CGAL::squared_distance(p1, p2);
   }
 
@@ -211,7 +223,7 @@ protected:
   /* Given a bisector finds the point that is the furthest intersection
    * (following the direction of the bisector) of the bisector with the four
    * lines saved in delimiters */
-  static Rat_point_2 find_unbounded_ray_start_point(
+  static std::pair<Rat_point_2, SEG_ENDPOINT> find_unbounded_ray_start_point(
     Rat_line_2 bisector,
     std::pair<
       std::pair<Rat_line_2, Rat_line_2>,
@@ -229,24 +241,31 @@ protected:
     CGAL::assign(p2, CGAL::intersection(bisector, delimiters.first.second));
     CGAL::assign(p3, CGAL::intersection(bisector, delimiters.second.first));
     CGAL::assign(p4, CGAL::intersection(bisector, delimiters.second.second));
-    std::vector<Rat_point_2> intersection_x = { p1, p2, p3, p4 };
-    std::vector<Rat_point_2> intersection_y = { p1, p2, p3, p4 };
-    std::sort(intersection_x.begin(), intersection_x.end(),
-      [](Rat_point_2 a, Rat_point_2 b) {
-      return a.x() < b.x();
+    std::vector<Point_info> intersections_x = {
+      std::make_pair(p1, S1_SOURCE),
+      std::make_pair(p2, S1_TARGET),
+      std::make_pair(p3, S2_SOURCE),
+      std::make_pair(p4, S1_TARGET)
+    };
+    std::vector<Point_info> intersections_y;
+    std::copy(intersections_x.begin(), intersections_x.end(),
+              std::back_inserter(intersections_y));
+    std::sort(intersections_x.begin(), intersections_x.end(),
+      [](Point_info a, Point_info b) {
+      return a.first.x() < b.first.x();
     });
-    std::sort(intersection_y.begin(), intersection_y.end(),
-      [](Rat_point_2 a, Rat_point_2 b) {
-      return a.y() < b.y();
+    std::sort(intersections_y.begin(), intersections_y.end(),
+      [](Point_info a, Point_info b) {
+      return a.first.y() < b.first.y();
     });
 
     /* find the farthest point according to the direction of bisector */
     Rat_direction_2 dir = bisector.direction();
     if (dir.dx() == 0) {
-      return (dir.dy() > 0) ? intersection_y.back() : intersection_x.front();
+      return (dir.dy() > 0) ? intersections_y.back() : intersections_x.front();
     }
     else {
-      return (dir.dx() > 0) ? intersection_x.back() : intersection_x.front();
+      return (dir.dx() > 0) ? intersections_x.back() : intersections_x.front();
     }
   }
 
@@ -378,8 +397,10 @@ public:
         CGAL_assertion(ch_polygon.is_convex()); // it is a hull
         CGAL_assertion(ch_polygon.area() >= 0); // it is counterclockwise
 
-        /* list to save starting points of unbounded rays */
-        std::list<Rat_point_2> ray_start_points;
+        /* list to save starting points of unbounded rays, together with an
+         * indication of which segment endpoint generates the orthogonal line
+         * that caused the intersection */
+        std::list<Point_info> ray_start_points_info;
 
         for ( // for all edges
           Edge_iterator eit = ch_polygon.edges_begin();
@@ -391,10 +412,11 @@ public:
             Rat_line_2 bisector_line = CGAL::bisector(
               eit->target(), eit->source()
             );
-            Rat_point_2 start_point = find_unbounded_ray_start_point(
+            Point_info start_point_info = find_unbounded_ray_start_point(
               bisector_line, delimiter_lines
             );
-            ray_start_points.push_back(start_point);
+            ray_start_points_info.push_back(start_point_info);
+            Rat_point_2 start_point = start_point_info.first;
             Rat_point_2 end_point = start_point
               + UNBOUNDED_RAY_LENGTH * bisector_line.direction().vector();
 
@@ -416,24 +438,28 @@ public:
         if (!CGAL::do_intersect(s1, s2)) { // segments do not intersect
           CGAL_assertion(ray_start_points.size() == 2);
 
-          /* start from one point, find intersection line */
-          Rat_point_2 start = ray_start_points.front();
-          Rat_line_2 intersecting_delimiter;
-          bool found;
-          std::for_each(
-            delimiter_lines_vector.begin(),
-            delimiter_lines_vector.end(),
-            [&intersecting_delimiter, &start, &found] (Rat_line_2 delimiter) {
-            if (delimiter.has_on(start)) {
-              found = true;
-              intersecting_delimiter = delimiter;
-            }
-          });
-          CGAL_assertion(found);
-          // TODO revise this horrendous thing, could get lines already
-          // by returning a pair from find_unbounded_ray_start_point
-
-          
+          /* start from one point, find which segment is to consider as partial
+           * directrix of parabolic arc. It is the segment that has as endpoints
+           * the point whose orthogonal line intersects the ray to create the
+           * ray start point. This information is saved in the info.
+           * Also find the focus of the parabola supporting the parabolic arc,
+           * which is the closest endpoint of the other segment. */
+          Point_info pt_info = ray_start_points_info.front();
+          Rat_point_2 start = pt_info.first;
+          Rat_line_2 directrix;
+          Rat_point_2 focus;
+          if (pt_info.second == S1_SOURCE || pt_info.second == S1_TARGET) {
+            directrix = s1.supporting_line();
+            focus =
+            (sqdistance(s2.source(), start) < sqdistance(s2.target(), start)) ?
+            s2.source() : s2.target();
+          }
+          else {
+            directrix = s2.supporting_line();
+            focus =
+            (sqdistance(s1.source(), start) < sqdistance(s1.target(), start)) ?
+            s1.source() : s1.target();
+          }
 
           // Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
 
