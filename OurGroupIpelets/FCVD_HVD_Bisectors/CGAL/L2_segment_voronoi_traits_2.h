@@ -70,6 +70,9 @@ public:
   typedef typename Alg_kernel::Segment_2              Alg_segment_2;
   typedef typename Alg_kernel::Line_2                 Alg_line_2;
 
+  typedef Rational                                    RT;
+  typedef Algebraic                                   AT;
+
   /* Define segments as surfaces for simplicity. Each segment should be thought
    * of as a surface representing the function distance, with higher values on
    * the z axis mean farthest points */
@@ -90,43 +93,47 @@ private:
 
   class Parabola {
   private: // coefficients of equation: rx^2 + sy^2 + txy + ux + vy + w = 0
-    typedef Rational RT;
     RT _r; RT _s; RT _t; RT _u; RT _v; RT _w;
 
   public:
     /* Construct using equation coefficients */
     Parabola(RT __r, RT __s, RT __t, RT __u, RT __v, RT __w)
-      : _r(__r), _s(__s), _t(__t), _u(__u), _v(__v), _w(__w) {}
+      : _r(__r), _s(__s), _t(__t), _u(__u), _v(__v), _w(__w) {
+
+      CGAL_assertion(CGAL::square(t) - 4 * r * s == 0); // curve is a parabola
+    }
 
     /* Construct using directrix and focus */
     Parabola(Rat_line_2 directrix, Rat_point_2 focus) {
-      Rational a = directrix.a();
-      Rational b = directrix.b();
-      Rational c = directrix.c();
-      Rational f_x = focus.x();
-      Rational f_y = focus.y();
-      Rational NEG2 = Rational(-2);
+      RT a = directrix.a();
+      RT b = directrix.b();
+      RT c = directrix.c();
+      RT f_x = focus.x();
+      RT f_y = focus.y();
+      RT NEG2 = RT(-2);
 
-      Rational r = CGAL::square(b);
-      Rational s = CGAL::square(a);
-      Rational t = NEG2 * a * b;
-      Rational u =
+      RT r = CGAL::square(b);
+      RT s = CGAL::square(a);
+      RT t = NEG2 * a * b;
+      RT u =
         NEG2 * a * c +
         NEG2 * CGAL::square(a) * f_x +
         NEG2 * CGAL::square(b) * f_x
       ;
-      Rational v =
+      RT v =
         NEG2 * b * c +
         NEG2 * CGAL::square(a) * f_y +
         NEG2 * CGAL::square(b) * f_y
       ;
-      Rational w =
+      RT w =
         CGAL::square(a) * CGAL::square(f_x) +
         CGAL::square(a) * CGAL::square(f_y) +
         CGAL::square(b) * CGAL::square(f_x) +
         CGAL::square(b) * CGAL::square(f_y) -
         CGAL::square(c)
       ;
+
+      CGAL_assertion(CGAL::square(t) - 4 * r * s == 0); // curve is a parabola
 
       /* construct the parabola using the other coefficients constructor */
       this->Parabola(r, s, t, u, v, w);
