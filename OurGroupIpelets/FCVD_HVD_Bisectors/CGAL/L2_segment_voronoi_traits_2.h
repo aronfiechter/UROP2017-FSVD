@@ -372,6 +372,10 @@ public:
           delimiter_lines.first.first, delimiter_lines.first.second,
           delimiter_lines.second.first, delimiter_lines.second.second
         };
+        /* also save segment endpoints "generating" these lines */
+        std::vector<Rat_point_2> segment_endpoints = {
+          s1.source(), s1.target(), s2.source(), s2.target()
+        };
 
         /* then compute the 2 or 4 unbounded edges of the bisector.
          * To do this, first compute the convex hull of the endpoints of the
