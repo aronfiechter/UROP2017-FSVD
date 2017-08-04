@@ -149,6 +149,14 @@ private:
 
     /* Methods */
 
+    /* Check if a given point lies on the parabola by checking if the values of
+     * x and y (the point's coordinates) satisfy the equation of the parabola */
+    bool has_on(Point_2 point) {
+      Algebraic x = point.x();
+      Algebraic y = point.y();
+      return true; //TODO fake
+    }
+
     /* Save into the OutputIterator o the intersection(s) of the parabola with
      * a given line l. The type of o must be Alg_point_2.
      * Return a past the end iterator o. */
@@ -249,6 +257,18 @@ private:
 
         return o; // already one past the end, post-incremented when adding
       }
+    }
+
+    /* Construct a parabolic arc on the parabola from point p1 to point p2.
+     * Precondition (checked): p1 and p2 are on the parabola */
+    Curve_2 construct_parabolic_arc(Point_2 p1, Point_2 p2) {
+      /* check precondition: both points lie on the parabola //TODO do it */
+
+      /* construct the curve using the parameters and the endpoints */
+      Curve_2 arc(_r,_s,_t,_u,_v,_w, CGAL::CLOCKWISE, p1, p2); //TODO ORIENTATION
+
+      CGAL_assertion(arc.is_valid()); // valid arc
+      return arc;
     }
   };
 
