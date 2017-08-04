@@ -14,7 +14,7 @@ int main () {
   typename std::vector<int>::iterator new_end
     = std::remove_if (myints.begin(), myints.end(), IsOdd);
 
-  myints.resize(new_end - myints.begin());
+  myints.resize(static_cast<unsigned long>(new_end - myints.begin()));
 
   std::cout << "the range contains:";
   for (auto& x : myints) {
