@@ -146,6 +146,110 @@ private:
     RT u() { return _u; }
     RT v() { return _v; }
     RT w() { return _w; }
+
+    /* Methods */
+
+    /* Save into the OutputIterator o the intersection(s) of the parabola with
+     * a given line l. The type of o must be Alg_point_2.
+     * Return a past the end iterator o. */
+    template <class OutputIterator>
+    OutputIterator get_intersections(Rat_line_2 l, OutputIterator o) {
+      /* equation of line:      ax + by + c = 0
+       * equation of parabola:  rx^2 + sy^2 + txy + ux + vy + w = 0
+       * we can find intersections by substituting line in parabola; described
+       * in detail in docs/parabola.pdf, verified using wxMaxima */
+      RT a = l.a();
+      RT b = l.b();
+      RT c = l.c();
+
+      Nt_traits nt_traits;
+
+      /* in this case the intersection is simpler, since we can substitute the x
+       * in the parabola equation with just:    x = -c/a
+       * We get a quadratic equation in y, which we can solve using CGAL */
+      if (b == 0) {
+        /* the quadratic equation in y is:
+         *                                    s y^2
+         *                     + (v - (tc / a)) y
+         *      + ((rc^2 / a^2) - (uc / a) + w)
+         *                                          = 0
+         */
+        RT EQ_A = _s;
+        RT EQ_B = _v - ((_t * c) / a);
+        RT EQ_C = ((_r * CGAL::square(c)) / CGAL::square(a)) -
+          ((_u * c) / a) +
+          _w
+        ;
+
+        /* to store the 0, 1, or 2 results, indicating the intersections.
+         * For all resulting y, find the corresponding x, and add a point to
+         * the OutputIterator o */
+        Algebraic  ys[2];
+        Algebraic * ys_end;
+        int n_ys;
+        ys_end = nt_traits.solve_quadratic_equation(EQ_A, EQ_B, EQ_C, ys);
+        n_ys = ys_end - ys;
+
+        /* if no intersections return */
+        if (n_ys == 0) {
+          return o;
+        }
+        /* else find xs for all ys, add points to iterator */
+        else while (--n_ys >= 0) {
+          Algebraic current_y = ys[n_ys];
+          Algebraic corresponding_x = l.x_at_y(current_y);
+          *o++ = Alg_point_2(corresponding_x, current_y);
+        }
+
+        return o; // already one past the end, post-incremented when adding
+      }
+      /* in the general case we substitute the y in the parabola equation with
+       * the value:                             y = -c/b + -ax/b
+       * We get a quadratic equation in x, which we can solve using CGAL */
+      else {
+        /* the quadratic equation in x is:
+         *                (r + (sa^2 / b^2) - (at / b)) x^2
+         *   + ((2acs / b^2) - (ct / b) - (av / b) + u) x
+         *              + ((sc^2 / b^2) - (cv / b) + w)
+         *                                                  = 0
+         */
+        RT EQ_A = _r +
+          (_s * CGAL::square(a) / CGAL::square(b)) -
+          (a * _t / b)
+        ;
+        RT EQ_B = (2 * a * c * _s / CGAL::square(b)) -
+          (c * _t / b) -
+          (a * _v / b) +
+          _u
+        ;
+        RT EQ_C = (_s * CGAL::square(c) / CGAL::square(b)) -
+          (c * _v / b) +
+          _w
+        ;
+
+        /* to store the 0, 1, or 2 results, indicating the intersections.
+         * For all resulting x, find the corresponding y, and add a point to
+         * the OutputIterator o */
+        Algebraic  xs[2];
+        Algebraic * xs_end;
+        int n_xs;
+        xs_end = nt_traits.solve_quadratic_equation(EQ_A, EQ_B, EQ_C, xs);
+        n_xs = xs_end - xs;
+
+        /* if no intersections return */
+        if (n_xs == 0) {
+          return o;
+        }
+        /* else find xs for all xs, add points to iterator */
+        else while (--n_xs >= 0) {
+          Algebraic current_x = xs[n_xs];
+          Algebraic respective_y = l.y_at_x(current_x);
+          *o++ = Alg_point_2(respective_y, current_x);
+        }
+
+        return o; // already one past the end, post-incremented when adding
+      }
+    }
   };
 
   /* Returns the squared distance between two points in L2 metric. */
