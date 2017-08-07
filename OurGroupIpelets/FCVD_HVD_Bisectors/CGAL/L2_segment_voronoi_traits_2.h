@@ -178,14 +178,14 @@ private:
       if (b == 0) {
         /* the quadratic equation in y is:
          *                                    s y^2
-         *                     + (v - (tc / a)) y
-         *      + ((rc^2 / a^2) - (uc / a) + w)
+         *                     + (v - (ct / a)) y
+         *      + ((rc^2 / a^2) - (cu / a) + w)
          *                                          = 0
          */
         RT EQ_A = _s;
-        RT EQ_B = _v - ((_t * c) / a);
+        RT EQ_B = _v - ((c * _t) / a);
         RT EQ_C = ((_r * CGAL::square(c)) / CGAL::square(a)) -
-          ((_u * c) / a) +
+          ((c * _u) / a) +
           _w
         ;
 
