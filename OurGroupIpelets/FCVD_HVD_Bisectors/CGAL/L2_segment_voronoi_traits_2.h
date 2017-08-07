@@ -92,52 +92,59 @@ private:
   typedef typename std::pair<Rat_point_2, SEG_ENDPOINT> Point_info;
 
   class Parabola {
-    typedef CGAL::Orientation Orientation;
-  private: // coefficients of equation: rx^2 + sy^2 + txy + ux + vy + w = 0
+
+  private:
+
+    /* Fields */
+
+    /* coefficients of equation: rx^2 + sy^2 + txy + ux + vy + w = 0 */
     RT _r; RT _s; RT _t; RT _u; RT _v; RT _w;
-    Orientation _orientation;
 
-  public:
-    /* Construct using equation coefficients */
-    Parabola(RT __r, RT __s, RT __t, RT __u, RT __v, RT __w, Orientation o)
-      : _r(__r), _s(__s), _t(__t), _u(__u), _v(__v), _w(__w), _orientation(o) {
+    /* generators of parabola, direction of parabola is the same of directrix */
+    Rat_line_2 _directrix;
+    Rat_point_2 _focus;
 
+    /* Private constructor to save equation coefficients */
+    Parabola(RT __r, RT __s, RT __t, RT __u, RT __v, RT __w)
+      : _r(__r), _s(__s), _t(__t), _u(__u), _v(__v), _w(__w) {
       CGAL_assertion(CGAL::square(t) - 4 * r * s == 0); // curve is a parabola
     }
 
+  public:
+
     /* Construct using directrix and focus */
-    Parabola(Rat_line_2 directrix, Rat_point_2 focus) {
+    Parabola(Rat_line_2 directrix, Rat_point_2 focus)
+      : _directrix(directrix), _focus(focus) {
+
       RT a = directrix.a();
       RT b = directrix.b();
       RT c = directrix.c();
       RT f_x = focus.x();
       RT f_y = focus.y();
-      RT NEG2 = RT(-2);
+      RT TWO = RT(2);
 
-      RT r = CGAL::square(b);
-      RT s = CGAL::square(a);
-      RT t = NEG2 * a * b;
+      RT r = -CGAL::square(b);
+      RT s = -CGAL::square(a);
+      RT t = TWO * a * b;
       RT u =
-        NEG2 * a * c +
-        NEG2 * CGAL::square(a) * f_x +
-        NEG2 * CGAL::square(b) * f_x
+        TWO * a * c +
+        TWO * CGAL::square(a) * f_x +
+        TWO * CGAL::square(b) * f_x
       ;
       RT v =
-        NEG2 * b * c +
-        NEG2 * CGAL::square(a) * f_y +
-        NEG2 * CGAL::square(b) * f_y
+        TWO * b * c +
+        TWO * CGAL::square(a) * f_y +
+        TWO * CGAL::square(b) * f_y
       ;
       RT w =
-        CGAL::square(a) * CGAL::square(f_x) +
-        CGAL::square(a) * CGAL::square(f_y) +
-        CGAL::square(b) * CGAL::square(f_x) +
-        CGAL::square(b) * CGAL::square(f_y) -
-        CGAL::square(c)
+        CGAL::square(c) -
+        CGAL::square(a) * CGAL::square(f_x) -
+        CGAL::square(a) * CGAL::square(f_y) -
+        CGAL::square(b) * CGAL::square(f_x) -
+        CGAL::square(b) * CGAL::square(f_y)
       ;
 
-      CGAL_assertion(CGAL::square(t) - 4 * r * s == 0); // curve is a parabola
-
-      /* construct the parabola using the other coefficients constructor */
+      /* finish constructing using the private coefficients constructor */
       this->Parabola(r, s, t, u, v, w);
     }
 
@@ -148,7 +155,8 @@ private:
     RT u() { return _u; }
     RT v() { return _v; }
     RT w() { return _w; }
-    Orientation orientation() { return _orientation; }
+    Rat_line_2 directrix() { return _directrix; }
+    Rat_point_2 focus() { return _focus; }
 
     /* Methods */
 
@@ -176,12 +184,12 @@ private:
       return CGAL::is_zero(evaluate(point));
     }
     /* Check if a given point lies on the positive side of the parabola. The
-     * positive side is the one "outside" the curve. */
+     * positive side is the one on the left when traveling on the curve. */
     bool has_on_positive_side(Point_2 point) {
       return CGAL::is_positive(evaluate(point));
     }
     /* Check if a given point lies on the negative side of the parabola. The
-     * negative side is the one "inside" the curve. */
+     * negative side is the one on the right when traveling on the curve. */
     bool has_on_negative_side(Point_2 point) {
       return CGAL::is_negative(evaluate(point));
     }
