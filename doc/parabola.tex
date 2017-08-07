@@ -84,10 +84,78 @@
     \newpage
     
     \section*{Parabola--line intersection}
-    The intersections of a line and a parabola can be found by solving the equation of the line for \(y\), then inserting it into the equation of the parabola to get a quadratic equation in \(x\).\par
-    The resulting \(x\)(s) of the equation can be input in the line equation to get the corresponding value(s) of \(y\), each indicating a point of intersection.\par
+    The intersections of a line and a parabola can be found by solving the equation of the line for \(y\), then inserting it into the equation of the parabola to get a quadratic equation in \(x\). If the coefficient \(b\) of the line is equal to 0, instead we can substitute \(x\) in the parabola equation and get a quadratic equation in \(y\).\par
+    The resulting \(x\)(s) (or \(y\)(s)) of the equation can be input in the line equation to get the corresponding value(s) of \(y\) (or \(x\)), each indicating a point of intersection.\par
     There can be 0, 1, or 2 intersections.
+    \ppar
+    If \(b \neq 0\):
     
+    \[
+    \phi \cap l :=
+    \]
+    \[
+    \begin{cases}
+    	0 &=\;\; rx^{2} + sy^{2} + txy + ux + vy + w \\
+		0 &=\;\; ax + by + c
+    \end{cases} \Iff
+    \begin{cases}
+    	0 &=\;\; rx^{2} + sy^{2} + txy + ux + vy + w \\
+		y &=\;\; \displaystyle\frac{-c}{b} + \displaystyle\frac{-ax}{b}
+    \end{cases} \Iff
+    \]
+    \begin{align*}
+    rx^{2} + s\left(\frac{-c}{b} + \frac{-ax}{b}\right)^{2} + tx\left(\frac{-c}{b} + \frac{-ax}{b}\right) + ux + v\left(\frac{-c}{b} + \frac{-ax}{b}\right) + w &= 0
+    \\
+	rx^{2} + s\left(\frac{(-c) + (-ax)}{b}\right)^{2} + tx\left(\frac{(-c) + (-ax)}{b}\right) + ux + v\left(\frac{(-c) + (-ax)}{b}\right) + w &= 0
+	\\
+	rx^{2} + s\frac{\big((-c) + (-ax)\big)^{2}}{b^{2}} + \frac{-ct}{b}x + \frac{-at}{b}x^{2} + ux + \frac{-cv}{b} + \frac{-av}{b}x + w &= 0
+	\\
+	rx^{2} + s\frac{c^{2} + 2acx + a^{2}x^{2}}{b^{2}} + \frac{-ct}{b}x + \frac{-at}{b}x^{2} + ux + \frac{-cv}{b} + \frac{-av}{b}x + w &= 0
+	\\
+	rx^{2} + \frac{sc^{2}}{b^{2}} + \frac{2acs}{b^{2}}x + \frac{sa^{2}}{b^{2}}x^{2} + \frac{-ct}{b}x + \frac{-at}{b}x^{2} + ux + \frac{-cv}{b} + \frac{-av}{b}x + w &= 0
+	\\
+	rx^{2} + \frac{sa^{2}}{b^{2}}x^{2} + \frac{-at}{b}x^{2} + \frac{2acs}{b^{2}}x + \frac{-ct}{b}x + \frac{-av}{b}x + ux + \frac{sc^{2}}{b^{2}} + \frac{-cv}{b} + w &= 0
+	\\
+	\left(r + \frac{sa^{2}}{b^{2}} + \frac{-at}{b}\right)x^{2} + \left(\frac{2acs}{b^{2}} + \frac{-ct}{b} + \frac{-av}{b} + u\right)x + \left(\frac{sc^{2}}{b^{2}} + \frac{-cv}{b} + w\right) &= 0
+	\\
+    \end{align*}
     
-
+    \ppar
+    Instead if \(b = 0\):
+    
+    \[
+    \phi \cap l :=
+    \]
+    \[
+    \begin{cases}
+    	0 &=\;\; rx^{2} + sy^{2} + txy + ux + vy + w \\
+		0 &=\;\; ax + c
+    \end{cases} \Iff
+    \begin{cases}
+    	0 &=\;\; rx^{2} + sy^{2} + txy + ux + vy + w \\
+		x &=\;\; \displaystyle\frac{-c}{a}
+    \end{cases} \Iff
+    \]
+    \begin{align*}
+    r\left(\frac{-c}{a}\right)^{2} + sy^{2} + t\left(\frac{-c}{a}\right)y + u\left(\frac{-c}{a}\right) + vy + w &= 0
+    \\
+    \frac{rc^{2}}{a^{2}} + sy^{2} + \frac{-ct}{a}y + \frac{-cu}{a} + vy + w &= 0
+    \\
+    \left(s\right)y^{2} + \left(v + \frac{-ct}{a}\right)y + \left(\frac{rc^{2}}{a^{2}} + \frac{-cu}{a} + w\right) &= 0
+    \\
+    \end{align*}
 \end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
