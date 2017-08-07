@@ -92,13 +92,15 @@ private:
   typedef typename std::pair<Rat_point_2, SEG_ENDPOINT> Point_info;
 
   class Parabola {
+    typedef CGAL::Orientation Orientation;
   private: // coefficients of equation: rx^2 + sy^2 + txy + ux + vy + w = 0
     RT _r; RT _s; RT _t; RT _u; RT _v; RT _w;
+    Orientation _orientation;
 
   public:
     /* Construct using equation coefficients */
-    Parabola(RT __r, RT __s, RT __t, RT __u, RT __v, RT __w)
-      : _r(__r), _s(__s), _t(__t), _u(__u), _v(__v), _w(__w) {
+    Parabola(RT __r, RT __s, RT __t, RT __u, RT __v, RT __w, Orientation o)
+      : _r(__r), _s(__s), _t(__t), _u(__u), _v(__v), _w(__w), _orientation(o) {
 
       CGAL_assertion(CGAL::square(t) - 4 * r * s == 0); // curve is a parabola
     }
@@ -146,15 +148,42 @@ private:
     RT u() { return _u; }
     RT v() { return _v; }
     RT w() { return _w; }
+    Orientation orientation() { return _orientation; }
 
     /* Methods */
+
+    /* Evaluate the equation of the parabola rx^2 + sy^2 + txy + ux + vy + w = 0
+     * using the x and y of the point. If the result is 0, the point is on the
+     * parabola, if it is positive the point lies on the positive side, if it
+     * is negative the point lies on the negative side. */
+    Algebraic evaluate(Point_2 point) {
+      Algebraic x = point.x();
+      Algebraic y = point.y();
+      Algebraic result =
+        r() * CGAL::square(x) +
+        s() * CGAL::square(x) +
+        t() * x * y +
+        u() * x +
+        v() * y +
+        w()
+      ;
+      return result;
+    }
 
     /* Check if a given point lies on the parabola by checking if the values of
      * x and y (the point's coordinates) satisfy the equation of the parabola */
     bool has_on(Point_2 point) {
-      Algebraic x = point.x();
-      Algebraic y = point.y();
-      return true; //TODO fake
+      return CGAL::is_zero(evaluate(point));
+    }
+    /* Check if a given point lies on the positive side of the parabola. The
+     * positive side is the one "outside" the curve. */
+    bool has_on_positive_side(Point_2 point) {
+      return CGAL::is_positive(evaluate(point));
+    }
+    /* Check if a given point lies on the negative side of the parabola. The
+     * negative side is the one "inside" the curve. */
+    bool has_on_negative_side(Point_2 point) {
+      return CGAL::is_negative(evaluate(point));
     }
 
     /* Save into the OutputIterator o the intersection(s) of the parabola with
