@@ -15,6 +15,6 @@ int main() {
   for (std::vector<int>::iterator it = v.begin(); it != v.end(); ++it) {
     std::cout << ' ' << *it;
   }
-  std::cout << '\n';
+  std::cout << std::endl;
 
 }

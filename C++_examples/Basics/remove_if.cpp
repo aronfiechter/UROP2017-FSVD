@@ -11,7 +11,7 @@ bool IsOdd (int i) {
 int main () {
   std::vector<int> myints = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-  typename std::vector<int>::iterator new_end
+  std::vector<int>::iterator new_end
     = std::remove_if (myints.begin(), myints.end(), IsOdd);
 
   myints.resize(static_cast<unsigned long>(new_end - myints.begin()));

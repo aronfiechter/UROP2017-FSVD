@@ -22,6 +22,6 @@ int main() {
   for (std::list<int>::iterator it = l.begin(); it != l.end(); ++it) {
     std::cout << ' ' << *it;
   }
-  std::cout << '\n';
+  std::cout << std::endl;
 
 }
