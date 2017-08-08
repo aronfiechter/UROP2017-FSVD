@@ -149,7 +149,7 @@ private:
       ;
 
       /* finish constructing using the private coefficients constructor */
-      this->Parabola(r, s, t, u, v, w);
+      Parabola(r, s, t, u, v, w);
     }
 
     /* Getters */
@@ -635,17 +635,20 @@ public:
           Rat_point_2 start = pt_info.first;
           Rat_line_2 directrix;
           Rat_point_2 focus;
+          Parabola supporting_conic;
           if (pt_info.second == S1_SOURCE || pt_info.second == S1_TARGET) {
             directrix = s1.supporting_line();
             focus =
             (sqdistance(s2.source(), start) < sqdistance(s2.target(), start)) ?
             s2.source() : s2.target();
+            supporting_conic = Parabola(directrix, focus);
           }
           else {
             directrix = s2.supporting_line();
             focus =
             (sqdistance(s1.source(), start) < sqdistance(s1.target(), start)) ?
             s1.source() : s1.target();
+            supporting_conic = Parabola(directrix, focus);
           }
 
           // Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
