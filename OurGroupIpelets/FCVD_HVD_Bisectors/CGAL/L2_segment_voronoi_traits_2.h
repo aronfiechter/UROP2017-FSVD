@@ -112,7 +112,8 @@ private:
 
   public:
 
-    /* Construct using directrix and focus */
+    /* Construct using directrix and focus. Details on the computation of the
+     * forumla can be found in doc/parabola.pdf */
     Parabola(Rat_line_2 directrix, Rat_point_2 focus)
       : _directrix(directrix), _focus(focus) {
 
@@ -167,15 +168,14 @@ private:
     Algebraic evaluate(Point_2 point) {
       Algebraic x = point.x();
       Algebraic y = point.y();
-      Algebraic result =
+      return Algebraic(
         r() * CGAL::square(x) +
         s() * CGAL::square(x) +
         t() * x * y +
         u() * x +
         v() * y +
         w()
-      ;
-      return result;
+      );
     }
 
     /* Check if a given point lies on the parabola by checking if the values of
@@ -184,12 +184,16 @@ private:
       return CGAL::is_zero(evaluate(point));
     }
     /* Check if a given point lies on the positive side of the parabola. The
-     * positive side is the one on the left when traveling on the curve. */
+     * positive side is the one on the left when traveling on the curve in the
+     * same direction as the directrix (by construction they have the "same"
+     * oriented side) */
     bool has_on_positive_side(Point_2 point) {
       return CGAL::is_positive(evaluate(point));
     }
     /* Check if a given point lies on the negative side of the parabola. The
-     * negative side is the one on the right when traveling on the curve. */
+     * negative side is the one on the right when traveling on the curve in the
+     * same direction as the directrix (by construction they have the "same"
+     * oriented side) */
     bool has_on_negative_side(Point_2 point) {
       return CGAL::is_negative(evaluate(point));
     }
