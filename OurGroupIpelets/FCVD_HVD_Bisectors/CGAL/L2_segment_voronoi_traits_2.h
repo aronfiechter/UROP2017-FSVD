@@ -599,17 +599,18 @@ public:
             Rat_line_2 bisector_line = CGAL::bisector(
               eit->target(), eit->source()
             );
+            /* find "farthest" intersection with delimiters, ray starts there */
             Point_info start_point_info = find_unbounded_ray_start_point(
               bisector_line, delimiter_lines
             );
             ray_start_points_info.push_back(start_point_info);
-            Rat_point_2 start_point = start_point_info.first;
-            Rat_point_2 end_point = start_point
-              + UNBOUNDED_RAY_LENGTH * bisector_line.direction().vector();
 
             /* make very long segment to represent an unbounded ray, so that it
              * can be saved as an X_monotone_curve_2, because the Conic_traits
              * require that curves are bounded */
+            Rat_point_2 start_point = start_point_info.first;
+            Rat_point_2 end_point = start_point
+              + UNBOUNDED_RAY_LENGTH * bisector_line.direction().vector();
             Rat_segment_2 seg(start_point, end_point);
             X_monotone_curve_2 curve_seg(seg);
             *o++ = CGAL::make_object(
