@@ -91,6 +91,11 @@ private:
   };
   typedef typename std::pair<Rat_ray_2, SEG_ENDPOINT> Ray_info;
 
+  typedef typename std::pair<
+    std::pair<Rat_line_2, Rat_line_2>,
+    std::pair<Rat_line_2, Rat_line_2>
+  >                                                   Delimiter_lines;
+
   class Parabola {
 
   private:
@@ -410,10 +415,7 @@ private:
    * orthogonal delimiter intersects the ray's source. */
   static Ray_info find_unbounded_ray(
     Rat_line_2 bisector,
-    std::pair<
-      std::pair<Rat_line_2, Rat_line_2>,
-      std::pair<Rat_line_2, Rat_line_2>
-    > delimiters
+    Delimiter_lines delimiters
   ) {
 
     /* get the four intersection points, add them to two lists, sort one by x
@@ -452,6 +454,19 @@ private:
     else {
       return (dir.dx() > 0) ? intersections_x.back() : intersections_x.front();
     }
+  }
+
+
+  /* Given a direction and a start point finds the point that is the first
+   * intersection (after this start point with the four lines saved in the
+   * vector of delimiter lines.
+   * Return a the found intersection point. */
+  static Rat_point_2 find_next_intersection(
+    Rat_direction_2 direction,
+    Rat_point_2 start_pt,
+    std::vector<Rat_line_2> delimiters
+  ) {
+    return start_pt; //TODO fake
   }
 
 public:
@@ -527,10 +542,7 @@ public:
          *   degrees counterclockwise from the segment vector
          * - the target of the segment but as direction the vector oriented 90
          *   degrees clockwise. */
-        std::pair<
-          std::pair<Rat_line_2, Rat_line_2>,
-          std::pair<Rat_line_2, Rat_line_2>
-        > delimiter_lines = {
+        Delimiter_lines delimiter_lines = {
           {
             Rat_line_2(
               s1.source(),
@@ -648,6 +660,9 @@ public:
             /* find next intersection with delimiter_lines when going in the
              * direction saved in "curr_direction", then find a middle point
              * between curr_pt and that intersection */
+            Rat_point_2 approximate_next_intersection = find_next_intersection(
+              curr_direction, curr_pt, delimiter_lines_vector
+            );
             //TODO
 
             /* determine where this middle point is relative to the two segments
