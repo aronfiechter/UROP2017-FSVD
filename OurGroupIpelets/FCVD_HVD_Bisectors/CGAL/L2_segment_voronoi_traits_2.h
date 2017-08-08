@@ -169,33 +169,33 @@ private:
       Algebraic x = point.x();
       Algebraic y = point.y();
       return Algebraic(
-        r() * CGAL::square(x) +
-        s() * CGAL::square(x) +
-        t() * x * y +
-        u() * x +
-        v() * y +
-        w()
+        this->r() * CGAL::square(x) +
+        this->s() * CGAL::square(x) +
+        this->t() * x * y +
+        this->u() * x +
+        this->v() * y +
+        this->w()
       );
     }
 
     /* Check if a given point lies on the parabola by checking if the values of
      * x and y (the point's coordinates) satisfy the equation of the parabola */
     bool has_on(Point_2 point) {
-      return CGAL::is_zero(evaluate(point));
+      return CGAL::is_zero(this->evaluate(point));
     }
     /* Check if a given point lies on the positive side of the parabola. The
      * positive side is the one on the left when traveling on the curve in the
      * same direction as the directrix (by construction they have the "same"
      * oriented side) */
     bool has_on_positive_side(Point_2 point) {
-      return CGAL::is_positive(evaluate(point));
+      return CGAL::is_positive(this->evaluate(point));
     }
     /* Check if a given point lies on the negative side of the parabola. The
      * negative side is the one on the right when traveling on the curve in the
      * same direction as the directrix (by construction they have the "same"
      * oriented side) */
     bool has_on_negative_side(Point_2 point) {
-      return CGAL::is_negative(evaluate(point));
+      return CGAL::is_negative(this->evaluate(point));
     }
 
     /* Save into the OutputIterator o the intersection(s) of the parabola with
@@ -223,11 +223,11 @@ private:
          *      + ((rc^2 / a^2) - (cu / a) + w)
          *                                          = 0
          */
-        RT EQ_A = _s;
-        RT EQ_B = _v - ((c * _t) / a);
-        RT EQ_C = ((_r * CGAL::square(c)) / CGAL::square(a)) -
-          ((c * _u) / a) +
-          _w
+        RT EQ_A = this->s();
+        RT EQ_B = this->v() - ((c * this->t()) / a);
+        RT EQ_C = ((this->r() * CGAL::square(c)) / CGAL::square(a)) -
+          ((c * this->u()) / a) +
+          this->w()
         ;
 
         /* to store the 0, 1, or 2 results, indicating the intersections.
@@ -262,18 +262,18 @@ private:
          *              + ((sc^2 / b^2) - (cv / b) + w)
          *                                                  = 0
          */
-        RT EQ_A = _r +
-          (_s * CGAL::square(a) / CGAL::square(b)) -
-          (a * _t / b)
+        RT EQ_A = this->r() +
+          (this->s() * CGAL::square(a) / CGAL::square(b)) -
+          (a * this->t() / b)
         ;
-        RT EQ_B = (2 * a * c * _s / CGAL::square(b)) -
-          (c * _t / b) -
-          (a * _v / b) +
-          _u
+        RT EQ_B = (2 * a * c * this->s() / CGAL::square(b)) -
+          (c * this->t() / b) -
+          (a * this->v() / b) +
+          this->u()
         ;
-        RT EQ_C = (_s * CGAL::square(c) / CGAL::square(b)) -
-          (c * _v / b) +
-          _w
+        RT EQ_C = (this->s() * CGAL::square(c) / CGAL::square(b)) -
+          (c * this->v() / b) +
+          this->w()
         ;
 
         /* to store the 0, 1, or 2 results, indicating the intersections.
