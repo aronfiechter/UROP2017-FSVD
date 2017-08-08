@@ -303,7 +303,9 @@ private:
     /* Construct a parabolic arc on the parabola from point p1 to point p2.
      * Precondition (checked): p1 and p2 are on the parabola */
     Curve_2 construct_parabolic_arc(Point_2 p1, Point_2 p2) {
-      /* check precondition: both points lie on the parabola //TODO do it */
+      /* check precondition: both points lie on the parabola */
+      CGAL_assertion(this->has_on(p1));
+      CGAL_assertion(this->has_on(p2));
 
       /* construct the curve using the parameters and the endpoints */
       Curve_2 arc(_r,_s,_t,_u,_v,_w, CGAL::CLOCKWISE, p1, p2); //TODO ORIENTATION
