@@ -89,7 +89,7 @@ private:
     S2_SOURCE,
     S2_TARGET,
   };
-  typedef typename std::pair<Rat_point_2, SEG_ENDPOINT> Point_info;
+  typedef typename std::pair<Rat_ray_2, SEG_ENDPOINT> Ray_info;
 
   class Parabola {
 
@@ -405,8 +405,10 @@ private:
 
   /* Given a bisector finds the point that is the furthest intersection
    * (following the direction of the bisector) of the bisector with the four
-   * lines saved in delimiters */
-  static std::pair<Rat_point_2, SEG_ENDPOINT> find_unbounded_ray_start_point(
+   * lines saved in delimiters.
+   * Return a pair with the unbounded ray and the segment endpoint whose
+   * orthogonal delimiter intersects the ray's source. */
+  static Ray_info find_unbounded_ray(
     Rat_line_2 bisector,
     std::pair<
       std::pair<Rat_line_2, Rat_line_2>,
@@ -424,22 +426,22 @@ private:
     CGAL::assign(p2, CGAL::intersection(bisector, delimiters.first.second));
     CGAL::assign(p3, CGAL::intersection(bisector, delimiters.second.first));
     CGAL::assign(p4, CGAL::intersection(bisector, delimiters.second.second));
-    std::vector<Point_info> intersections_x = {
-      std::make_pair(p1, S1_SOURCE),
-      std::make_pair(p2, S1_TARGET),
-      std::make_pair(p3, S2_SOURCE),
-      std::make_pair(p4, S1_TARGET)
+    std::vector<Ray_info> intersections_x = {
+      std::make_pair(Rat_ray_2(p1, bisector.direction()), S1_SOURCE),
+      std::make_pair(Rat_ray_2(p2, bisector.direction()), S1_TARGET),
+      std::make_pair(Rat_ray_2(p3, bisector.direction()), S2_SOURCE),
+      std::make_pair(Rat_ray_2(p4, bisector.direction()), S1_TARGET)
     };
-    std::vector<Point_info> intersections_y;
+    std::vector<Ray_info> intersections_y;
     std::copy(intersections_x.begin(), intersections_x.end(),
               std::back_inserter(intersections_y));
     std::sort(intersections_x.begin(), intersections_x.end(),
-      [](Point_info a, Point_info b) {
-      return a.first.x() < b.first.x();
+      [](Ray_info a, Ray_info b) {
+      return a.first.source().x() < b.first.source().x();
     });
     std::sort(intersections_y.begin(), intersections_y.end(),
-      [](Point_info a, Point_info b) {
-      return a.first.y() < b.first.y();
+      [](Ray_info a, Ray_info b) {
+      return a.first.source().y() < b.first.source().y();
     });
 
     /* find the farthest point according to the direction of bisector */
@@ -587,7 +589,7 @@ public:
         /* list to save starting points of unbounded rays, together with an
          * indication of which segment endpoint generates the orthogonal line
          * that caused the intersection */
-        std::list<Point_info> ray_start_points_info;
+        std::list<Ray_info> ray_info_list;
 
         for ( // for all edges
           Edge_iterator eit = ch_polygon.edges_begin();
@@ -600,17 +602,17 @@ public:
               eit->target(), eit->source()
             );
             /* find "farthest" intersection with delimiters, ray starts there */
-            Point_info start_point_info = find_unbounded_ray_start_point(
+            Ray_info ray_info = find_unbounded_ray(
               bisector_line, delimiter_lines
             );
-            ray_start_points_info.push_back(start_point_info);
+            ray_info_list.push_back(ray_info);
 
             /* make very long segment to represent an unbounded ray, so that it
              * can be saved as an X_monotone_curve_2, because the Conic_traits
              * require that curves are bounded */
-            Rat_point_2 start_point = start_point_info.first;
+            Rat_point_2 start_point = ray_info.first.source();
             Rat_point_2 end_point = start_point
-              + UNBOUNDED_RAY_LENGTH * bisector_line.direction().vector();
+              + UNBOUNDED_RAY_LENGTH * ray_info.first.direction().vector();
             Rat_segment_2 seg(start_point, end_point);
             X_monotone_curve_2 curve_seg(seg);
             *o++ = CGAL::make_object(
@@ -626,28 +628,45 @@ public:
         if (!CGAL::do_intersect(s1, s2)) { // segments do not intersect
           CGAL_assertion(ray_start_points.size() == 2);
 
+          /* starting from the source of one unbounded ray and finishing at the
+           * source of the other, compute the rest of the bisector, consisting
+           * of:
+           * - parabolic arcs: when we are in the "area of influence" of the
+           *   interior of a segment and of one endpoint of the other
+           * - segments: when we are in the "area of influence" of the interiors
+           *   of the two segments or of two endpoints of the two segments */
+          Ray_info start_ray_info = ray_info_list.front();
+          Ray_info end_ray_info = ray_info_list.back();
+          Rat_point_2 start_pt = start_ray_info.first.source();
+          Rat_point_2 end_pt = end_ray_info.first.source();
+          Rat_point_2 current_pt = start_pt;
+
+          /* "walk" through the bisector to find all parts until every piece has
+           * been created and added to the OutputIterator o */
+          while (current_pt != end_pt) {
+            break; //TODO fake to avoid infinite loop
+          }
+
           /* start from one point, find which segment is to consider as partial
            * directrix of parabolic arc. It is the segment that has as endpoints
            * the point whose orthogonal line intersects the ray to create the
            * ray start point. This information is saved in the info.
            * Also find the focus of the parabola supporting the parabolic arc,
            * which is the closest endpoint of the other segment. */
-          Point_info pt_info = ray_start_points_info.front();
-          Rat_point_2 start = pt_info.first;
           Rat_line_2 directrix;
           Rat_point_2 focus;
           Parabola supporting_conic;
-          if (pt_info.second == S1_SOURCE || pt_info.second == S1_TARGET) {
+          if (start_ray_info.second == S1_SOURCE || start_ray_info.second == S1_TARGET) {
             directrix = s1.supporting_line();
             focus =
-            (sqdistance(s2.source(), start) < sqdistance(s2.target(), start)) ?
+            (sqdistance(s2.source(), start_pt) < sqdistance(s2.target(), start_pt)) ?
             s2.source() : s2.target();
             supporting_conic = Parabola(directrix, focus);
           }
           else {
             directrix = s2.supporting_line();
             focus =
-            (sqdistance(s1.source(), start) < sqdistance(s1.target(), start)) ?
+            (sqdistance(s1.source(), start_pt) < sqdistance(s1.target(), start_pt)) ?
             s1.source() : s1.target();
             supporting_conic = Parabola(directrix, focus);
           }
