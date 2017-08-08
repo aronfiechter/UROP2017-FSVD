@@ -112,6 +112,9 @@ private:
 
   public:
 
+    /* Empty constructor */
+    Parabola() {}
+
     /* Construct using directrix and focus. Details on the computation of the
      * forumla can be found in doc/parabola.pdf */
     Parabola(Rat_line_2 directrix, Rat_point_2 focus)
@@ -361,53 +364,6 @@ private:
     if (cv.is_vertical()) return Point_2(mid_x);
     /* otherwise take the point with the same x coordinate but on cv */
     else return Point_2(cv.point_at_x(mid_x));
-  }
-
-  /* Construct a parabolic arc on the parabola with a directrix that is the line
-   * that supports the segment seg and a focus that is the point f. The arc goes
-   * from points p1 to p2.
-   * Precondition: p1 and p2 are on the parabola */
-  static Curve_2 construct_parabolic_arc(Rat_segment_2 seg, Rat_point_2 f,
-    Point_2 p1, Point_2 p2) {
-    /* get supporting_line of seg */
-    Rat_line_2 directrix = seg.supporting_line();
-    Rat_point_2 focus = f;
-
-    Rational a = directrix.a();
-    Rational b = directrix.b();
-    Rational c = directrix.c();
-    Rational f_x = focus.x();
-    Rational f_y = focus.y();
-    Rational NEG2 = Rational(-2);
-
-    Rational r = CGAL::square(b);
-    Rational s = CGAL::square(a);
-    Rational t = NEG2 * a * b;
-    Rational u =
-      NEG2 * a * c +
-      NEG2 * CGAL::square(a) * f_x +
-      NEG2 * CGAL::square(b) * f_x
-    ;
-    Rational v =
-      NEG2 * b * c +
-      NEG2 * CGAL::square(a) * f_y +
-      NEG2 * CGAL::square(b) * f_y
-    ;
-    Rational w =
-      CGAL::square(a) * CGAL::square(f_x) +
-      CGAL::square(a) * CGAL::square(f_y) +
-      CGAL::square(b) * CGAL::square(f_x) +
-      CGAL::square(b) * CGAL::square(f_y) -
-      CGAL::square(c)
-    ;
-
-    /* construct the curve using the parameters and the endpoints; the
-     * orientation is clockwise becuase probably it doesn't matter at all */
-    Curve_2 arc(r, s, t, u, v, w, CGAL::CLOCKWISE, p1, p2);
-
-    CGAL_assertion(arc.is_valid()); // valid arc
-    CGAL_assertion(4 * r * s - CGAL::square(t) == 0); // curve is a parabola
-    return arc;
   }
 
   /* Convert the Curve_2 cv into multiple X_monotone_curve_2 using the provided
