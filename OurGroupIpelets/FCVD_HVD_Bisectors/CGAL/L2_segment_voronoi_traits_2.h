@@ -639,12 +639,27 @@ public:
           Ray_info end_ray_info = ray_info_list.back();
           Rat_point_2 start_pt = start_ray_info.first.source();
           Rat_point_2 end_pt = end_ray_info.first.source();
-          Rat_point_2 current_pt = start_pt;
+          Rat_point_2 curr_pt = start_pt;
+          Rat_direction_2 curr_direction = -(start_ray_info.first.direction());
 
           /* "walk" through the bisector to find all parts until every piece has
            * been created and added to the OutputIterator o */
-          while (current_pt != end_pt) {
-            break; //TODO fake to avoid infinite loop
+          while (curr_pt != end_pt) {
+            /* find next intersection with delimiter_lines when going in the
+             * direction saved in "curr_direction", then find a middle point
+             * between curr_pt and that intersection */
+            //TODO
+
+            /* determine where this middle point is relative to the two segments
+             * s1 and s2, and create the correct piece of the bisector */
+            //TODO
+
+            /* add the piece of the bisector to the OutputIterator o, update the
+             * curr_pt to be the next intersection found (corrected when
+             * determining the actual correct piece of the bisector) */
+            //TODO
+
+            break; //TODO remove (to avoid infinite loop)
           }
 
           /* start from one point, find which segment is to consider as partial
