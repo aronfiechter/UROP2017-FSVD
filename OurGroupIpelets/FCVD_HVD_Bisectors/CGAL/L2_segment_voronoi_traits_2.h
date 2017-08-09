@@ -375,11 +375,7 @@ private:
    * from Env_sphere_traits_3.h */
   static Point_2 construct_middle_point(const X_monotone_curve_2& cv) {
     /* get the x-value of the middle point */
-    Alg_kernel k;
-    Alg_point_2 mid_x = k.construct_midpoint_2_object()(
-      cv.source(),
-      cv.target()
-    );
+    Alg_point_2 mid_x = CGAL::midpoint(cv.source(),cv.target());
 
     /* if cv is vertical, it is just a segment */
     if (cv.is_vertical()) return Point_2(mid_x);
@@ -498,8 +494,6 @@ private:
     /* all intersections are in the correct direction because we used a ray
      * starting from start_pt, so return the closest one */
     return closest_pt(start_pt, intersections);
-
-    return start_pt; //TODO fake
   }
 
 public:
@@ -696,7 +690,10 @@ public:
             Rat_point_2 approximate_next_intersection = find_next_intersection(
               curr_direction, curr_pt, delimiter_lines_vector
             );
-            //TODO
+            Rat_point_2 midpoint = CGAL::midpoint(
+              curr_pt,
+              approximate_next_intersection
+            );
 
             /* determine where this middle point is relative to the two segments
              * s1 and s2, and create the correct piece of the bisector */
