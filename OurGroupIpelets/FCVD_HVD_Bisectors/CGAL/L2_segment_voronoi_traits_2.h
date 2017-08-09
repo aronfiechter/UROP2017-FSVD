@@ -327,7 +327,7 @@ private:
   static Algebraic sqdistance(const Point_2& p1, const Point_2& p2) {
     return CGAL::squared_distance(p1, p2);
   }
-  static Algebraic sqdistance(const Rat_point_2& p1, const Rat_point_2& p2) {
+  static Rational sqdistance(const Rat_point_2& p1, const Rat_point_2& p2) {
     return CGAL::squared_distance(p1, p2);
   }
 
@@ -353,6 +353,22 @@ private:
         sqdistance(p, Alg_point_2(s.target().x(), s.target().y()))
       );
     }
+  }
+
+  /* Given a point p and a list of points, return the closest point */
+  static Rat_point_2 closest_pt(Rat_point_2 p, std::list<Rat_point_2> points) {
+    Rat_point_2 result;
+    RT smaller_sqdistance = -1;
+    for (auto& q : points) {
+      RT sqdist_pq = sqdistance(p, q);
+      if (smaller_sqdistance < 0 || smaller_sqdistance > sqdist_pq) {
+        result = q;
+        smaller_sqdistance = sqdist_pq;
+      }
+    }
+
+    CGAL_assertion(smaller_sqdistance >= 0);
+    return result;
   }
 
   /* Construct a point in the middle of the curve cv. This function is copied
@@ -460,12 +476,29 @@ private:
   /* Given a direction and a start point finds the point that is the first
    * intersection (after this start point with the four lines saved in the
    * vector of delimiter lines.
-   * Return a the found intersection point. */
+   * Return the found intersection point. */
   static Rat_point_2 find_next_intersection(
     Rat_direction_2 direction,
     Rat_point_2 start_pt,
     std::vector<Rat_line_2> delimiters
   ) {
+    /* list to store intersections */
+    std::list<Rat_point_2> intersections;
+
+    /* for each delimiter add the intersection with ray, if it's not start_pt */
+    Rat_ray_2 ray(start_pt, direction);
+    for (auto& delimiter : delimiters) {
+      if (CGAL::do_intersect(delimiter, ray)) {
+        Rat_point_2 intersection;
+        CGAL::assign(intersection, CGAL::intersection(delimiter, ray));
+        if (intersection != start_pt) intersections.push_back(intersection);
+      }
+    }
+
+    /* all intersections are in the correct direction because we used a ray
+     * starting from start_pt, so return the closest one */
+    return closest_pt(start_pt, intersections);
+
     return start_pt; //TODO fake
   }
 
