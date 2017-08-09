@@ -83,13 +83,13 @@ protected:
   typedef std::pair<X_monotone_curve_2, Multiplicity> Intersection_curve;
 
 private:
-  enum SEG_ENDPOINT {
+  enum Seg_endpoint {
     S1_SOURCE,
     S1_TARGET,
     S2_SOURCE,
     S2_TARGET,
   };
-  typedef typename std::pair<Rat_ray_2, SEG_ENDPOINT> Ray_info;
+  typedef typename std::pair<Rat_ray_2, Seg_endpoint> Ray_info;
 
   typedef typename std::pair<
     std::pair<Rat_line_2, Rat_line_2>,
