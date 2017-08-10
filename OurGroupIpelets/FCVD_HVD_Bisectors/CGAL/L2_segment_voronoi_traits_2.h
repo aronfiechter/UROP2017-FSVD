@@ -531,15 +531,17 @@ private:
   static Bisector_type find_position(
     Alg_point_2 p,
     Delimiter_lines delimiter_lines,
+    Rat_segment_2 s1,
+    Rat_segment_2 s2,
     Object o1,  // to store directrix/line1/point1
     Object o2   // to store focus/line2/point2
   ) {
-    //TODO revise to find better solution
     /* convert point p from alg to rational */
     AK_to_DK to_dbl;
     DK_to_RK to_rat;
-    D_point_2 dp = to_dbl(p);
-    Rat_point_2 rp = to_rat(dp);
+    Rat_point_2 rp = to_rat(to_dbl(p)); //TODO revise to find better solution
+
+    /* assume point is not on any delimiter, consider all other cases */
     if (delimiter_lines.first.first.has_on_positive_side(rp)) {
       return PARABOLIC_ARC; //TODO fake
     }
@@ -754,7 +756,8 @@ public:
             Object o1, o2;
             Curve_2 piece_of_bisector;
             RK_to_AK to_alg;
-            switch (find_position(to_alg(midpoint), delimiter_lines, o1, o2)) {
+            Alg_point_2 alg_m_pt = to_alg(midpoint);
+            switch (find_position(alg_m_pt, delimiter_lines, s1, s2, o1, o2)) {
               case PARABOLIC_ARC: {
                 Rat_line_2 directrix; Rat_point_2 focus;
                 CGAL_assertion(CGAL::assign(directrix, o1));
