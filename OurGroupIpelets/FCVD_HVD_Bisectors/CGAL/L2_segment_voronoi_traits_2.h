@@ -33,6 +33,10 @@
 #include <CGAL/number_utils.h>
 #include <CGAL/Envelope_3/Envelope_base.h>
 
+/* to convert from Alg to Rat and viceversa */
+#include <CGAL/Cartesian_converter.h>
+#include <CGAL/Cartesian.h>
+
 /* to compute bisector of two segments */
 #include <CGAL/ch_akl_toussaint.h> // convex hull
 
@@ -73,6 +77,14 @@ public:
   typedef Rational                                    RT;
   typedef Algebraic                                   AT;
 
+  /* Converters */
+  typedef CGAL::Cartesian_converter<Alg_kernel, Rat_kernel> AK_to_RK;
+  typedef CGAL::Cartesian_converter<Rat_kernel, Alg_kernel> RK_to_AK;
+  typedef CGAL::Cartesian<double>                     D_kernel;
+  typedef typename D_kernel::Point_2                  D_point_2;
+  typedef CGAL::Cartesian_converter<Alg_kernel, D_kernel> AK_to_DK;
+  typedef CGAL::Cartesian_converter<D_kernel, Rat_kernel> DK_to_RK;
+
   /* Define segments as surfaces for simplicity. Each segment should be thought
    * of as a surface representing the function distance, with higher values on
    * the z axis mean farthest points */
@@ -95,6 +107,12 @@ private:
     std::pair<Rat_line_2, Rat_line_2>,
     std::pair<Rat_line_2, Rat_line_2>
   >                                                   Delimiter_lines;
+
+  enum Bisector_type {
+    PARABOLIC_ARC,
+    SUPP_LINE_BISECTOR,
+    ENDPOINT_BISECTOR
+  };
 
   class Parabola {
 
@@ -496,6 +514,38 @@ private:
     return closest_pt(start_pt, intersections);
   }
 
+  /* Determine the position of the point p relative to the segments s1 and s2.
+   * We do not have the segments though: we have four lines, each orthogonal to
+   * one endpoint of one of the two segments. Every line is oriented so to have
+   * the inner part of the segment on their negative side (right side).
+   * There are three main cases (described by enum Bisector_type):
+   * - PARABOLIC_ARC: when p is closer to one segment's inner part and to one of
+   *   the other segment's endpoints. In this case, save the supporting_line of
+   *   the first segment in o1, and the endpoint of the second segment in o2.
+   * - SUPP_LINE_BISECTOR: when p is closer to both inner parts of both the two
+   *   segments. In this case save the two supporting_lines of the two segments
+   *   in o1 and o2.
+   * - ENDPOINT_BISECTOR: when p is closer to two endpoints of the two segments.
+   *   In this case save those two endpoints in o1 and o2.
+   */
+  static Bisector_type find_position(
+    Alg_point_2 p,
+    Delimiter_lines delimiter_lines,
+    Object o1,  // to store directrix/line1/point1
+    Object o2   // to store focus/line2/point2
+  ) {
+    //TODO revise to find better solution
+    /* convert point p from alg to rational */
+    AK_to_DK to_dbl;
+    DK_to_RK to_rat;
+    D_point_2 dp = to_dbl(p);
+    Rat_point_2 rp = to_rat(dp);
+    if (delimiter_lines.first.first.has_on_positive_side(rp)) {
+      return PARABOLIC_ARC; //TODO fake
+    }
+    return SUPP_LINE_BISECTOR; //TODO fake
+  }
+
 public:
 
   class Make_xy_monotone_3 {
@@ -696,13 +746,45 @@ public:
             );
 
             /* determine where this middle point is relative to the two segments
-             * s1 and s2, and create the correct piece of the bisector */
+             * s1 and s2, and create the correct piece of the bisector. The
+             * objects o1 and o2 that are passed will store in the cases:
+             * - PARABOLIC_ARC:       o1 = focus,         o2 = directrix
+             * - SUPP_LINE_BISECTOR:  o1 = supp_line1,   o2 = supp_line2
+             * - ENDPOINT_BISECTOR:   o1 = endpoint_1,    o2 = endpoint_2     */
+            Object o1, o2;
+            Curve_2 piece_of_bisector;
+            RK_to_AK to_alg;
+            switch (find_position(to_alg(midpoint), delimiter_lines, o1, o2)) {
+              case PARABOLIC_ARC: {
+                Rat_line_2 directrix; Rat_point_2 focus;
+                CGAL_assertion(CGAL::assign(directrix, o1));
+                CGAL_assertion(CGAL::assign(focus, o2));
+                break;
+              }
+
+              case SUPP_LINE_BISECTOR: {
+                Rat_line_2 supp_line1; Rat_line_2 supp_line2;
+                CGAL_assertion(CGAL::assign(supp_line1, o1));
+                CGAL_assertion(CGAL::assign(supp_line2, o2));
+                break;
+              }
+
+              case ENDPOINT_BISECTOR: {
+                Rat_point_2 endpoint1; Rat_point_2 endpoint2;
+                CGAL_assertion(CGAL::assign(endpoint1, o1));
+                CGAL_assertion(CGAL::assign(endpoint2, o2));
+                break;
+              }
+
+              default: break; // should never happen
+            }
             //TODO
 
             /* add the piece of the bisector to the OutputIterator o, update the
              * curr_pt to be the next intersection found (corrected when
              * determining the actual correct piece of the bisector) */
             //TODO
+            //TODO REMEMBER TO UPDATE curr_pt
 
             break; //TODO remove (to avoid infinite loop)
           }
