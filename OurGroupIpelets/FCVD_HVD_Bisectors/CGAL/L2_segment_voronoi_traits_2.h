@@ -801,7 +801,9 @@ public:
             RK_to_AK to_alg;
             Alg_point_2 alg_m_pt = to_alg(midpoint);
             switch (find_position(alg_m_pt, delimiter_lines, s1, s2, o1, o2)) {
+
               case PARABOLIC_ARC: {
+                /* extract directrix and focus */
                 Rat_line_2 directrix; Rat_point_2 focus;
                 if (CGAL::assign(directrix, o1)) {
                   CGAL_assertion(CGAL::assign(focus, o2));
@@ -810,32 +812,60 @@ public:
                   CGAL_assertion(CGAL::assign(focus, o1));
                   CGAL_assertion(CGAL::assign(directrix, o2));
                 }
+
+                /* keep or invert directrix based on curr_direction */
+
+                /* create parabola */
+
+                /* find actual next intersection of parabola */
+
+                /* get parabolic arc */
+
                 break;
               }
 
               case SUPP_LINE_BISECTOR: {
+                /* extract two supporting lines */
                 Rat_line_2 supp_line1; Rat_line_2 supp_line2;
                 CGAL_assertion(CGAL::assign(supp_line1, o1));
                 CGAL_assertion(CGAL::assign(supp_line2, o2));
+
+                /* create bisector, orient it according to curr_direction, make
+                 * it into a ray */
+
+                /* find actual next intersection of ray */
+
+                /* get segment */
+
                 break;
               }
 
               case ENDPOINT_BISECTOR: {
+                /* extract two endpoints */
                 Rat_point_2 endpoint1; Rat_point_2 endpoint2;
                 CGAL_assertion(CGAL::assign(endpoint1, o1));
                 CGAL_assertion(CGAL::assign(endpoint2, o2));
+
+                /* create bisector, orient it according to curr_direction, make
+                 * it into a ray */
+
+                /* find actual next intersection of ray */
+
+                /* get segment */
+                
                 break;
               }
 
               default: break; // should never happen
             }
-            //TODO
+            //TODO finish
 
             /* add the piece of the bisector to the OutputIterator o, update the
              * curr_pt to be the next intersection found (corrected when
              * determining the actual correct piece of the bisector) */
             //TODO
             //TODO REMEMBER TO UPDATE curr_pt
+            //TODO REMEMBER TO UPDATE curr_direction
 
             break; //TODO remove (to avoid infinite loop)
           }
