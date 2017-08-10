@@ -521,31 +521,74 @@ private:
    * There are three main cases (described by enum Bisector_type):
    * - PARABOLIC_ARC: when p is closer to one segment's inner part and to one of
    *   the other segment's endpoints. In this case, save the supporting_line of
-   *   the first segment in o1, and the endpoint of the second segment in o2.
+   *   the first segment and the endpoint of the second segment.
    * - SUPP_LINE_BISECTOR: when p is closer to both inner parts of both the two
-   *   segments. In this case save the two supporting_lines of the two segments
-   *   in o1 and o2.
+   *   segments. In this case save the two supporting_lines of the two segments.
    * - ENDPOINT_BISECTOR: when p is closer to two endpoints of the two segments.
-   *   In this case save those two endpoints in o1 and o2.
+   *   In this case save those two endpoints.
+   * In all three cases we save in o1 the correct endpoint or supporting_line of
+   * s1, and in o2 the same for s2.
    */
   static Bisector_type find_position(
     Alg_point_2 p,
     Delimiter_lines delimiter_lines,
     Rat_segment_2 s1,
     Rat_segment_2 s2,
-    Object o1,  // to store directrix/line1/point1
-    Object o2   // to store focus/line2/point2
+    Object& o1,  // to store [directrix1 or focus1]/line1/point1
+    Object& o2   // to store [directrix2 or focus2]/line2/point2
   ) {
     /* convert point p from alg to rational */
     AK_to_DK to_dbl;
     DK_to_RK to_rat;
     Rat_point_2 rp = to_rat(to_dbl(p)); //TODO revise to find better solution
 
-    /* assume point is not on any delimiter, consider all other cases */
+    /* assume point is not on any delimiter, consider all other cases. To do so,
+     * first determine what must be stored in o1, then in o2. Save in two flags
+     * information about the case. In the end, determine the case. */
+    bool o1_is_line = false;
+    bool o2_is_line = false;
+
+    /* determine o1 */
     if (delimiter_lines.first.first.has_on_positive_side(rp)) {
-      return PARABOLIC_ARC; //TODO fake
+      o1 = CGAL::make_object(s1.source());
     }
-    return SUPP_LINE_BISECTOR; //TODO fake
+    else if (delimiter_lines.first.second.has_on_positive_side(rp)) {
+      o1 = CGAL::make_object(s1.target());
+    }
+    else {
+      CGAL_assertion(
+        delimiter_lines.first.first.has_on_negative_side(rp)
+        &&
+        delimiter_lines.first.second.has_on_negative_side(rp)
+      );
+      o1 = CGAL::make_object(s1.supporting_line());
+      o1_is_line = true;
+    }
+
+    /* determine o2 */
+    if (delimiter_lines.second.first.has_on_positive_side(rp)) {
+      o2 = CGAL::make_object(s2.source());
+    }
+    else if (delimiter_lines.second.second.has_on_positive_side(rp)) {
+      o2 = CGAL::make_object(s2.target());
+    }
+    else {
+      CGAL_assertion(
+        delimiter_lines.second.first.has_on_negative_side(rp)
+        &&
+        delimiter_lines.second.second.has_on_negative_side(rp)
+      );
+      o2 = CGAL::make_object(s2.supporting_line());
+      o2_is_line = true;
+    }
+
+    /* determine case using flags */
+    if (o1_is_line) {
+      return (o2_is_line) ? SUPP_LINE_BISECTOR : PARABOLIC_ARC;
+    }
+    else {
+      return (o2_is_line) ? PARABOLIC_ARC : ENDPOINT_BISECTOR;
+    }
   }
 
 public:
@@ -750,9 +793,9 @@ public:
             /* determine where this middle point is relative to the two segments
              * s1 and s2, and create the correct piece of the bisector. The
              * objects o1 and o2 that are passed will store in the cases:
-             * - PARABOLIC_ARC:       o1 = focus,         o2 = directrix
-             * - SUPP_LINE_BISECTOR:  o1 = supp_line1,   o2 = supp_line2
-             * - ENDPOINT_BISECTOR:   o1 = endpoint_1,    o2 = endpoint_2     */
+             * - PARABOLIC_ARC:       o1 = focus/directrix  o2 = focus/directrix
+             * - SUPP_LINE_BISECTOR:  o1 = supp_line1,      o2 = supp_line2
+             * - ENDPOINT_BISECTOR:   o1 = endpoint_1,      o2 = endpoint_2   */
             Object o1, o2;
             Curve_2 piece_of_bisector;
             RK_to_AK to_alg;
@@ -760,8 +803,13 @@ public:
             switch (find_position(alg_m_pt, delimiter_lines, s1, s2, o1, o2)) {
               case PARABOLIC_ARC: {
                 Rat_line_2 directrix; Rat_point_2 focus;
-                CGAL_assertion(CGAL::assign(directrix, o1));
-                CGAL_assertion(CGAL::assign(focus, o2));
+                if (CGAL::assign(directrix, o1)) {
+                  CGAL_assertion(CGAL::assign(focus, o2));
+                }
+                else {
+                  CGAL_assertion(CGAL::assign(focus, o1));
+                  CGAL_assertion(CGAL::assign(directrix, o2));
+                }
                 break;
               }
 
