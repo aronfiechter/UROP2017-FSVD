@@ -770,6 +770,9 @@ public:
           }
         }
 
+        /* create converter functor to convert from Rational to Algebraic */
+        RK_to_AK to_alg;
+
         /* if the two segments do NOT intersect, construct the bisector starting
          * from one unbounded edge, finding the correct intersection points
          * using the delimiter_lines.
@@ -813,7 +816,6 @@ public:
              * - ENDPOINT_BISECTOR:   o1 = endpoint_1,      o2 = endpoint_2   */
             Object o1, o2;
             Curve_2 piece_of_bisector;
-            RK_to_AK to_alg;
             Alg_point_2 alg_m_pt = to_alg(midpoint);
             switch (find_position(alg_m_pt, delimiter_lines, s1, s2, o1, o2)) {
 
