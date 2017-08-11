@@ -831,6 +831,8 @@ public:
                 }
 
                 /* create parabola */
+                Parabola supporting_conic(directrix, focus);
+                CGAL_assertion(supporting_conic.has_on(curr_pt));
 
                 /* find actual next intersection of parabola */
 
@@ -867,7 +869,7 @@ public:
                 /* find actual next intersection of ray */
 
                 /* get segment */
-                
+
                 break;
               }
 
