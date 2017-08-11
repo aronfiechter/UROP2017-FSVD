@@ -591,6 +591,18 @@ private:
     }
   }
 
+  /* Given a line and a direction determine whether the line is oriented in that
+   * genreal direction, that is in a range of [-90˚, 90˚] around the Given
+   * direction. */
+  static bool generally_same_direction(Rat_line_2 line, Rat_direction_2 dir) {
+    return line.direction().counterclockwise_in_between(
+      dir.vector().perpendicular(CGAL::CLOCKWISE).direction(),
+      dir.vector().perpendicular(CGAL::COUNTERCLOCKWISE).direction()
+    ); //TODO what if they are perpendicular? which case is it?
+  }
+
+
+
 public:
 
   class Make_xy_monotone_3 {
@@ -814,6 +826,9 @@ public:
                 }
 
                 /* keep or invert directrix based on curr_direction */
+                if (!generally_same_direction(directrix, curr_direction)) {
+                  directrix = directrix.opposite();
+                }
 
                 /* create parabola */
 
