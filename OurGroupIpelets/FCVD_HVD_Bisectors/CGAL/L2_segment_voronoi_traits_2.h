@@ -891,23 +891,23 @@ public:
            * ray start point. This information is saved in the info.
            * Also find the focus of the parabola supporting the parabolic arc,
            * which is the closest endpoint of the other segment. */
-          Rat_line_2 directrix;
-          Rat_point_2 focus;
-          Parabola supporting_conic;
-          if (start_ray_info.second == S1_SOURCE || start_ray_info.second == S1_TARGET) {
-            directrix = s1.supporting_line();
-            focus =
-            (sqdistance(s2.source(), start_pt) < sqdistance(s2.target(), start_pt)) ?
-            s2.source() : s2.target();
-            supporting_conic = Parabola(directrix, focus);
-          }
-          else {
-            directrix = s2.supporting_line();
-            focus =
-            (sqdistance(s1.source(), start_pt) < sqdistance(s1.target(), start_pt)) ?
-            s1.source() : s1.target();
-            supporting_conic = Parabola(directrix, focus);
-          }
+          // Rat_line_2 directrix;
+          // Rat_point_2 focus;
+          // Parabola supporting_conic;
+          // if (start_ray_info.second == S1_SOURCE || start_ray_info.second == S1_TARGET) {
+          //   directrix = s1.supporting_line();
+          //   focus =
+          //   (sqdistance(s2.source(), start_pt) < sqdistance(s2.target(), start_pt)) ?
+          //   s2.source() : s2.target();
+          //   supporting_conic = Parabola(directrix, focus);
+          // }
+          // else {
+          //   directrix = s2.supporting_line();
+          //   focus =
+          //   (sqdistance(s1.source(), start_pt) < sqdistance(s1.target(), start_pt)) ?
+          //   s1.source() : s1.target();
+          //   supporting_conic = Parabola(directrix, focus);
+          // }
 
           // Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
 
