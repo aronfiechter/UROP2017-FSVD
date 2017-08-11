@@ -228,15 +228,18 @@ private:
      * a given line l. The type of o must be Alg_point_2.
      * Return a past the end iterator o. */
     template <class OutputIterator>
-    OutputIterator get_intersections(Rat_line_2 l, OutputIterator o) {
+    OutputIterator get_intersections(Rat_line_2 line, OutputIterator o) {
       /* equation of line:      ax + by + c = 0
        * equation of parabola:  rx^2 + sy^2 + txy + ux + vy + w = 0
        * we can find intersections by substituting line in parabola; described
        * in detail in docs/parabola.pdf, verified using wxMaxima */
-      RT a = l.a();
-      RT b = l.b();
-      RT c = l.c();
+      RT a = line.a();
+      RT b = line.b();
+      RT c = line.c();
 
+      /* convert line to algebraic, get nt_traits to solve quadratic equation */
+      RK_to_AK to_alg;
+      Alg_line_2 alg_line = to_alg(line);
       Nt_traits nt_traits;
 
       /* in this case the intersection is simpler, since we can substitute the x
@@ -272,7 +275,7 @@ private:
         /* else find xs for all ys, add points to iterator */
         else while (--n_ys >= 0) {
           Algebraic current_y = ys[n_ys];
-          Algebraic corresponding_x = l.x_at_y(current_y);
+          Algebraic corresponding_x = alg_line.x_at_y(current_y);
           *o++ = Alg_point_2(corresponding_x, current_y);
         }
 
@@ -318,7 +321,7 @@ private:
         /* else find xs for all xs, add points to iterator */
         else while (--n_xs >= 0) {
           Algebraic current_x = xs[n_xs];
-          Algebraic respective_y = l.y_at_x(current_x);
+          Algebraic respective_y = alg_line.y_at_x(current_x);
           *o++ = Alg_point_2(respective_y, current_x);
         }
 
