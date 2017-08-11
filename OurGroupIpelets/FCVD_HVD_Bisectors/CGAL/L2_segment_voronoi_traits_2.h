@@ -832,7 +832,7 @@ public:
 
                 /* create parabola */
                 Parabola supporting_conic(directrix, focus);
-                CGAL_assertion(supporting_conic.has_on(curr_pt));
+                CGAL_assertion(supporting_conic.has_on(to_alg(curr_pt)));
 
                 /* find actual next intersection of parabola */
 
@@ -927,10 +927,11 @@ public:
         } // end of segments do not intersect
         /* if instead they do intersect, assert it, then proceed to computing
          * the bisector in this case.
-         * In this case, the ray start points should be four. */
+         * In this case, the ray start points should be four, but only if the
+         * intersection is not by one or two endpoints (weak intersection) */
         else {
           CGAL_assertion(CGAL::do_intersect(s1, s2)); // they HAVE to intersect
-          CGAL_assertion(ray_info_list.size() == 4);
+          CGAL_assertion(ray_info_list.size() == 4); //TODO correct for touching segments
           return o;
         } // end of segments intersect
 
