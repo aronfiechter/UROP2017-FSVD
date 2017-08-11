@@ -329,6 +329,18 @@ private:
       }
     }
 
+    Alg_point_2 next_intersection(
+      Alg_point_2 start,
+      std::vector<Rat_line_2> delimiters
+    ) {
+      std::list<Alg_point_2> intersections;
+      for (auto& delimiter : delimiters) {
+        this->get_intersections(delimiter, std::back_inserter(intersections));
+      }
+
+      //TODO return closest_pt(...);
+    }
+
     /* Construct a parabolic arc on the parabola from point p1 to point p2.
      * Precondition (checked): p1 and p2 are on the parabola */
     Curve_2 construct_parabolic_arc(Point_2 p1, Point_2 p2) {
@@ -840,6 +852,10 @@ public:
                 CGAL_assertion(supporting_conic.has_on(to_alg(curr_pt)));
 
                 /* find actual next intersection of parabola */
+                Alg_point_2 actual_next_intersection =
+                supporting_conic.next_intersection(
+                  to_alg(curr_pt), delimiter_lines_vector
+                );
 
                 /* get parabolic arc */
 
