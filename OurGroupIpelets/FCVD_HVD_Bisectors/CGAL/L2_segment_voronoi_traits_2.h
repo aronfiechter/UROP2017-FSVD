@@ -329,14 +329,33 @@ private:
       }
     }
 
+    /* //TODO add comment */
     Alg_point_2 next_intersection(
       Alg_point_2 start,
       std::vector<Rat_line_2> delimiters
     ) {
+      /* get intersections */
       std::list<Alg_point_2> intersections;
       for (auto& delimiter : delimiters) {
         this->get_intersections(delimiter, std::back_inserter(intersections));
       }
+
+      /* convert directrix and project start point on it */
+      RK_to_AK to_alg;
+      Alg_line_2 alg_directrix = to_alg(this->directrix());
+      Alg_point_2 alg_start_pt = alg_directrix.projection(start);
+
+      /* project intersections on alg_directrix */
+      std::for_each(
+        intersections.begin(),
+        intersections.end(),
+        [&alg_directrix] (Alg_point_2 p) {
+        p = alg_directrix.projection(p);
+      });
+
+      /* filter points that are "before" alg_start_pt on the directrix */
+
+      // return closest_point<Alg_kernel>()
 
       //TODO return closest_pt(...);
     }
