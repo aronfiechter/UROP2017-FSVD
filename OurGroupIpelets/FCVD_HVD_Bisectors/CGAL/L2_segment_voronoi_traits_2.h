@@ -404,6 +404,26 @@ private:
     return result;
   }
 
+  /* Given a point p and a list of points, return the closest point */
+  template <class K>
+  static typename K::Point_2 closest_point(
+    typename K::Point_2 p,
+    std::list<typename K::Point_2> points
+  ) {
+    typename K::Point_2 result;
+    typename K::FT smaller_sqdistance = -1;
+    for (auto& q : points) {
+      typename K::FT sqdist_pq = sqdistance(p, q);
+      if (smaller_sqdistance < 0 || smaller_sqdistance > sqdist_pq) {
+        result = q;
+        smaller_sqdistance = sqdist_pq;
+      }
+    }
+
+    CGAL_assertion(smaller_sqdistance >= 0);
+    return result;
+  }
+
   /* Construct a point in the middle of the curve cv. This function is copied
    * from Env_sphere_traits_3.h */
   static Point_2 construct_middle_point(const X_monotone_curve_2& cv) {
