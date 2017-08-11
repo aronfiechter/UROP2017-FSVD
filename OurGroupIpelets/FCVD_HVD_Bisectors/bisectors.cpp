@@ -7,6 +7,13 @@
 #define CGAL_SDG_DEBUG(a) { a }
 #endif
 
+/* We need assertions */
+//#define CGAL_DEBUG
+#if defined(CGAL_NO_ASSERTIONS)
+#undef CGAL_NO_ASSERTIONS
+#endif
+#include <CGAL/assertions.h>
+
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Cartesian.h>
 #include <CGAL/CGAL_Ipelet_base.h>
@@ -891,7 +898,7 @@ void bisectorIpelet::protected_run(int fn) {
       /* the edge is a parabolic arc */
       else {
         CGAL_assertion( // curve must be a parabola
-          4 *  eit->curve().r() *   eit->curve().s() -  CGAL::square(t)
+          4 *  eit->curve().r() *   eit->curve().s() -  CGAL::square(eit->curve().t())
           == 0
         );
         std::list<Segment_2> segments;

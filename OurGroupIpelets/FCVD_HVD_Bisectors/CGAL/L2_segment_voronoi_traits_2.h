@@ -130,7 +130,7 @@ private:
     /* Private constructor to save equation coefficients */
     Parabola(RT __r, RT __s, RT __t, RT __u, RT __v, RT __w)
       : _r(__r), _s(__s), _t(__t), _u(__u), _v(__v), _w(__w) {
-      CGAL_assertion(CGAL::square(t) - 4 * r * s == 0); // curve is a parabola
+      CGAL_assertion(CGAL::square(_t) - 4 * _r * _s == 0); // curve is parabola
     }
 
   public:
@@ -772,7 +772,7 @@ public:
          * using the delimiter_lines.
          * In this case, the ray start points should be only two. */
         if (!CGAL::do_intersect(s1, s2)) { // segments do not intersect
-          CGAL_assertion(ray_start_points.size() == 2);
+          CGAL_assertion(ray_info_list.size() == 2);
 
           /* starting from the source of one unbounded ray and finishing at the
            * source of the other, compute the rest of the bisector, consisting
@@ -930,7 +930,7 @@ public:
          * In this case, the ray start points should be four. */
         else {
           CGAL_assertion(CGAL::do_intersect(s1, s2)); // they HAVE to intersect
-          CGAL_assertion(ray_start_points.size() == 4);
+          CGAL_assertion(ray_info_list.size() == 4);
           return o;
         } // end of segments intersect
 
