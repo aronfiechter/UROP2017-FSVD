@@ -396,25 +396,45 @@ private:
       for (auto& delimiter : delimiters) {
         this->get_intersections(delimiter, std::back_inserter(intersections));
       }
+      CGAL_assertion(intersections.size() > 0);
 
       /* convert directrix and project start point on it */
       RK_to_AK to_alg;
       Alg_line_2 alg_directrix = to_alg(this->directrix());
       Alg_point_2 alg_start_pt = alg_directrix.projection(start);
 
-      /* project intersections on alg_directrix */
-      std::for_each(
-        intersections.begin(),
-        intersections.end(),
-        [&alg_directrix] (Alg_point_2 p) {
-        p = alg_directrix.projection(p);
-      });
+      /* project intersections on alg_directrix, filter points that are "before"
+       * alg_start_pt on the directrix */
+      std::list<Alg_point_2> relevant_proj_intersections;
+      for (auto& p : intersections) {
+        Alg_point_2 proj_p = alg_directrix.projection(p);
+        if (
+          alg_directrix.direction()
+          ==
+          Alg_segment_2(alg_start_pt, proj_p).direction()
+        ) {
+          relevant_proj_intersections.push_back(proj_p);
+        }
+      };
+      CGAL_assertion(relevant_proj_intersections.size() > 0);
 
-      /* filter points that are "before" alg_start_pt on the directrix */
+      /* find next intersection on directrix, return corresponding point on the
+       * parabola. Just look through the intersections and find it. */
+      Alg_point_2 next_on_directrix = closest_point<Alg_kernel>(
+        alg_start_pt,
+        relevant_proj_intersections
+      );
+      Alg_point_2 result; bool assigned;
+      for (auto& intersection : intersections) {
+        if (alg_directrix.projection(intersection) == next_on_directrix) {
+          result = intersection;
+          assigned = true;
+        }
+      }
 
-      // return closest_point<Alg_kernel>()
-
-      //TODO return closest_pt(...);
+      CGAL_assertion(assigned);
+      std::cout << "This is the closest intersection: " << result << std::endl;
+      return result;
     }
 
     /* Construct a parabolic arc on the parabola from point p1 to point p2.
@@ -954,6 +974,10 @@ public:
                 );
 
                 /* get parabolic arc */
+                Curve_2 arc = supporting_conic.construct_parabolic_arc(
+                  to_alg(curr_pt),
+                  actual_next_intersection
+                );
 
                 break;
               }
