@@ -123,9 +123,11 @@ private:
     /* coefficients of equation: rx^2 + sy^2 + txy + ux + vy + w = 0 */
     RT _r; RT _s; RT _t; RT _u; RT _v; RT _w;
 
-    /* generators of parabola, direction of parabola is the same of directrix */
+    /* generators of parabola, direction of parabola is the same of directrix;
+     * also store orientation for when we build arcs */
     Rat_line_2 _directrix;
     Rat_point_2 _focus;
+    Orientation _orientation;
 
   public:
 
@@ -137,6 +139,15 @@ private:
     Parabola(Rat_line_2 directrix, Rat_point_2 focus)
       : _directrix(directrix), _focus(focus) {
 
+      /* orientation depends on directrix an focus */
+      if (directrix.has_on_positive_side(focus)) {
+        this->_orientation = CGAL::COUNTERCLOCKWISE;
+      }
+      else {
+        this->_orientation = CGAL::CLOCKWISE;
+      }
+
+      /* extract parameters to compute coefficients */
       RT a = directrix.a();
       RT b = directrix.b();
       RT c = directrix.c();
@@ -144,6 +155,7 @@ private:
       RT f_y = focus.y();
       RT TWO = RT(2);
 
+      /* compute coefficients, see details in doc/parabola.pdf */
       RT r = -CGAL::square(b);
       RT s = -CGAL::square(a);
       RT t = TWO * a * b;
@@ -199,6 +211,7 @@ private:
     RT w() { return _w; }
     Rat_line_2 directrix() { return _directrix; }
     Rat_point_2 focus() { return _focus; }
+    Orientation orientation() { return _orientation; }
 
     /* Methods */
 
@@ -445,8 +458,7 @@ private:
       CGAL_assertion(this->has_on(p2));
 
       /* construct the curve using the parameters and the endpoints */
-      Curve_2 arc(_r,_s,_t,_u,_v,_w, CGAL::CLOCKWISE, p1, p2); //TODO ORIENTATION
-
+      Curve_2 arc(_r,_s,_t,_u,_v,_w, this->orientation(), p1, p2);
       CGAL_assertion(arc.is_valid()); // valid arc
       return arc;
     }
