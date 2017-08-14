@@ -73,6 +73,8 @@ public:
   typedef typename Alg_kernel::Point_2                Alg_point_2;
   typedef typename Alg_kernel::Segment_2              Alg_segment_2;
   typedef typename Alg_kernel::Line_2                 Alg_line_2;
+  typedef typename Alg_kernel::Ray_2                  Alg_ray_2;
+  typedef typename Alg_kernel::Direction_2            Alg_direction_2;
 
   typedef Rational                                    RT;
   typedef Algebraic                                   AT;
@@ -634,27 +636,29 @@ private:
    * intersection (after this start point with the four lines saved in the
    * vector of delimiter lines.
    * Return the found intersection point. */
-  static Rat_point_2 find_next_intersection(
-    Rat_direction_2 direction,
-    Rat_point_2 start_pt,
+  static Alg_point_2 find_next_intersection(
+    Alg_direction_2 direction,
+    Alg_point_2 start_pt,
     std::vector<Rat_line_2> delimiters
   ) {
+    /* converter */
+    RK_to_AK to_alg;
     /* list to store intersections */
-    std::list<Rat_point_2> intersections;
+    std::list<Alg_point_2> intersections;
 
     /* for each delimiter add the intersection with ray, if it's not start_pt */
-    Rat_ray_2 ray(start_pt, direction);
+    Alg_ray_2 ray(start_pt, direction);
     for (auto& delimiter : delimiters) {
-      if (CGAL::do_intersect(delimiter, ray)) {
-        Rat_point_2 intersection;
-        CGAL::assign(intersection, CGAL::intersection(delimiter, ray));
+      if (CGAL::do_intersect(to_alg(delimiter), ray)) {
+        Alg_point_2 intersection;
+        CGAL::assign(intersection, CGAL::intersection(to_alg(delimiter), ray));
         if (intersection != start_pt) intersections.push_back(intersection);
       }
     }
 
     /* all intersections are in the correct direction because we used a ray
      * starting from start_pt, so return the closest one */
-    return closest_pt(start_pt, intersections);
+    return closest_point<Alg_kernel>(start_pt, intersections);
   }
 
   /* Determine the position of the point p relative to the segments s1 and s2.
@@ -737,7 +741,7 @@ private:
   /* Given a line and a direction determine whether the line is oriented in that
    * genreal direction, that is in a range of [-90˚, 90˚] around the Given
    * direction. */
-  static bool generally_same_direction(Rat_line_2 line, Rat_direction_2 dir) {
+  static bool generally_same_direction(Alg_line_2 line, Alg_direction_2 dir) {
     return line.direction().counterclockwise_in_between(
       dir.vector().perpendicular(CGAL::CLOCKWISE).direction(),
       dir.vector().perpendicular(CGAL::COUNTERCLOCKWISE).direction()
@@ -930,9 +934,12 @@ public:
           Ray_info start_ray_info = ray_info_list.front();
           Ray_info end_ray_info = ray_info_list.back();
           Rat_point_2 start_pt = start_ray_info.first.source();
-          Rat_point_2 end_pt = end_ray_info.first.source();
-          Rat_point_2 curr_pt = start_pt;
-          Rat_direction_2 curr_direction = -(start_ray_info.first.direction());
+
+          Alg_point_2 end_pt = to_alg(end_ray_info.first.source());
+          Alg_point_2 curr_pt = to_alg(start_pt);
+          Alg_direction_2 curr_direction = to_alg(
+            - start_ray_info.first.direction()
+          );
 
           /* "walk" through the bisector to find all parts until every piece has
            * been created and added to the OutputIterator o */
@@ -940,13 +947,17 @@ public:
             /* find next intersection with delimiter_lines when going in the
              * direction saved in "curr_direction", then find a middle point
              * between curr_pt and that intersection */
-            Rat_point_2 approximate_next_intersection = find_next_intersection(
+            Alg_point_2 approximate_next_intersection = find_next_intersection(
               curr_direction, curr_pt, delimiter_lines_vector
             );
-            Rat_point_2 midpoint = CGAL::midpoint(
+            Alg_point_2 midpoint = CGAL::midpoint(
               curr_pt,
               approximate_next_intersection
             );
+
+            /* to store the true next intersection and the next direction */
+            Alg_point_2 actual_next_intersection;
+            Alg_direction_2 next_direction;
 
             /* determine where this middle point is relative to the two segments
              * s1 and s2, and create the correct piece of the bisector. The
@@ -956,8 +967,7 @@ public:
              * - ENDPOINT_BISECTOR:   o1 = endpoint_1,      o2 = endpoint_2   */
             Object o1, o2;
             Curve_2 piece_of_bisector;
-            Alg_point_2 alg_m_pt = to_alg(midpoint);
-            switch (find_position(alg_m_pt, delimiter_lines, s1, s2, o1, o2)) {
+            switch (find_position(midpoint, delimiter_lines, s1, s2, o1, o2)) {
 
               case PARABOLIC_ARC: {
                 /* extract directrix and focus */
@@ -971,23 +981,24 @@ public:
                 }
 
                 /* keep or invert directrix based on curr_direction */
-                if (!generally_same_direction(directrix, curr_direction)) {
+                if (!generally_same_direction(
+                  to_alg(directrix), curr_direction
+                )) {
                   directrix = directrix.opposite();
                 }
 
                 /* create parabola */
                 Parabola supporting_conic(directrix, focus);
-                CGAL_assertion(supporting_conic.has_on(to_alg(curr_pt)));
+                CGAL_assertion(supporting_conic.has_on(curr_pt));
 
                 /* find actual next intersection of parabola */
-                Alg_point_2 actual_next_intersection =
-                supporting_conic.next_intersection(
-                  to_alg(curr_pt), delimiter_lines_vector
+                actual_next_intersection = supporting_conic.next_intersection(
+                  curr_pt, delimiter_lines_vector
                 );
 
                 /* get parabolic arc */
                 Curve_2 arc = supporting_conic.construct_parabolic_arc(
-                  to_alg(curr_pt),
+                  curr_pt,
                   actual_next_intersection
                 );
                 std::vector<X_monotone_curve_2> arc_x_mono_parts;
