@@ -127,12 +127,6 @@ private:
     Rat_line_2 _directrix;
     Rat_point_2 _focus;
 
-    /* Private constructor to save equation coefficients */
-    Parabola(RT __r, RT __s, RT __t, RT __u, RT __v, RT __w)
-      : _r(__r), _s(__s), _t(__t), _u(__u), _v(__v), _w(__w) {
-      CGAL_assertion(CGAL::square(_t) - 4 * _r * _s == 0); // curve is parabola
-    }
-
   public:
 
     /* Empty constructor */
@@ -171,8 +165,18 @@ private:
         CGAL::square(b) * CGAL::square(f_y)
       ;
 
-      /* finish constructing using the private coefficients constructor */
-      Parabola(r, s, t, u, v, w);
+      this->_r = r;
+      this->_s = s;
+      this->_t = t;
+      this->_u = u;
+      this->_v = v;
+      this->_w = w;
+
+      RK_to_AK to_alg;
+      CGAL_assertion(CGAL::square(_t) - 4 * _r * _s == 0);  // curve is parabola
+      CGAL_assertion(this->has_on(to_alg(
+        CGAL::midpoint(focus, directrix.projection(focus))  // origin is on p
+      )));
     }
 
     /* Getters */
