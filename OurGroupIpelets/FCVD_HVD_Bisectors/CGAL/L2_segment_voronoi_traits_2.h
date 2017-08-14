@@ -172,6 +172,17 @@ private:
       this->_v = v;
       this->_w = w;
 
+      //TODO remove
+      std::cout << "Constructed parabola: "
+                << _r << "x^2 + "
+                << _s << "y^2 + "
+                << _t << "xy + "
+                << _u << "x + "
+                << _v << "y + "
+                << _w
+                << std::endl
+      ;
+
       RK_to_AK to_alg;
       CGAL_assertion(CGAL::square(_t) - 4 * _r * _s == 0);  // curve is parabola
       CGAL_assertion(this->has_on(to_alg(
@@ -198,7 +209,7 @@ private:
     Algebraic evaluate(Point_2 point) {
       Algebraic x = point.x();
       Algebraic y = point.y();
-      return Algebraic(
+      Algebraic result(
         this->r() * CGAL::square(x) +
         this->s() * CGAL::square(y) +
         this->t() * x * y +
@@ -206,6 +217,12 @@ private:
         this->v() * y +
         this->w()
       );
+      //TODO remove
+      std::cout << "Evaluated point " << point
+                << " and the result is " << result
+                << std::endl
+      ;
+      return result;
     }
 
     /* Check if a given point lies on the parabola by checking if the values of
@@ -241,6 +258,13 @@ private:
       RT b = line.b();
       RT c = line.c();
 
+      //TODO remove
+      std::cout << "Finding intersections with line: "
+                << a << "x + "
+                << b << "y + "
+                << c << std::endl
+      ;
+
       /* convert line to algebraic, get nt_traits to solve quadratic equation */
       RK_to_AK to_alg;
       Alg_line_2 alg_line = to_alg(line);
@@ -263,6 +287,14 @@ private:
           this->w()
         ;
 
+        //TODO remove
+        std::cout << "Solving quadratic equation: "
+                  << EQ_A << "y^2 + "
+                  << EQ_B << "y + "
+                  << EQ_C
+                  << std::endl
+        ;
+
         /* to store the 0, 1, or 2 results, indicating the intersections.
          * For all resulting y, find the corresponding x, and add a point to
          * the OutputIterator o */
@@ -272,6 +304,9 @@ private:
         ys_end = nt_traits.solve_quadratic_equation(EQ_A, EQ_B, EQ_C, ys);
         n_ys = ys_end - ys;
 
+        //TODO remove
+        std::cout << "Found " << n_ys << " intersections." << std::endl;
+
         /* if no intersections return */
         if (n_ys == 0) {
           return o;
@@ -279,8 +314,10 @@ private:
         /* else find xs for all ys, add points to iterator */
         else while (--n_ys >= 0) {
           Algebraic current_y = ys[n_ys];
-          Algebraic corresponding_x = alg_line.x_at_y(current_y);
-          *o++ = Alg_point_2(corresponding_x, current_y);
+          Algebraic respective_x = alg_line.x_at_y(current_y);
+          Alg_point_2 intersection(respective_x, current_y);
+          CGAL_assertion(this->has_on(intersection));
+          *o++ = intersection;
         }
 
         return o; // already one past the end, post-incremented when adding
@@ -309,6 +346,14 @@ private:
           this->w()
         ;
 
+        //TODO remove
+        std::cout << "Solving quadratic equation: "
+                  << EQ_A << "x^2 + "
+                  << EQ_B << "x + "
+                  << EQ_C
+                  << std::endl
+        ;
+
         /* to store the 0, 1, or 2 results, indicating the intersections.
          * For all resulting x, find the corresponding y, and add a point to
          * the OutputIterator o */
@@ -318,6 +363,9 @@ private:
         xs_end = nt_traits.solve_quadratic_equation(EQ_A, EQ_B, EQ_C, xs);
         n_xs = xs_end - xs;
 
+        //TODO remove
+        std::cout << "Found " << n_xs << " intersections." << std::endl;
+
         /* if no intersections return */
         if (n_xs == 0) {
           return o;
@@ -326,7 +374,9 @@ private:
         else while (--n_xs >= 0) {
           Algebraic current_x = xs[n_xs];
           Algebraic respective_y = alg_line.y_at_x(current_x);
-          *o++ = Alg_point_2(respective_y, current_x);
+          Alg_point_2 intersection(current_x, respective_y);
+          CGAL_assertion(this->has_on(intersection));
+          *o++ = intersection;
         }
 
         return o; // already one past the end, post-incremented when adding
