@@ -116,6 +116,9 @@ private:
     ENDPOINT_BISECTOR
   };
 
+  /* Parabola class used to provide methods to find intersections with lines,
+   * to check point location with respect to a parabola, to create parabolic
+   * arcs, to get tangent directions at points. */
   class Parabola {
 
   private:
@@ -258,6 +261,17 @@ private:
      * oriented side) */
     bool has_on_negative_side(Point_2 point) {
       return CGAL::is_negative(this->evaluate(point));
+    }
+
+    /* Given a point, return the tangent line at that point. The tangent can be
+     * found by looking at the line that is perpendicular to the directrix and
+     * goes through this point and the line that goes through the focus and this
+     * point. The bisector of these two lines is the tangent at this point.
+     * Precondition (checked): the point is on the parabola. */
+    Alg_direction_2 tangent_at_point(Alg_point_2 point) {
+      CGAL_precondition(this->has_on(point));
+      /* special case: the point is the vertex of the parabola. */
+
     }
 
     /* Save into the OutputIterator o the intersection(s) of the parabola with
