@@ -978,6 +978,16 @@ public:
                   to_alg(curr_pt),
                   actual_next_intersection
                 );
+                std::vector<X_monotone_curve_2> arc_x_mono_parts;
+                make_curve_2_into_many_x_monotone_curve_2(
+                  arc,
+                  arc_x_mono_parts
+                );
+                for (auto& x_mono_curve : arc_x_mono_parts) {
+                  *o++ = CGAL::make_object(
+                    Intersection_curve(x_mono_curve, 0)
+                  );
+                }
 
                 break;
               }
