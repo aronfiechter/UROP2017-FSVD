@@ -196,7 +196,7 @@ private:
       Algebraic y = point.y();
       return Algebraic(
         this->r() * CGAL::square(x) +
-        this->s() * CGAL::square(x) +
+        this->s() * CGAL::square(y) +
         this->t() * x * y +
         this->u() * x +
         this->v() * y +
@@ -329,7 +329,10 @@ private:
       }
     }
 
-    /* //TODO add comment */
+    /* Given a point on the parabola and a vector of lines, finds all
+     * intersections of the parabola with those lines, then looks for the next
+     * point on the parabola (in the same direction as the directrix) after the
+     * given start point and returns that point. */
     Alg_point_2 next_intersection(
       Alg_point_2 start,
       std::vector<Rat_line_2> delimiters
