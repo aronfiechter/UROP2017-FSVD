@@ -498,21 +498,6 @@ private:
     }
   }
 
-  /* Given a point p and a list of points, return the closest point */
-  static Rat_point_2 closest_pt(Rat_point_2 p, std::list<Rat_point_2> points) {
-    Rat_point_2 result;
-    RT smaller_sqdistance = -1;
-    for (auto& q : points) {
-      RT sqdist_pq = sqdistance(p, q);
-      if (smaller_sqdistance < 0 || smaller_sqdistance > sqdist_pq) {
-        result = q;
-        smaller_sqdistance = sqdist_pq;
-      }
-    }
-
-    CGAL_assertion(smaller_sqdistance >= 0);
-    return result;
-  }
 
   /* Given a point p and a list of points, return the closest point */
   template <class K>
