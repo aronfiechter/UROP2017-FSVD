@@ -1116,17 +1116,10 @@ public:
                 );
 
                 /* get segment, save as Curve_2 in "piece_of_bisector" */
-                // AK_to_RK to_rational;
-                // Rat_segment_2 segment(to_rational(
-                //   Alg_segment_2(curr_pt, actual_next_intersection)
-                // ));
                 Rat_segment_2 segment(to_rat(to_dbl(
                   Alg_segment_2(curr_pt, actual_next_intersection)
                 )));
                 piece_of_bisector = Curve_2(segment);
-                // /* correct approximated source and target */
-                // piece_of_bisector.set_source(curr_pt);
-                // piece_of_bisector.set_target(actual_next_intersection);
 
                 break;
               }
@@ -1170,42 +1163,6 @@ public:
 
             // break; //TODO remove (to avoid infinite loop)
           }
-
-          /* start from one point, find which segment is to consider as partial
-           * directrix of parabolic arc. It is the segment that has as endpoints
-           * the point whose orthogonal line intersects the ray to create the
-           * ray start point. This information is saved in the info.
-           * Also find the focus of the parabola supporting the parabolic arc,
-           * which is the closest endpoint of the other segment. */
-          // Rat_line_2 directrix;
-          // Rat_point_2 focus;
-          // Parabola supporting_conic;
-          // if (start_ray_info.second == S1_SOURCE || start_ray_info.second == S1_TARGET) {
-          //   directrix = s1.supporting_line();
-          //   focus =
-          //   (sqdistance(s2.source(), start_pt) < sqdistance(s2.target(), start_pt)) ?
-          //   s2.source() : s2.target();
-          //   supporting_conic = Parabola(directrix, focus);
-          // }
-          // else {
-          //   directrix = s2.supporting_line();
-          //   focus =
-          //   (sqdistance(s1.source(), start_pt) < sqdistance(s1.target(), start_pt)) ?
-          //   s1.source() : s1.target();
-          //   supporting_conic = Parabola(directrix, focus);
-          // }
-
-          // Curve_2 par_arc = construct_parabolic_arc(s1, s2.source(), i1, i2);
-
-          /* critical, if the curve is not valid, abort immediately */
-          // if (!c2.is_valid()) return o;
-          // *o++ = CGAL::make_object(
-          //   Intersection_curve(c2, 0)
-          // );
-
-          // *o++ = CGAL::make_object(
-          //   Intersection_curve(X_monotone_curve_2(Rat_segment_2(s1.source(), s2.source())), 0)
-          // );
 
           return o;
         } // end of segments do not intersect
