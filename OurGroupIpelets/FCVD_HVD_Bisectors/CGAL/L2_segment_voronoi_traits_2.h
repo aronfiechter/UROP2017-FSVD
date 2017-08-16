@@ -1025,7 +1025,7 @@ public:
 
                 /* find actual next intersection of ray */
 
-                /* get segment */
+                /* get segment, save as Curve_2 in "piece_of_bisector" */
 
                 break;
               }
@@ -1041,7 +1041,7 @@ public:
 
                 /* find actual next intersection of ray */
 
-                /* get segment */
+                /* get segment, save as Curve_2 in "piece_of_bisector" */
 
                 break;
               }
