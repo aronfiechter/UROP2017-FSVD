@@ -269,7 +269,12 @@ private:
      * point. The bisector of these two lines is the tangent at this point.
      * Precondition (checked): the point is on the parabola. */
     Alg_line_2 tangent_at_point(Alg_point_2 point) {
-      CGAL_precondition(this->has_on(point));
+      /* check precondition */
+      CGAL_precondition_msg(
+        this->has_on(point),
+        "Given point for tangent has to be on the parabola"
+      );
+
       /* get converter and convert */
       RK_to_AK to_alg;
       Alg_line_2 alg_directrix = to_alg(this->directrix());
@@ -278,22 +283,42 @@ private:
 
       /* based on an orientation test, distinguish three cases */
       switch (CGAL::orientation(proj_point, point, focus)) {
+
         /* special case: the point is the vertex of the parabola. In this case,
          * the tangent at point has the same direction as the directrix */
         case CGAL::COLLINEAR: {
           return Alg_line_2(point, alg_directrix.direction());
           break;
         }
+
+        /* in this case the tangent is directed towards the positive part of the
+         * directrix, so we need to have one line directed from the focus to the
+         * point and the other one from the directrix to the point */
         case CGAL::LEFT_TURN: {
-          return Alg_line_2(point, alg_directrix.direction()); //TODO fake
+          return CGAL::bisector(
+            Alg_line_2(focus, point),
+            Alg_line_2(proj_point, point)
+          );
           break;
         }
+
+        /* in this case the tangent is directed towards the negative part of the
+         * directrix, so we need to have one line directed from the point to the
+         * focus and the other one from the point to the directrix */
         case CGAL::RIGHT_TURN: {
-          return Alg_line_2(point, alg_directrix.direction()); //TODO fake
+          return CGAL::bisector(
+            Alg_line_2(point, focus),
+            Alg_line_2(point, proj_point)
+          );
           break;
         }
+
+        /* impossible, throw error */
         default: {
-          //TODO error! It's impossible
+          CGAL_error_msg(
+            "Point on parabola, its projection on the directrix and the focus"
+            " failed to have one of three orientations."
+          );
           break;
         }
       }
@@ -572,9 +597,16 @@ private:
 
   /* Convert the Curve_2 cv into multiple X_monotone_curve_2 using the provided
    * make_x_monotone function. Store the results into the list x_mono_curves.
-   * Precondition: cv is a valid curve. */
+   * Precondition (checked): cv is a valid curve. */
   static void make_curve_2_into_many_x_monotone_curve_2(Curve_2& cv,
     std::vector<X_monotone_curve_2>& x_mono_curves) {
+    /* check precondition */
+    CGAL_precondition_msg(
+      cv.is_valid(),
+      "The given curve cannot be converted to X_monotone parts because it is "
+      "not valid"
+    );
+
     /* instantiate traits, we need the provided function */
     C_traits_2 c_traits;
     typename C_traits_2::Make_x_monotone_2 make_x_monotone =
