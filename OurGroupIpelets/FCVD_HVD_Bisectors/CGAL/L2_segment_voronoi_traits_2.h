@@ -1120,6 +1120,10 @@ public:
                   Alg_segment_2(curr_pt, actual_next_intersection)
                 )));
                 piece_of_bisector = Curve_2(segment);
+                /* the segment is slightly approximated when saved in the
+                 * OutputIterator o, but this has to be done because the
+                 * `Arr_conic_traits_2` class does not support bounded curves
+                 * supported by Algebraic coefficients */
 
                 break;
               }
@@ -1164,6 +1168,7 @@ public:
             // break; //TODO remove (to avoid infinite loop)
           }
 
+          /* return one past the end iterator */
           return o;
         } // end of segments do not intersect
         /* if instead they do intersect, assert it, then proceed to computing
@@ -1173,6 +1178,7 @@ public:
         else {
           CGAL_assertion(CGAL::do_intersect(s1, s2)); // they HAVE to intersect
           CGAL_assertion(ray_info_list.size() == 4); //TODO correct for touching segments
+          /* return one past the end iterator */
           return o;
         } // end of segments intersect
 
