@@ -268,10 +268,35 @@ private:
      * goes through this point and the line that goes through the focus and this
      * point. The bisector of these two lines is the tangent at this point.
      * Precondition (checked): the point is on the parabola. */
-    Alg_direction_2 tangent_at_point(Alg_point_2 point) {
+    Alg_line_2 tangent_at_point(Alg_point_2 point) {
       CGAL_precondition(this->has_on(point));
-      /* special case: the point is the vertex of the parabola. */
+      /* get converter and convert */
+      RK_to_AK to_alg;
+      Alg_line_2 alg_directrix = to_alg(this->directrix());
+      Alg_point_2 focus = to_alg(this->focus());
+      Alg_point_2 proj_point = alg_directrix.projection(point);
 
+      /* based on an orientation test, distinguish three cases */
+      switch (CGAL::orientation(proj_point, point, focus)) {
+        /* special case: the point is the vertex of the parabola. In this case,
+         * the tangent at point has the same direction as the directrix */
+        case CGAL::COLLINEAR: {
+          return Alg_line_2(point, alg_directrix.direction());
+          break;
+        }
+        case CGAL::LEFT_TURN: {
+          return Alg_line_2(point, alg_directrix.direction()); //TODO fake
+          break;
+        }
+        case CGAL::RIGHT_TURN: {
+          return Alg_line_2(point, alg_directrix.direction()); //TODO fake
+          break;
+        }
+        default: {
+          //TODO error! It's impossible
+          break;
+        }
+      }
     }
 
     /* Save into the OutputIterator o the intersection(s) of the parabola with
@@ -995,21 +1020,16 @@ public:
                   curr_pt, delimiter_lines_vector
                 );
 
-                /* get parabolic arc */
-                Curve_2 arc = supporting_conic.construct_parabolic_arc(
+                /* get parabolic arc, save as Curve_2 in "piece_of_bisector" */
+                piece_of_bisector = supporting_conic.construct_parabolic_arc(
                   curr_pt,
                   actual_next_intersection
                 );
-                std::vector<X_monotone_curve_2> arc_x_mono_parts;
-                make_curve_2_into_many_x_monotone_curve_2(
-                  arc,
-                  arc_x_mono_parts
+
+                Alg_line_2 tangent = supporting_conic.tangent_at_point(
+                  actual_next_intersection
                 );
-                for (auto& x_mono_curve : arc_x_mono_parts) {
-                  *o++ = CGAL::make_object(
-                    Intersection_curve(x_mono_curve, 0)
-                  );
-                }
+                next_direction = tangent.direction();
 
                 break;
               }
@@ -1052,10 +1072,20 @@ public:
 
             /* add the piece of the bisector to the OutputIterator o, update the
              * curr_pt to be the next intersection found (corrected when
-             * determining the actual correct piece of the bisector) */
-            //TODO
-            //TODO REMEMBER TO UPDATE curr_pt
-            //TODO REMEMBER TO UPDATE curr_direction
+             * determining the actual correct piece of the bisector), update the
+             * curr_direction to be the direction of the bisector at curr_pt */
+            std::vector<X_monotone_curve_2> arc_x_mono_parts;
+            make_curve_2_into_many_x_monotone_curve_2(
+              piece_of_bisector,
+              arc_x_mono_parts
+            );
+            for (auto& x_mono_curve : arc_x_mono_parts) {
+              *o++ = CGAL::make_object(
+                Intersection_curve(x_mono_curve, 0) //TODO multiplicity?
+              );
+            }
+            curr_pt = actual_next_intersection;
+            curr_direction = next_direction;
 
             break; //TODO remove (to avoid infinite loop)
           }
