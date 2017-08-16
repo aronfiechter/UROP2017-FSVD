@@ -281,13 +281,16 @@ private:
       Alg_point_2 focus = to_alg(this->focus());
       Alg_point_2 proj_point = alg_directrix.projection(point);
 
+      /* tangent */
+      Alg_line_2 tangent;
+
       /* based on an orientation test, distinguish three cases */
       switch (CGAL::orientation(proj_point, point, focus)) {
 
         /* special case: the point is the vertex of the parabola. In this case,
          * the tangent at point has the same direction as the directrix */
         case CGAL::COLLINEAR: {
-          return Alg_line_2(point, alg_directrix.direction());
+          tangent = Alg_line_2(point, alg_directrix.direction());
           break;
         }
 
@@ -295,7 +298,7 @@ private:
          * directrix, so we need to have one line directed from the focus to the
          * point and the other one from the directrix to the point */
         case CGAL::LEFT_TURN: {
-          return CGAL::bisector(
+          tangent = CGAL::bisector(
             Alg_line_2(focus, point),
             Alg_line_2(proj_point, point)
           );
@@ -306,7 +309,7 @@ private:
          * directrix, so we need to have one line directed from the point to the
          * focus and the other one from the point to the directrix */
         case CGAL::RIGHT_TURN: {
-          return CGAL::bisector(
+          tangent = CGAL::bisector(
             Alg_line_2(point, focus),
             Alg_line_2(point, proj_point)
           );
@@ -322,6 +325,12 @@ private:
           break;
         }
       }
+
+      /* invert tangent if necessary */
+      if (!generally_same_direction(tangent, alg_directrix.direction())) {
+        tangent = tangent.opposite();
+      }
+      return tangent;
     }
 
     /* Save into the OutputIterator o the intersection(s) of the parabola with
@@ -511,7 +520,7 @@ private:
         }
       }
 
-      CGAL_assertion(assigned);
+      CGAL_assertion_msg(assigned, "Could not find closest point");
       std::cout << "This is the closest intersection: " << result << std::endl;
       return result;
     }
@@ -970,8 +979,15 @@ public:
           }
         }
 
-        /* create converter functor to convert from Rational to Algebraic */
+        /* create converter functors to convert from:
+         * - Rational to Algebraic
+         * - Algebraic to Cartesian<double>
+         * - Cartesian<double> to Rational
+         * The last two are used together to convert by approximation from
+         * Algebraic to Rational */
         RK_to_AK to_alg;
+        AK_to_DK to_dbl;
+        DK_to_RK to_rat;
 
         /* if the two segments do NOT intersect, construct the bisector starting
          * from one unbounded edge, finding the correct intersection points
@@ -1072,12 +1088,45 @@ public:
                 CGAL_assertion(CGAL::assign(supp_line1, o1));
                 CGAL_assertion(CGAL::assign(supp_line2, o2));
 
-                /* create bisector, orient it according to curr_direction, make
-                 * it into a ray */
+                /* orient supporting lines according to curr_direction, get
+                 * bisector, assert that curr_pt is on it and get direction */
+                if (!generally_same_direction(
+                  to_alg(supp_line1), curr_direction
+                )) {
+                  supp_line1 = supp_line1.opposite();
+                }
+                if (!generally_same_direction(
+                  to_alg(supp_line2), curr_direction
+                )) {
+                  supp_line2 = supp_line2.opposite();
+                }
+                Alg_line_2 supp_line_bisector = CGAL::bisector(
+                  to_alg(supp_line1),
+                  to_alg(supp_line2)
+                );
+                CGAL_assertion_msg(
+                  supp_line_bisector.has_on(curr_pt),
+                  "The point curr_pt should be on the bisector, but it is not"
+                );
 
-                /* find actual next intersection of ray */
+                /* save next_direction, find actual next intersection */
+                next_direction = supp_line_bisector.direction();
+                actual_next_intersection = find_next_intersection(
+                  next_direction, curr_pt, delimiter_lines_vector
+                );
 
                 /* get segment, save as Curve_2 in "piece_of_bisector" */
+                // AK_to_RK to_rational;
+                // Rat_segment_2 segment(to_rational(
+                //   Alg_segment_2(curr_pt, actual_next_intersection)
+                // ));
+                Rat_segment_2 segment(to_rat(to_dbl(
+                  Alg_segment_2(curr_pt, actual_next_intersection)
+                )));
+                piece_of_bisector = Curve_2(segment);
+                // /* correct approximated source and target */
+                // piece_of_bisector.set_source(curr_pt);
+                // piece_of_bisector.set_target(actual_next_intersection);
 
                 break;
               }
@@ -1119,7 +1168,7 @@ public:
             curr_pt = actual_next_intersection;
             curr_direction = next_direction;
 
-            break; //TODO remove (to avoid infinite loop)
+            // break; //TODO remove (to avoid infinite loop)
           }
 
           /* start from one point, find which segment is to consider as partial
