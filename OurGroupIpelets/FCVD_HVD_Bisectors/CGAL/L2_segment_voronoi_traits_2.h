@@ -855,6 +855,9 @@ public:
   }
 
 
+/* ########################################################################## */
+/* ###            MAIN PART: COMPUTE BISECTOR OF TWO SEGMENTS             ### */
+/* ########################################################################## */
 
   class Construct_projected_intersections_2 {
   private:
@@ -1129,6 +1132,7 @@ public:
               }
 
               case ENDPOINT_BISECTOR: {
+                //TODO finish
                 /* extract two endpoints */
                 Rat_point_2 endpoint1; Rat_point_2 endpoint2;
                 CGAL_assertion(CGAL::assign(endpoint1, o1));
@@ -1146,7 +1150,6 @@ public:
 
               default: break; // should never happen
             }
-            //TODO finish
 
             /* add the piece of the bisector to the OutputIterator o, update the
              * curr_pt to be the next intersection found (corrected when
@@ -1164,13 +1167,12 @@ public:
             }
             curr_pt = actual_next_intersection;
             curr_direction = next_direction;
-
-            // break; //TODO remove (to avoid infinite loop)
           }
 
           /* return one past the end iterator */
           return o;
         } // end of segments do not intersect
+
         /* if instead they do intersect, assert it, then proceed to computing
          * the bisector in this case.
          * In this case, the ray start points should be four, but only if the
@@ -1178,6 +1180,7 @@ public:
         else {
           CGAL_assertion(CGAL::do_intersect(s1, s2)); // they HAVE to intersect
           CGAL_assertion(ray_info_list.size() == 4); //TODO correct for touching segments
+
           /* return one past the end iterator */
           return o;
         } // end of segments intersect
@@ -1190,6 +1193,10 @@ public:
   construct_projected_intersections_2_object() const {
     return Construct_projected_intersections_2();
   }
+
+/* ########################################################################## */
+/* ###               END: COMPUTE BISECTOR OF TWO SEGMENTS                ### */
+/* ########################################################################## */
 
 
 
