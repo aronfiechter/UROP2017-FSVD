@@ -1138,12 +1138,34 @@ public:
                 CGAL_assertion(CGAL::assign(endpoint1, o1));
                 CGAL_assertion(CGAL::assign(endpoint2, o2));
 
-                /* create bisector, orient it according to curr_direction, make
-                 * it into a ray */
+                /* create bisector, orient it according to curr_direction */
+                Alg_line_2 endpoint_bisector = to_alg(Rat_line_2(
+                  endpoint1, endpoint2
+                )).perpendicular(to_alg(CGAL::midpoint(endpoint1, endpoint2)));
+                if (!generally_same_direction(
+                  endpoint_bisector, curr_direction
+                )) {
+                  endpoint_bisector = endpoint_bisector.opposite();
+                }
 
-                /* find actual next intersection of ray */
+                /* assert curr_pt is on bisector */
+                CGAL_assertion(endpoint_bisector.has_on(curr_pt));
+
+                /* save next_direction, find actual next intersection */
+                next_direction = endpoint_bisector.direction();
+                actual_next_intersection = find_next_intersection(
+                  next_direction, curr_pt, delimiter_lines_vector
+                );
 
                 /* get segment, save as Curve_2 in "piece_of_bisector" */
+                Rat_segment_2 segment(to_rat(to_dbl(
+                  Alg_segment_2(curr_pt, actual_next_intersection)
+                )));
+                piece_of_bisector = Curve_2(segment);
+                /* the segment is slightly approximated when saved in the
+                 * OutputIterator o, but this has to be done because the
+                 * `Arr_conic_traits_2` class does not support bounded curves
+                 * supported by Algebraic coefficients */
 
                 break;
               }
