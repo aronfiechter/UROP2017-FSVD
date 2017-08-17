@@ -169,7 +169,7 @@ public:
   }
 
 private:
-  Algebraic PRECISION = Algebraic(2); // values under 0.5 take too long
+  Algebraic PRECISION = Algebraic(5); // values under 0.5 take too long
   int counter = 0;
   int arc_converter_called = 0;
   /* Find a number of points on the curve cv such that they are all close enough
@@ -841,8 +841,7 @@ void bisectorIpelet::protected_run(int fn) {
     /* request value for presision in rendering the parabolic arcs */
     int code; double precision;
     boost::tie(code, precision) = request_value_from_user<double>(
-      "Enter a precision value for the conversion of parabolic arcs to "
-      "segments. The default value is 2. Lower values can take more time."
+      "Enter a precision value in [2,10]. Default is 5."
     );
     if (code == -1) return;
     if (code > 0) this->PRECISION = precision;
