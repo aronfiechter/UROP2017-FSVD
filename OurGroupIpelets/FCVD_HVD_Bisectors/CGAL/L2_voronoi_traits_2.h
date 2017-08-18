@@ -1,4 +1,4 @@
-//modified by Elena Khramtcova 31.07.2012. The names of classes are not changed, even though it is 
+//modified by Elena Khramtcova 31.07.2012. The names of classes are not changed, even though it is
 //Linf metrics instead of L1, just for simplicity of building the demo.
 // L2 metrics for both nearest and farthest
 
@@ -30,7 +30,7 @@
 #include <CGAL/enum.h>
 #include <CGAL/Arr_tags.h>
 #include <CGAL/Arr_linear_traits_2.h>
-#include <CGAL/number_utils.h> 
+#include <CGAL/number_utils.h>
 #include <CGAL/Envelope_3/Envelope_base.h>
 #include <CGAL/Envelope_3/Env_plane_traits_3_functions.h>
 
@@ -46,6 +46,7 @@ public:
   //L1_voronoi_traits
   typedef L2_voronoi_traits_2<Kernel>          Self;
   typedef typename Base::Multiplicity          Multiplicity;
+  typedef typename Base::Oriented_side         Oriented_side;
 
   typedef typename Base::Point_2               Point_2;
   typedef typename Base::Curve_2               Curve_2;
@@ -54,13 +55,14 @@ public:
   typedef typename Kernel::Ray_2               Ray_2;
   typedef typename Kernel::Line_2              Line_2;
   typedef typename Kernel::Direction_2         Direction_2;
-  typedef std::pair<Curve_2, Multiplicity>     Intersection_curve;
+  typedef std::pair<X_monotone_curve_2, Multiplicity>     Intersection_curve;
+  typedef std::pair<X_monotone_curve_2, Oriented_side>    Boundary_curve;
 
   typedef typename Base::Left_side_category    Left_side_category;
   typedef typename Base::Bottom_side_category  Bottom_side_category;
   typedef typename Base::Top_side_category     Top_side_category;
   typedef typename Base::Right_side_category   Right_side_category;
-  
+
   typedef Point_2                  Xy_monotone_surface_3;
   typedef Point_2                  Surface_3;
 
@@ -72,13 +74,13 @@ public:
     return sqdist;
   }
 
-  // Returns two enpoints of the middle (vertical/horizontal) part of the bisector, 
-  //the index determines which point is returned. There are no conventions about how these endpoints situated 
-  //depending on the index (like there was no in the oroginal traits) 
+  // Returns two enpoints of the middle (vertical/horizontal) part of the bisector,
+  //the index determines which point is returned. There are no conventions about how these endpoints situated
+  //depending on the index (like there was no in the oroginal traits)
   static Point_2 mid_seg_endpoint(const Point_2& p1, const Point_2& p2, std::size_t index) {
     const Point_2 *pp1;
     const Point_2 *pp2;
-    
+
     if (index % 2 == 0) {
       pp1 = &p1;
       pp2 = &p2;
@@ -89,16 +91,16 @@ public:
 
     FT delta_x = pp2->x() - pp1->x();
     FT delta_y = pp2->y() - pp1->y();
-    
+
     FT sign_x = CGAL::sign(delta_x);
     FT sign_y = CGAL::sign(delta_y);
 
     FT abs_x = CGAL::abs(delta_x);
     FT abs_y = CGAL::abs(delta_y);
-    
+
     //midpoint between pp1 and pp2
-    Point_2 mid = CGAL::midpoint(*pp1, *pp2);    
-    
+    Point_2 mid = CGAL::midpoint(*pp1, *pp2);
+
     //the case when bisector consists of only one line
     if(abs_x == abs_y){
         return mid;
@@ -109,17 +111,17 @@ public:
 
     //length of the middle part of bisector
     FT len_mid = CGAL::abs(abs_x - abs_y);
-    
+
     CGAL_assertion(sign_x != CGAL::ZERO || sign_y !=CGAL::ZERO);
 
-    //sign_x (resp. sign_y) is not zero, and will be different for different indexes 
-    //since the order of input points changes 
-    if (abs_x < abs_y){ 
+    //sign_x (resp. sign_y) is not zero, and will be different for different indexes
+    //since the order of input points changes
+    if (abs_x < abs_y){
       mid_x += sign_y * 0.5 * len_mid;
     }else{
       mid_y += sign_x * 0.5 * len_mid;
     }
-    
+
     return Point_2(mid_x, mid_y);
   }
 
@@ -140,7 +142,7 @@ public:
 
       //std::cout << "l = " << l << std::endl;
 
-    if ((l.is_vertical())){ 
+    if ((l.is_vertical())){
       // To be "above" the curve, we actually need to have smaller x coordinate,
       // the order of the comparison function here is opposite to the none vertical
       // case.
@@ -156,7 +158,7 @@ public:
 
       CGAL::Comparison_result res = CGAL::compare_y_at_x(h1, l);
       //std::cout << "res = " << res << "; side = " << side << std::endl;
-      
+
       if (l.is_horizontal()) {
         CGAL_assertion(CGAL::compare_y_at_x(h2, l) != res);
         if (res == side)
@@ -166,8 +168,8 @@ public:
           return CGAL::LARGER;
         }
       }
-     
-     //Could be a tie: points can be equidistant from some query points not on the line 
+
+     //Could be a tie: points can be equidistant from some query points not on the line
      //(which are parts of 2d bisector). In that case it returns CGAL::EQUAL
 
       if (res == side)
@@ -177,7 +179,7 @@ public:
       if(res == side)
         return CGAL::LARGER;
 
-     // std::cout << "compare returns EQUAL: " << "h1 = " << h1 << "; h2 = " << h2 << std::endl; 
+     // std::cout << "compare returns EQUAL: " << "h1 = " << h1 << "; h2 = " << h2 << std::endl;
       return CGAL::EQUAL;
     }
   }
@@ -192,11 +194,11 @@ public:
       return o;
     }
   };
-  
+
   Make_xy_monotone_3 make_xy_monotone_3_object() const {
     return Make_xy_monotone_3();
   }
-  
+
   class Compare_z_at_xy_3 {
   public:
     Comparison_result operator()(const Point_2& p,
@@ -219,9 +221,9 @@ public:
           CGAL_assertion(cv.is_line());
           p = k.construct_point_on_2_object()(cv.line(), 1);
         }
-      return this->operator()(p, h1, h2); 
+      return this->operator()(p, h1, h2);
     }
-    
+
     Comparison_result operator()(const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
       // should happen only if the points are equal.
@@ -234,7 +236,7 @@ public:
   {
     return Compare_z_at_xy_3();
   }
-        
+
   class Compare_z_at_xy_above_3
   {
   public:
@@ -264,17 +266,31 @@ public:
   Compare_z_at_xy_below_3 compare_z_at_xy_below_3_object() const {
     return Compare_z_at_xy_below_3();
   }
-  
+
   class Construct_projected_boundary_2 {
   public:
     template <class OutputIterator>
     OutputIterator operator()(const Xy_monotone_surface_3& s,
                               OutputIterator o) const {
+
+      /* Aron Fiechter: weird test, don't look here */
+      FT far_l = 2000;
+      std::vector<Segment_2> border = {
+        Segment_2(Point_2(-far_l, -far_l), Point_2(far_l, -far_l)),
+        Segment_2(Point_2(far_l, -far_l), Point_2(far_l, far_l)),
+        Segment_2(Point_2(far_l, far_l), Point_2(-far_l, far_l)),
+        Segment_2(Point_2(-far_l, far_l), Point_2(-far_l, -far_l))
+      };
+
+      for (auto& seg : border) {
+        X_monotone_curve_2 x_seg = X_monotone_curve_2(seg);
+        *o++ = CGAL::make_object(Boundary_curve(x_seg, CGAL::ON_NEGATIVE_SIDE));
+      }
       return o;
     }
   };
 
-  Construct_projected_boundary_2 
+  Construct_projected_boundary_2
   construct_projected_boundary_2_object() const
   {
     return Construct_projected_boundary_2();
@@ -290,7 +306,43 @@ public:
       if (s1 == s2) {
         return o;
       } else {
-        *o++ = CGAL::make_object(Intersection_curve(CGAL::bisector(s1, s2), 1));
+
+        /* Aron Fiechter: weird test, don't look here */
+        FT far_l = 2000;
+        std::vector<Segment_2> border = {
+          Segment_2(Point_2(-far_l, -far_l), Point_2(far_l, -far_l)),
+          Segment_2(Point_2(far_l, -far_l), Point_2(far_l, far_l)),
+          Segment_2(Point_2(far_l, far_l), Point_2(-far_l, far_l)),
+          Segment_2(Point_2(-far_l, far_l), Point_2(-far_l, -far_l))
+        };
+
+        Line_2 bisector = CGAL::bisector(s1, s2);
+        std::cout << "Bisector is line: " << bisector;
+        Point_2 start, end;
+        bool assigned_start = false, assigned_end = false;
+        for (auto& segment : border) {
+          if (CGAL::do_intersect(bisector, segment)) {
+            if (assigned_start && !assigned_end) {
+              assigned_end = true;
+              CGAL_assertion_msg(
+                CGAL::assign(end, CGAL::intersection(bisector, segment)),
+                "Could not assing end."
+              );
+            }
+            else if (!assigned_start && !assigned_end) {
+              assigned_start = true;
+              CGAL_assertion_msg(
+                CGAL::assign(start, CGAL::intersection(bisector, segment)),
+                "Could not assing start."
+              );
+            }
+          }
+        }
+        std::cout << ". Start at " << start << " end at " << end << std::endl;
+        Segment_2 seg_bisector(start, end);
+        X_monotone_curve_2 x_seg_bisector = X_monotone_curve_2(seg_bisector);
+        *o++ = CGAL::make_object(Intersection_curve(x_seg_bisector, 1));
+        // *o++ = CGAL::make_object(Intersection_curve(CGAL::bisector(s1, s2), 1));
         return o;
       }
     }
