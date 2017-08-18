@@ -1196,7 +1196,7 @@ public:
 
           //TODO remove
           std::cout << "Created bisector of s1 = "
-                    << s1 << "and s2 = " << s2 << std::endl
+                    << s1 << " and s2 = " << s2 << std::endl
           ;
 
           /* return one past the end iterator */
@@ -1213,7 +1213,7 @@ public:
 
           //TODO remove
           std::cout << "Created bisector of s1 = "
-                    << s1 << "and s2 = " << s2 << std::endl
+                    << s1 << " and s2 = " << s2 << std::endl
           ;
 
           /* return one past the end iterator */
