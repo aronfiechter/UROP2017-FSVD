@@ -170,21 +170,18 @@ public:
 
 private:
   Algebraic PRECISION = Algebraic(5); // values under 0.5 take too long
-  int counter = 0;
-  int arc_converter_called = 0;
+
+
   /* Find a number of points on the curve cv such that they are all close enough
    * to approximate the curve. Then create segments between these points and add
    * them to the provided list. */
   void arc_to_segments(const X_monotone_curve_2& cv, std::list<Segment_2>& segments) {
-
-    this->arc_converter_called++;
 
     /* create points on the arc, create segments between them and push segments */
     Algebraic current_x = cv.left().x();
     Algebraic end_x = cv.right().x();
 
     for (; current_x + PRECISION < end_x; current_x += PRECISION) {
-      this->counter++;
       Alg_point_2 current = Alg_point_2(current_x, 0);
       Alg_point_2 next = Alg_point_2(current_x + PRECISION, 0);
       /* project points on arc */
@@ -223,7 +220,7 @@ private:
     return;
   }
 
-  };
+}; // end of class bisectorIpelet
 // --------------------------------------------------------------------
 
 void bisectorIpelet::protected_run(int fn) {
@@ -912,10 +909,6 @@ void bisectorIpelet::protected_run(int fn) {
         std::list<Segment_2> segments;
         arc_to_segments(eit->curve(), segments);
         draw_in_ipe(segments.begin(), segments.end(), true);
-
-        //TODO remove message
-        sprintf(message, "The arc has been converted into %lu segments in %d loops. Converter called %d times.\"", segments.size(), this->counter, this->arc_converter_called);
-        print_error_message(message);
       }
     } // end of draw FSVD edges
 
