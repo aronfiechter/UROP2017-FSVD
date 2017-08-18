@@ -825,13 +825,18 @@ void bisectorIpelet::protected_run(int fn) {
     char message[100];
     unsigned long ne = m_envelope_diagram->number_of_edges();
     unsigned long nv = m_envelope_diagram->number_of_vertices();
+    unsigned long nsg = vd_sg_list.size();
     if (ne == 0) {
       sprintf(message, "The diagram is empty!");
       print_error_message(message);
       return;
     }
     else {
-      sprintf(message, "There are %ld edges and %lu vertices", ne, nv);
+      sprintf(
+        message,
+        "FSVD of %ld segments. There are %ld edges and %lu vertices.",
+        nsg, ne, nv
+      );
       print_error_message(message);
     }
 
