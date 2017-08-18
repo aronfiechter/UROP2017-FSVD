@@ -40,6 +40,9 @@
 /* to compute bisector of two segments */
 #include <CGAL/ch_akl_toussaint.h> // convex hull
 
+/* to format strings */
+#include <boost/format.hpp>
+
 namespace CGAL {
 
 template <class Conic_traits_2, class Kernel_>
@@ -190,15 +193,15 @@ private:
       this->_w = w;
 
       //TODO remove
-      std::cout << "Constructed parabola: "
-                << _r << "x^2 + "
-                << _s << "y^2 + "
-                << _t << "xy + "
-                << _u << "x + "
-                << _v << "y + "
-                << _w
-                << std::endl
-      ;
+      // std::cout << "Constructed parabola: "
+      //           << _r << "x^2 + "
+      //           << _s << "y^2 + "
+      //           << _t << "xy + "
+      //           << _u << "x + "
+      //           << _v << "y + "
+      //           << _w
+      //           << std::endl
+      // ;
 
       RK_to_AK to_alg;
       CGAL_assertion(CGAL::square(_t) - 4 * _r * _s == 0);  // curve is parabola
@@ -236,10 +239,10 @@ private:
         this->w()
       );
       //TODO remove
-      std::cout << "Evaluated point " << point
-                << " and the result is " << result
-                << std::endl
-      ;
+      // std::cout << "Evaluated point " << point
+      //           << " and the result is " << result
+      //           << std::endl
+      // ;
       return result;
     }
 
@@ -347,11 +350,11 @@ private:
       RT c = line.c();
 
       //TODO remove
-      std::cout << "Finding intersections with line: "
-                << a << "x + "
-                << b << "y + "
-                << c << std::endl
-      ;
+      // std::cout << "Finding intersections with line: "
+      //           << a << "x + "
+      //           << b << "y + "
+      //           << c << std::endl
+      // ;
 
       /* convert line to algebraic, get nt_traits to solve quadratic equation */
       RK_to_AK to_alg;
@@ -376,12 +379,12 @@ private:
         ;
 
         //TODO remove
-        std::cout << "Solving quadratic equation: "
-                  << EQ_A << "y^2 + "
-                  << EQ_B << "y + "
-                  << EQ_C
-                  << std::endl
-        ;
+        // std::cout << "Solving quadratic equation: "
+        //           << EQ_A << "y^2 + "
+        //           << EQ_B << "y + "
+        //           << EQ_C
+        //           << std::endl
+        // ;
 
         /* to store the 0, 1, or 2 results, indicating the intersections.
          * For all resulting y, find the corresponding x, and add a point to
@@ -393,7 +396,7 @@ private:
         n_ys = ys_end - ys;
 
         //TODO remove
-        std::cout << "Found " << n_ys << " intersections." << std::endl;
+        // std::cout << "Found " << n_ys << " intersections." << std::endl;
 
         /* if no intersections return */
         if (n_ys == 0) {
@@ -435,12 +438,12 @@ private:
         ;
 
         //TODO remove
-        std::cout << "Solving quadratic equation: "
-                  << EQ_A << "x^2 + "
-                  << EQ_B << "x + "
-                  << EQ_C
-                  << std::endl
-        ;
+        // std::cout << "Solving quadratic equation: "
+        //           << EQ_A << "x^2 + "
+        //           << EQ_B << "x + "
+        //           << EQ_C
+        //           << std::endl
+        // ;
 
         /* to store the 0, 1, or 2 results, indicating the intersections.
          * For all resulting x, find the corresponding y, and add a point to
@@ -452,7 +455,7 @@ private:
         n_xs = xs_end - xs;
 
         //TODO remove
-        std::cout << "Found " << n_xs << " intersections." << std::endl;
+        // std::cout << "Found " << n_xs << " intersections." << std::endl;
 
         /* if no intersections return */
         if (n_xs == 0) {
@@ -521,7 +524,8 @@ private:
       }
 
       CGAL_assertion_msg(assigned, "Could not find closest point");
-      std::cout << "This is the closest intersection: " << result << std::endl;
+      //TODO remove
+      // std::cout << "This is the closest intersection: " << result << std::endl;
       return result;
     }
 
@@ -1132,7 +1136,6 @@ public:
               }
 
               case ENDPOINT_BISECTOR: {
-                //TODO finish
                 /* extract two endpoints */
                 Rat_point_2 endpoint1; Rat_point_2 endpoint2;
                 CGAL_assertion(CGAL::assign(endpoint1, o1));
@@ -1252,14 +1255,14 @@ public:
   }
 
 
-
+  /* Call helper function with flag set to true */
   class Compare_z_at_xy_above_3
   {
   public:
     Comparison_result operator()(const X_monotone_curve_2& cv,
-                                 const Xy_monotone_surface_3& h1,
-                                 const Xy_monotone_surface_3& h2) const {
-      return CGAL::LARGER; //TODO fake
+                                 const Xy_monotone_surface_3& s1,
+                                 const Xy_monotone_surface_3& s2) const {
+      return compare_z_at_xy_3_helper(cv, s1, s2, true);
     }
 
   };
@@ -1270,19 +1273,86 @@ public:
   }
 
 
-
+  /* Call helper function with flag set to false */
   class Compare_z_at_xy_below_3
   {
   public:
     Comparison_result operator()(const X_monotone_curve_2& cv,
-                                 const Xy_monotone_surface_3& h1,
-                                 const Xy_monotone_surface_3& h2) const {
-      return CGAL::LARGER; //TODO fake
+                                 const Xy_monotone_surface_3& s1,
+                                 const Xy_monotone_surface_3& s2) const {
+      return compare_z_at_xy_3_helper(cv, s1, s2, false);
     }
   };
 
   Compare_z_at_xy_below_3 compare_z_at_xy_below_3_object() const {
     return Compare_z_at_xy_below_3();
+  }
+
+  /* Helper function for Compare_z_at_xy_above_3 and Compare_z_at_xy_below_3 */
+  static Comparison_result compare_z_at_xy_3_helper(
+    const X_monotone_curve_2& cv,
+    const Xy_monotone_surface_3& s1,
+    const Xy_monotone_surface_3& s2,
+    bool compare_above
+  ) {
+    Algebraic move_by = 1;
+
+    /* construct a point on the curve cv, assert equidistant from s1 and s2 */
+    Alg_point_2 midpoint = construct_middle_point(cv);
+    Algebraic difference = sqdistance(midpoint, s1) - sqdistance(midpoint, s2);
+
+    /* print warning if necessary */
+    /* colour */
+    #define RESET   "\033[0m"
+    #define GREEN   "\033[32m"      /* Green */
+    #define YELLOW  "\033[33m"      /* Yellow */
+    #define BLUE    "\033[34m"      /* Blue */
+    char message[100];
+    sprintf(
+      message,
+      GREEN "s1 and s2 are not equidistand, difference: %lf" RESET,
+      CGAL::to_double(difference)
+    );
+    CGAL_warning_msg((difference == 0), message);
+    std::cout << "The difference is: " << difference << ".";
+
+    /* get converter and convert */
+    RK_to_AK to_alg;
+    Alg_segment_2 alg_s1 = to_alg(s1);
+    Alg_segment_2 alg_s2 = to_alg(s2);
+
+    /* midpoint is on the bisector of s1 and s2, so find the closest point to
+     * midpoint on s1 and s2 */
+    std::list<Alg_point_2> pts_s1, pts_s2;
+    pts_s1.push_back(alg_s1.source());
+    pts_s1.push_back(alg_s1.target());
+    pts_s1.push_back(CGAL::midpoint(alg_s1.source(), alg_s1.target()));
+    pts_s2.push_back(alg_s2.source());
+    pts_s2.push_back(alg_s2.target());
+    pts_s2.push_back(CGAL::midpoint(alg_s2.source(), alg_s2.target()));
+    Alg_point_2 closest_pt1 = closest_point<Alg_kernel>(midpoint, pts_s1);
+    Alg_point_2 closest_pt2 = closest_point<Alg_kernel>(midpoint, pts_s2);
+
+    Alg_point_2 moved_point;
+    Algebraic displacement = compare_above ? move_by : -move_by;
+    if (!cv.is_vertical()) {
+      moved_point = Alg_point_2(midpoint.x(), midpoint.y() + displacement);
+    }
+    else {
+      moved_point = Alg_point_2(midpoint.x() - displacement, midpoint.y());
+    }
+
+    if (sqdistance(moved_point, s1) < sqdistance(moved_point, s2)) {
+      std::cout << " Returning CGAL::SMALLER." << std::endl;
+      return CGAL::SMALLER;
+    }
+    else {
+      std::cout << " Returning CGAL::LARGER." << std::endl;
+      return CGAL::LARGER;
+    }
+
+    CGAL_error_msg("This function is not working properly");
+    return CGAL::EQUAL;
   }
 
 }; // class L2_segment_voronoi_traits_2
