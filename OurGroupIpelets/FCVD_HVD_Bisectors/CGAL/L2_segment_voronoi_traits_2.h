@@ -1194,6 +1194,11 @@ public:
             curr_direction = next_direction;
           }
 
+          //TODO remove
+          std::cout << "Created bisector of s1 = "
+                    << s1 << "and s2 = " << s2 << std::endl
+          ;
+
           /* return one past the end iterator */
           return o;
         } // end of segments do not intersect
@@ -1205,6 +1210,11 @@ public:
         else {
           CGAL_assertion(CGAL::do_intersect(s1, s2)); // they HAVE to intersect
           CGAL_assertion(ray_info_list.size() == 4); //TODO correct for touching segments
+
+          //TODO remove
+          std::cout << "Created bisector of s1 = "
+                    << s1 << "and s2 = " << s2 << std::endl
+          ;
 
           /* return one past the end iterator */
           return o;
