@@ -541,7 +541,7 @@ private:
       CGAL_assertion(arc.is_valid()); // valid arc
       return arc;
     }
-  };
+  }; // end of class Parabola
 
   /* Returns the squared distance between two points in L2 metric. */
   static Algebraic sqdistance(const Point_2& p1, const Point_2& p2) {
