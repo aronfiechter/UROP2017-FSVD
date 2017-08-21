@@ -608,14 +608,11 @@ private:
     /* get the x-value of the middle point */
     Alg_point_2 mid_x = CGAL::midpoint(cv.source(),cv.target());
 
-    std::cout << "HERE construct_middle_point: midpoint = (" << mid_x << ") ";
-
     /* if cv is vertical, it is just a segment */
     if (cv.is_vertical()) result = Point_2(mid_x);
     /* otherwise take the point with the same x coordinate but on cv */
     else result = Point_2(cv.point_at_x(mid_x));
 
-    std::cout << "-- result = (" << result << ")" << std::endl;
     return result;
   }
 
@@ -913,8 +910,6 @@ public:
       AK_to_DK to_dbl;
       DK_to_RK to_rat;
 
-      std::cout << "finding bisector of s1=(" << s1 << ") and s2=(" << s2 << ")" << std::endl;
-
       /* if the two segments are the same (also if one is just the other but
        * reversed), their distance function is the same, so there is no
        * intersection */
@@ -1054,7 +1049,6 @@ public:
                     ),
                     "Could not assing end."
                   );
-                  std::cout << "Intersection end_point at " << end_point << '\n';
                 }
               }
             }
@@ -1382,6 +1376,19 @@ public:
     Alg_point_2 midpoint = construct_middle_point(cv);
     Algebraic difference = sqdistance(midpoint, s1) - sqdistance(midpoint, s2);
 
+    std::cout << std::endl << "##############################" << std::endl;
+    std::cout << "Compare s1[" << s1 << "] and s2[" << s2 << "] "
+              << (compare_above ? "above" : "below") << " cv=[ "
+              << cv.r() << "x^2 + "
+              << cv.s() << "y^2 + "
+              << cv.t() << "xy + "
+              << cv.u() << "x + "
+              << cv.v() << "y + "
+              << cv.w() << std::endl
+    ;
+
+    std::cout << "midpoint(" << midpoint << ") , ";
+
     /* print warning if necessary */
     /* colour */
     #define RESET   "\033[0m"
@@ -1396,7 +1403,7 @@ public:
       CGAL::to_double(difference)
     );
     CGAL_warning_msg((difference == 0), message);
-    std::cout << "The difference is: " << difference << ".";
+    std::cout << "the difference is: " << difference << ".";
 
     /* get converter and convert */
     RK_to_AK to_alg;
@@ -1409,9 +1416,11 @@ public:
       moved_point = Alg_point_2(midpoint.x(), midpoint.y() + displacement);
     }
     else {
-      std::cout << " -- CV IS VERTICAL -- ";
+      std::cout << " -- CV IS VERTICAL --";
       moved_point = Alg_point_2(midpoint.x() - displacement, midpoint.y());
     }
+
+    std::cout << " Moved midpoint to pt(" << moved_point << ")" << std::endl;
 
     if (sqdistance(moved_point, s1) < sqdistance(moved_point, s2)) {
       std::cout << " Returning CGAL::SMALLER." << std::endl;
