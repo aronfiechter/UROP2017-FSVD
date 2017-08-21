@@ -846,9 +846,27 @@ public:
     template <class OutputIterator>
     OutputIterator operator()(const Xy_monotone_surface_3& s,
                               OutputIterator o) const {
-      /* the surfaces we are considering are distance functions of line
-       * segments and are infinite, so they have no projected boundary */
-      return o; // the iterator remains empty
+      // /* the surfaces we are considering are distance functions of line
+      //  * segments and are infinite, so they have no projected boundary */
+      // return o; // the iterator remains empty
+
+      /* save boundary for intersection with it */
+      RT far_l = 2000;
+      std::vector<Rat_segment_2> border = {
+        Rat_segment_2(Rat_point_2(-far_l, -far_l), Rat_point_2(far_l, -far_l)),
+        Rat_segment_2(Rat_point_2(far_l, -far_l), Rat_point_2(far_l, far_l)),
+        Rat_segment_2(Rat_point_2(far_l, far_l), Rat_point_2(-far_l, far_l)),
+        Rat_segment_2(Rat_point_2(-far_l, far_l), Rat_point_2(-far_l, -far_l))
+      };
+
+      /* The surfaces representing distance functions are infinite, but to make
+       * this work with bounded bisectors we need a boundary. We use the same
+       * for all segments */
+      for (auto& seg : border) {
+        X_monotone_curve_2 x_seg = X_monotone_curve_2(seg);
+        *o++ = CGAL::make_object(std::make_pair(x_seg, CGAL::ON_NEGATIVE_SIDE));
+      }
+      return o;
     }
   };
 
@@ -927,6 +945,15 @@ public:
           s1.source(), s1.target(), s2.source(), s2.target()
         };
 
+        /* save boundary for intersection with it */
+        RT far_l = 2000;
+        std::vector<Rat_segment_2> border = {
+          Rat_segment_2(Rat_point_2(-far_l, -far_l), Rat_point_2(far_l, -far_l)),
+          Rat_segment_2(Rat_point_2(far_l, -far_l), Rat_point_2(far_l, far_l)),
+          Rat_segment_2(Rat_point_2(far_l, far_l), Rat_point_2(-far_l, far_l)),
+          Rat_segment_2(Rat_point_2(-far_l, far_l), Rat_point_2(-far_l, -far_l))
+        };
+
         /* then compute the 2 or 4 unbounded edges of the bisector.
          * To do this, first compute the convex hull of the endpoints of the
          * segments. The pairs of vertices of the hull that are not of the same
@@ -976,12 +1003,31 @@ public:
              * can be saved as an X_monotone_curve_2, because the Conic_traits
              * require that curves are bounded */
             Rat_point_2 start_point = ray_info.first.source();
-            Rat_point_2 end_point = start_point
-              + UNBOUNDED_RAY_LENGTH * ray_info.first.direction().vector();
+            // Rat_point_2 end_point = start_point
+            //   + UNBOUNDED_RAY_LENGTH * ray_info.first.direction().vector();
+            Rat_point_2 end_point;
+            bool assigned = false;
+            for (auto& seg : border) {
+              if (assigned) break;
+              if (CGAL::do_intersect(ray_info.first, seg)) {
+                if (!assigned) {
+                  assigned = true;
+                  CGAL_assertion_msg(
+                    CGAL::assign(
+                      end_point,
+                      CGAL::intersection(ray_info.first, seg)
+                    ),
+                    "Could not assing end."
+                  );
+                  std::cout << "Intersection end_point at " << end_point << '\n';
+                }
+              }
+            }
+
             Rat_segment_2 seg(start_point, end_point);
             X_monotone_curve_2 curve_seg(seg);
             *o++ = CGAL::make_object(
-              Intersection_curve(curve_seg, 0)
+              Intersection_curve(curve_seg, 1)
             );
           }
         }
@@ -1305,7 +1351,7 @@ public:
     const Xy_monotone_surface_3& s2,
     bool compare_above
   ) {
-    Algebraic move_by = 1;
+    Algebraic move_by = 10;
 
     /* construct a point on the curve cv, assert equidistant from s1 and s2 */
     Alg_point_2 midpoint = construct_middle_point(cv);
@@ -1314,13 +1360,14 @@ public:
     /* print warning if necessary */
     /* colour */
     #define RESET   "\033[0m"
+    #define RED     "\033[31m"      /* Red */
     #define GREEN   "\033[32m"      /* Green */
     #define YELLOW  "\033[33m"      /* Yellow */
     #define BLUE    "\033[34m"      /* Blue */
     char message[100];
     sprintf(
       message,
-      GREEN "s1 and s2 are not equidistand, difference: %lf" RESET,
+      RED "Warning: " YELLOW "s1 and s2 are not equidistand, difference: %lf" RESET,
       CGAL::to_double(difference)
     );
     CGAL_warning_msg((difference == 0), message);
@@ -1331,17 +1378,17 @@ public:
     Alg_segment_2 alg_s1 = to_alg(s1);
     Alg_segment_2 alg_s2 = to_alg(s2);
 
-    /* midpoint is on the bisector of s1 and s2, so find the closest point to
-     * midpoint on s1 and s2 */
-    std::list<Alg_point_2> pts_s1, pts_s2;
-    pts_s1.push_back(alg_s1.source());
-    pts_s1.push_back(alg_s1.target());
-    pts_s1.push_back(CGAL::midpoint(alg_s1.source(), alg_s1.target()));
-    pts_s2.push_back(alg_s2.source());
-    pts_s2.push_back(alg_s2.target());
-    pts_s2.push_back(CGAL::midpoint(alg_s2.source(), alg_s2.target()));
-    Alg_point_2 closest_pt1 = closest_point<Alg_kernel>(midpoint, pts_s1);
-    Alg_point_2 closest_pt2 = closest_point<Alg_kernel>(midpoint, pts_s2);
+    // /* midpoint is on the bisector of s1 and s2, so find the closest point to
+    //  * midpoint on s1 and s2 */
+    // std::list<Alg_point_2> pts_s1, pts_s2;
+    // pts_s1.push_back(alg_s1.source());
+    // pts_s1.push_back(alg_s1.target());
+    // pts_s1.push_back(CGAL::midpoint(alg_s1.source(), alg_s1.target()));
+    // pts_s2.push_back(alg_s2.source());
+    // pts_s2.push_back(alg_s2.target());
+    // pts_s2.push_back(CGAL::midpoint(alg_s2.source(), alg_s2.target()));
+    // Alg_point_2 closest_pt1 = closest_point<Alg_kernel>(midpoint, pts_s1);
+    // Alg_point_2 closest_pt2 = closest_point<Alg_kernel>(midpoint, pts_s2);
 
     Alg_point_2 moved_point;
     Algebraic displacement = compare_above ? move_by : -move_by;
@@ -1349,6 +1396,7 @@ public:
       moved_point = Alg_point_2(midpoint.x(), midpoint.y() + displacement);
     }
     else {
+      std::cout << "CV VERTICAL" << '\n';
       moved_point = Alg_point_2(midpoint.x() - displacement, midpoint.y());
     }
 
