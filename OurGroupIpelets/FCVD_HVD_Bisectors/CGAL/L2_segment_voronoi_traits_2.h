@@ -663,7 +663,7 @@ private:
    * orthogonal delimiter intersects the ray's source. */
   static Ray_info find_unbounded_ray(
     Rat_line_2 bisector,
-    Delimiter_lines delimiters
+    Rat_delimiter_lines delimiters
   ) {
 
     /* get the four intersection points, add them to two lists, sort one by x
@@ -748,19 +748,21 @@ private:
    *   In this case save those two endpoints.
    * In all three cases we save in o1 the correct endpoint or supporting_line of
    * s1, and in o2 the same for s2.
+   * Precondition (checked): the point p is not on any of the four delimiters
    */
   static Bisector_type find_position(
     Alg_point_2 p,
-    Delimiter_lines delimiter_lines,
+    Alg_delimiter_lines delimiter_lines,
     Rat_segment_2 s1,
     Rat_segment_2 s2,
     Object& o1,  // to store [directrix1 or focus1]/line1/point1
     Object& o2   // to store [directrix2 or focus2]/line2/point2
   ) {
-    /* convert point p from alg to rational */
-    AK_to_DK to_dbl;
-    DK_to_RK to_rat;
-    Rat_point_2 rp = to_rat(to_dbl(p)); //TODO revise to find better solution
+    /* check precondition */
+    CGAL_precondition(!delimiter_lines.first.first.has_on(p));
+    CGAL_precondition(!delimiter_lines.first.second.has_on(p));
+    CGAL_precondition(!delimiter_lines.second.first.has_on(p));
+    CGAL_precondition(!delimiter_lines.second.second.has_on(p));
 
     /* assume point is not on any delimiter, consider all other cases. To do so,
      * first determine what must be stored in o1, then in o2. Save in two flags
@@ -769,34 +771,34 @@ private:
     bool o2_is_line = false;
 
     /* determine o1 */
-    if (delimiter_lines.first.first.has_on_positive_side(rp)) {
+    if (delimiter_lines.first.first.has_on_positive_side(p)) {
       o1 = CGAL::make_object(s1.source());
     }
-    else if (delimiter_lines.first.second.has_on_positive_side(rp)) {
+    else if (delimiter_lines.first.second.has_on_positive_side(p)) {
       o1 = CGAL::make_object(s1.target());
     }
     else {
       CGAL_assertion(
-        delimiter_lines.first.first.has_on_negative_side(rp)
+        delimiter_lines.first.first.has_on_negative_side(p)
         &&
-        delimiter_lines.first.second.has_on_negative_side(rp)
+        delimiter_lines.first.second.has_on_negative_side(p)
       );
       o1 = CGAL::make_object(s1.supporting_line());
       o1_is_line = true;
     }
 
     /* determine o2 */
-    if (delimiter_lines.second.first.has_on_positive_side(rp)) {
+    if (delimiter_lines.second.first.has_on_positive_side(p)) {
       o2 = CGAL::make_object(s2.source());
     }
-    else if (delimiter_lines.second.second.has_on_positive_side(rp)) {
+    else if (delimiter_lines.second.second.has_on_positive_side(p)) {
       o2 = CGAL::make_object(s2.target());
     }
     else {
       CGAL_assertion(
-        delimiter_lines.second.first.has_on_negative_side(rp)
+        delimiter_lines.second.first.has_on_negative_side(p)
         &&
-        delimiter_lines.second.second.has_on_negative_side(rp)
+        delimiter_lines.second.second.has_on_negative_side(p)
       );
       o2 = CGAL::make_object(s2.supporting_line());
       o2_is_line = true;
@@ -904,6 +906,8 @@ public:
       AK_to_DK to_dbl;
       DK_to_RK to_rat;
 
+      std::cout << "finding bisector of s1=(" << s1 << ") and s2=(" << s2 << ")" << std::endl;
+
       /* if the two segments are the same (also if one is just the other but
        * reversed), their distance function is the same, so there is no
        * intersection */
@@ -926,7 +930,7 @@ public:
          *   degrees counterclockwise from the segment vector
          * - the target of the segment but as direction the vector oriented 90
          *   degrees clockwise. */
-        Delimiter_lines delimiter_lines = {
+        Rat_delimiter_lines delimiter_lines = {
           {
             Rat_line_2(
               s1.source(),
@@ -958,7 +962,7 @@ public:
             to_alg(delimiter_lines.second.first),
             to_alg(delimiter_lines.second.second)
           }
-        }
+        };
         /* also save the lines in a vector for convenience */
         std::vector<Rat_line_2> delimiter_lines_vector = {
           delimiter_lines.first.first, delimiter_lines.first.second,
@@ -1106,7 +1110,7 @@ public:
              * - ENDPOINT_BISECTOR:   o1 = endpoint_1,      o2 = endpoint_2   */
             Object o1, o2;
             Curve_2 piece_of_bisector;
-            switch (find_position(midpoint, delimiter_lines, s1, s2, o1, o2)) {
+            switch (find_position(midpoint, alg_delimiter_lines, s1, s2, o1, o2)) {
 
               case PARABOLIC_ARC: {
                 /* extract directrix and focus */
