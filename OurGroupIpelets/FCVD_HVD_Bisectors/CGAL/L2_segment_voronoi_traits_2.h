@@ -111,7 +111,11 @@ private:
   typedef typename std::pair<
     std::pair<Rat_line_2, Rat_line_2>,
     std::pair<Rat_line_2, Rat_line_2>
-  >                                                   Delimiter_lines;
+  >                                                   Rat_delimiter_lines;
+  typedef typename std::pair<
+    std::pair<Alg_line_2, Alg_line_2>,
+    std::pair<Alg_line_2, Alg_line_2>
+  >                                                   Alg_delimiter_lines;
 
   enum Bisector_type {
     PARABOLIC_ARC,
@@ -890,7 +894,16 @@ public:
       OutputIterator operator()(const Xy_monotone_surface_3& s1,
                                 const Xy_monotone_surface_3& s2,
                                 OutputIterator o) const {
-      Rat_kernel rat_kernel;
+      /* create converter functors to convert from:
+       * - Rational to Algebraic
+       * - Algebraic to Cartesian<double>
+       * - Cartesian<double> to Rational
+       * The last two are used together to convert by approximation from
+       * Algebraic to Rational */
+      RK_to_AK to_alg;
+      AK_to_DK to_dbl;
+      DK_to_RK to_rat;
+
       /* if the two segments are the same (also if one is just the other but
        * reversed), their distance function is the same, so there is no
        * intersection */
@@ -935,6 +948,17 @@ public:
             )
           }
         };
+        /* also save the lines in alg form for convenience */
+        Alg_delimiter_lines alg_delimiter_lines = {
+          {
+            to_alg(delimiter_lines.first.first),
+            to_alg(delimiter_lines.first.second)
+          },
+          {
+            to_alg(delimiter_lines.second.first),
+            to_alg(delimiter_lines.second.second)
+          }
+        }
         /* also save the lines in a vector for convenience */
         std::vector<Rat_line_2> delimiter_lines_vector = {
           delimiter_lines.first.first, delimiter_lines.first.second,
@@ -1031,16 +1055,6 @@ public:
             );
           }
         }
-
-        /* create converter functors to convert from:
-         * - Rational to Algebraic
-         * - Algebraic to Cartesian<double>
-         * - Cartesian<double> to Rational
-         * The last two are used together to convert by approximation from
-         * Algebraic to Rational */
-        RK_to_AK to_alg;
-        AK_to_DK to_dbl;
-        DK_to_RK to_rat;
 
         /* if the two segments do NOT intersect, construct the bisector starting
          * from one unbounded edge, finding the correct intersection points
