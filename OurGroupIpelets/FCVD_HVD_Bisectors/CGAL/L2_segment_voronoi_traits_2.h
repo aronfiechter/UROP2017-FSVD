@@ -111,7 +111,11 @@ private:
   typedef typename std::pair<
     std::pair<Rat_line_2, Rat_line_2>,
     std::pair<Rat_line_2, Rat_line_2>
-  >                                                   Delimiter_lines;
+  >                                                   Rat_delimiter_lines;
+  typedef typename std::pair<
+    std::pair<Alg_line_2, Alg_line_2>,
+    std::pair<Alg_line_2, Alg_line_2>
+  >                                                   Alg_delimiter_lines;
 
   enum Bisector_type {
     PARABOLIC_ARC,
@@ -541,7 +545,7 @@ private:
       CGAL_assertion(arc.is_valid()); // valid arc
       return arc;
     }
-  };
+  }; // end of class Parabola
 
   /* Returns the squared distance between two points in L2 metric. */
   static Algebraic sqdistance(const Point_2& p1, const Point_2& p2) {
@@ -659,7 +663,7 @@ private:
    * orthogonal delimiter intersects the ray's source. */
   static Ray_info find_unbounded_ray(
     Rat_line_2 bisector,
-    Delimiter_lines delimiters
+    Rat_delimiter_lines delimiters
   ) {
 
     /* get the four intersection points, add them to two lists, sort one by x
@@ -744,19 +748,21 @@ private:
    *   In this case save those two endpoints.
    * In all three cases we save in o1 the correct endpoint or supporting_line of
    * s1, and in o2 the same for s2.
+   * Precondition (checked): the point p is not on any of the four delimiters
    */
   static Bisector_type find_position(
     Alg_point_2 p,
-    Delimiter_lines delimiter_lines,
+    Alg_delimiter_lines delimiter_lines,
     Rat_segment_2 s1,
     Rat_segment_2 s2,
     Object& o1,  // to store [directrix1 or focus1]/line1/point1
     Object& o2   // to store [directrix2 or focus2]/line2/point2
   ) {
-    /* convert point p from alg to rational */
-    AK_to_DK to_dbl;
-    DK_to_RK to_rat;
-    Rat_point_2 rp = to_rat(to_dbl(p)); //TODO revise to find better solution
+    /* check precondition */
+    CGAL_precondition(!delimiter_lines.first.first.has_on(p));
+    CGAL_precondition(!delimiter_lines.first.second.has_on(p));
+    CGAL_precondition(!delimiter_lines.second.first.has_on(p));
+    CGAL_precondition(!delimiter_lines.second.second.has_on(p));
 
     /* assume point is not on any delimiter, consider all other cases. To do so,
      * first determine what must be stored in o1, then in o2. Save in two flags
@@ -765,34 +771,34 @@ private:
     bool o2_is_line = false;
 
     /* determine o1 */
-    if (delimiter_lines.first.first.has_on_positive_side(rp)) {
+    if (delimiter_lines.first.first.has_on_positive_side(p)) {
       o1 = CGAL::make_object(s1.source());
     }
-    else if (delimiter_lines.first.second.has_on_positive_side(rp)) {
+    else if (delimiter_lines.first.second.has_on_positive_side(p)) {
       o1 = CGAL::make_object(s1.target());
     }
     else {
       CGAL_assertion(
-        delimiter_lines.first.first.has_on_negative_side(rp)
+        delimiter_lines.first.first.has_on_negative_side(p)
         &&
-        delimiter_lines.first.second.has_on_negative_side(rp)
+        delimiter_lines.first.second.has_on_negative_side(p)
       );
       o1 = CGAL::make_object(s1.supporting_line());
       o1_is_line = true;
     }
 
     /* determine o2 */
-    if (delimiter_lines.second.first.has_on_positive_side(rp)) {
+    if (delimiter_lines.second.first.has_on_positive_side(p)) {
       o2 = CGAL::make_object(s2.source());
     }
-    else if (delimiter_lines.second.second.has_on_positive_side(rp)) {
+    else if (delimiter_lines.second.second.has_on_positive_side(p)) {
       o2 = CGAL::make_object(s2.target());
     }
     else {
       CGAL_assertion(
-        delimiter_lines.second.first.has_on_negative_side(rp)
+        delimiter_lines.second.first.has_on_negative_side(p)
         &&
-        delimiter_lines.second.second.has_on_negative_side(rp)
+        delimiter_lines.second.second.has_on_negative_side(p)
       );
       o2 = CGAL::make_object(s2.supporting_line());
       o2_is_line = true;
@@ -846,9 +852,27 @@ public:
     template <class OutputIterator>
     OutputIterator operator()(const Xy_monotone_surface_3& s,
                               OutputIterator o) const {
-      /* the surfaces we are considering are distance functions of line
-       * segments and are infinite, so they have no projected boundary */
-      return o; // the iterator remains empty
+      // /* the surfaces we are considering are distance functions of line
+      //  * segments and are infinite, so they have no projected boundary */
+      // return o; // the iterator remains empty
+
+      /* save boundary for intersection with it */
+      RT far_l = 2000;
+      std::vector<Rat_segment_2> border = {
+        Rat_segment_2(Rat_point_2(-far_l, -far_l), Rat_point_2(far_l, -far_l)),
+        Rat_segment_2(Rat_point_2(far_l, -far_l), Rat_point_2(far_l, far_l)),
+        Rat_segment_2(Rat_point_2(far_l, far_l), Rat_point_2(-far_l, far_l)),
+        Rat_segment_2(Rat_point_2(-far_l, far_l), Rat_point_2(-far_l, -far_l))
+      };
+
+      /* The surfaces representing distance functions are infinite, but to make
+       * this work with bounded bisectors we need a boundary. We use the same
+       * for all segments */
+      for (auto& seg : border) {
+        X_monotone_curve_2 x_seg = X_monotone_curve_2(seg);
+        *o++ = CGAL::make_object(std::make_pair(x_seg, CGAL::ON_NEGATIVE_SIDE));
+      }
+      return o;
     }
   };
 
@@ -872,7 +896,18 @@ public:
       OutputIterator operator()(const Xy_monotone_surface_3& s1,
                                 const Xy_monotone_surface_3& s2,
                                 OutputIterator o) const {
-      Rat_kernel rat_kernel;
+      /* create converter functors to convert from:
+       * - Rational to Algebraic
+       * - Algebraic to Cartesian<double>
+       * - Cartesian<double> to Rational
+       * The last two are used together to convert by approximation from
+       * Algebraic to Rational */
+      RK_to_AK to_alg;
+      AK_to_DK to_dbl;
+      DK_to_RK to_rat;
+
+      std::cout << "finding bisector of s1=(" << s1 << ") and s2=(" << s2 << ")" << std::endl;
+
       /* if the two segments are the same (also if one is just the other but
        * reversed), their distance function is the same, so there is no
        * intersection */
@@ -895,7 +930,7 @@ public:
          *   degrees counterclockwise from the segment vector
          * - the target of the segment but as direction the vector oriented 90
          *   degrees clockwise. */
-        Delimiter_lines delimiter_lines = {
+        Rat_delimiter_lines delimiter_lines = {
           {
             Rat_line_2(
               s1.source(),
@@ -917,6 +952,17 @@ public:
             )
           }
         };
+        /* also save the lines in alg form for convenience */
+        Alg_delimiter_lines alg_delimiter_lines = {
+          {
+            to_alg(delimiter_lines.first.first),
+            to_alg(delimiter_lines.first.second)
+          },
+          {
+            to_alg(delimiter_lines.second.first),
+            to_alg(delimiter_lines.second.second)
+          }
+        };
         /* also save the lines in a vector for convenience */
         std::vector<Rat_line_2> delimiter_lines_vector = {
           delimiter_lines.first.first, delimiter_lines.first.second,
@@ -925,6 +971,15 @@ public:
         /* also save segment endpoints "generating" these lines */
         std::vector<Rat_point_2> segment_endpoints = {
           s1.source(), s1.target(), s2.source(), s2.target()
+        };
+
+        /* save boundary for intersection with it */
+        RT far_l = 2000;
+        std::vector<Rat_segment_2> border = {
+          Rat_segment_2(Rat_point_2(-far_l, -far_l), Rat_point_2(far_l, -far_l)),
+          Rat_segment_2(Rat_point_2(far_l, -far_l), Rat_point_2(far_l, far_l)),
+          Rat_segment_2(Rat_point_2(far_l, far_l), Rat_point_2(-far_l, far_l)),
+          Rat_segment_2(Rat_point_2(-far_l, far_l), Rat_point_2(-far_l, -far_l))
         };
 
         /* then compute the 2 or 4 unbounded edges of the bisector.
@@ -976,25 +1031,34 @@ public:
              * can be saved as an X_monotone_curve_2, because the Conic_traits
              * require that curves are bounded */
             Rat_point_2 start_point = ray_info.first.source();
-            Rat_point_2 end_point = start_point
-              + UNBOUNDED_RAY_LENGTH * ray_info.first.direction().vector();
+            // Rat_point_2 end_point = start_point
+            //   + UNBOUNDED_RAY_LENGTH * ray_info.first.direction().vector();
+            Rat_point_2 end_point;
+            bool assigned = false;
+            for (auto& seg : border) {
+              if (assigned) break;
+              if (CGAL::do_intersect(ray_info.first, seg)) {
+                if (!assigned) {
+                  assigned = true;
+                  CGAL_assertion_msg(
+                    CGAL::assign(
+                      end_point,
+                      CGAL::intersection(ray_info.first, seg)
+                    ),
+                    "Could not assing end."
+                  );
+                  std::cout << "Intersection end_point at " << end_point << '\n';
+                }
+              }
+            }
+
             Rat_segment_2 seg(start_point, end_point);
             X_monotone_curve_2 curve_seg(seg);
             *o++ = CGAL::make_object(
-              Intersection_curve(curve_seg, 0)
+              Intersection_curve(curve_seg, 1)
             );
           }
         }
-
-        /* create converter functors to convert from:
-         * - Rational to Algebraic
-         * - Algebraic to Cartesian<double>
-         * - Cartesian<double> to Rational
-         * The last two are used together to convert by approximation from
-         * Algebraic to Rational */
-        RK_to_AK to_alg;
-        AK_to_DK to_dbl;
-        DK_to_RK to_rat;
 
         /* if the two segments do NOT intersect, construct the bisector starting
          * from one unbounded edge, finding the correct intersection points
@@ -1046,7 +1110,7 @@ public:
              * - ENDPOINT_BISECTOR:   o1 = endpoint_1,      o2 = endpoint_2   */
             Object o1, o2;
             Curve_2 piece_of_bisector;
-            switch (find_position(midpoint, delimiter_lines, s1, s2, o1, o2)) {
+            switch (find_position(midpoint, alg_delimiter_lines, s1, s2, o1, o2)) {
 
               case PARABOLIC_ARC: {
                 /* extract directrix and focus */
@@ -1305,7 +1369,7 @@ public:
     const Xy_monotone_surface_3& s2,
     bool compare_above
   ) {
-    Algebraic move_by = 1;
+    Algebraic move_by = 10;
 
     /* construct a point on the curve cv, assert equidistant from s1 and s2 */
     Alg_point_2 midpoint = construct_middle_point(cv);
@@ -1314,13 +1378,14 @@ public:
     /* print warning if necessary */
     /* colour */
     #define RESET   "\033[0m"
+    #define RED     "\033[31m"      /* Red */
     #define GREEN   "\033[32m"      /* Green */
     #define YELLOW  "\033[33m"      /* Yellow */
     #define BLUE    "\033[34m"      /* Blue */
     char message[100];
     sprintf(
       message,
-      GREEN "s1 and s2 are not equidistand, difference: %lf" RESET,
+      RED "Warning: " YELLOW "s1 and s2 are not equidistand, difference: %lf" RESET,
       CGAL::to_double(difference)
     );
     CGAL_warning_msg((difference == 0), message);
@@ -1331,17 +1396,17 @@ public:
     Alg_segment_2 alg_s1 = to_alg(s1);
     Alg_segment_2 alg_s2 = to_alg(s2);
 
-    /* midpoint is on the bisector of s1 and s2, so find the closest point to
-     * midpoint on s1 and s2 */
-    std::list<Alg_point_2> pts_s1, pts_s2;
-    pts_s1.push_back(alg_s1.source());
-    pts_s1.push_back(alg_s1.target());
-    pts_s1.push_back(CGAL::midpoint(alg_s1.source(), alg_s1.target()));
-    pts_s2.push_back(alg_s2.source());
-    pts_s2.push_back(alg_s2.target());
-    pts_s2.push_back(CGAL::midpoint(alg_s2.source(), alg_s2.target()));
-    Alg_point_2 closest_pt1 = closest_point<Alg_kernel>(midpoint, pts_s1);
-    Alg_point_2 closest_pt2 = closest_point<Alg_kernel>(midpoint, pts_s2);
+    // /* midpoint is on the bisector of s1 and s2, so find the closest point to
+    //  * midpoint on s1 and s2 */
+    // std::list<Alg_point_2> pts_s1, pts_s2;
+    // pts_s1.push_back(alg_s1.source());
+    // pts_s1.push_back(alg_s1.target());
+    // pts_s1.push_back(CGAL::midpoint(alg_s1.source(), alg_s1.target()));
+    // pts_s2.push_back(alg_s2.source());
+    // pts_s2.push_back(alg_s2.target());
+    // pts_s2.push_back(CGAL::midpoint(alg_s2.source(), alg_s2.target()));
+    // Alg_point_2 closest_pt1 = closest_point<Alg_kernel>(midpoint, pts_s1);
+    // Alg_point_2 closest_pt2 = closest_point<Alg_kernel>(midpoint, pts_s2);
 
     Alg_point_2 moved_point;
     Algebraic displacement = compare_above ? move_by : -move_by;
@@ -1349,6 +1414,7 @@ public:
       moved_point = Alg_point_2(midpoint.x(), midpoint.y() + displacement);
     }
     else {
+      std::cout << "CV VERTICAL" << '\n';
       moved_point = Alg_point_2(midpoint.x() - displacement, midpoint.y());
     }
 
