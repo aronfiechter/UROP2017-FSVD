@@ -603,13 +603,20 @@ private:
   /* Construct a point in the middle of the curve cv. This function is copied
    * from Env_sphere_traits_3.h */
   static Point_2 construct_middle_point(const X_monotone_curve_2& cv) {
+    Point_2 result;
+
     /* get the x-value of the middle point */
     Alg_point_2 mid_x = CGAL::midpoint(cv.source(),cv.target());
 
+    std::cout << "HERE construct_middle_point: midpoint = (" << mid_x << ") ";
+
     /* if cv is vertical, it is just a segment */
-    if (cv.is_vertical()) return Point_2(mid_x);
+    if (cv.is_vertical()) result = Point_2(mid_x);
     /* otherwise take the point with the same x coordinate but on cv */
-    else return Point_2(cv.point_at_x(mid_x));
+    else result = Point_2(cv.point_at_x(mid_x));
+
+    std::cout << "-- result = (" << result << ")" << std::endl;
+    return result;
   }
 
   /* Convert the Curve_2 cv into multiple X_monotone_curve_2 using the provided
@@ -1402,7 +1409,7 @@ public:
       moved_point = Alg_point_2(midpoint.x(), midpoint.y() + displacement);
     }
     else {
-      std::cout << "CV VERTICAL" << '\n';
+      std::cout << " -- CV IS VERTICAL -- ";
       moved_point = Alg_point_2(midpoint.x() - displacement, midpoint.y());
     }
 
