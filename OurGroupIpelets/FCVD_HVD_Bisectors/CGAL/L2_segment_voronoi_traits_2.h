@@ -1396,18 +1396,6 @@ public:
     Alg_segment_2 alg_s1 = to_alg(s1);
     Alg_segment_2 alg_s2 = to_alg(s2);
 
-    // /* midpoint is on the bisector of s1 and s2, so find the closest point to
-    //  * midpoint on s1 and s2 */
-    // std::list<Alg_point_2> pts_s1, pts_s2;
-    // pts_s1.push_back(alg_s1.source());
-    // pts_s1.push_back(alg_s1.target());
-    // pts_s1.push_back(CGAL::midpoint(alg_s1.source(), alg_s1.target()));
-    // pts_s2.push_back(alg_s2.source());
-    // pts_s2.push_back(alg_s2.target());
-    // pts_s2.push_back(CGAL::midpoint(alg_s2.source(), alg_s2.target()));
-    // Alg_point_2 closest_pt1 = closest_point<Alg_kernel>(midpoint, pts_s1);
-    // Alg_point_2 closest_pt2 = closest_point<Alg_kernel>(midpoint, pts_s2);
-
     Alg_point_2 moved_point;
     Algebraic displacement = compare_above ? move_by : -move_by;
     if (!cv.is_vertical()) {
