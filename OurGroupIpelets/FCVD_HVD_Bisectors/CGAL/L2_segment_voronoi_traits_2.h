@@ -1077,13 +1077,27 @@ public:
            *   of the two segments or of two endpoints of the two segments */
           Ray_info start_ray_info = ray_info_list.front();
           Ray_info end_ray_info = ray_info_list.back();
-          Rat_point_2 start_pt = start_ray_info.first.source();
 
+          Alg_point_2 start_pt = to_alg(start_ray_info.first.source());
           Alg_point_2 end_pt = to_alg(end_ray_info.first.source());
-          Alg_point_2 curr_pt = to_alg(start_pt);
+
           Alg_direction_2 curr_direction = to_alg(
             - start_ray_info.first.direction()
           );
+
+          /* call big private function that iteratively constructs the parts of
+           * the bisector of s1 and s2 starting from a start point going in a
+           * given direction and finishing at an end point */
+          o = this->construct_bisector_from_point_to_point(
+            s1, s2,                 // the two segments
+            o,                      // OutputIterator
+            start_pt, end_pt,       // construct bisector from start to end
+            curr_direction,         // initial direction, updated
+            alg_delimiter_lines,    // delimiter lines of s1 and s2
+            delimiter_lines_vector  // same but as vector and in rational
+          );
+
+          Alg_point_2 curr_pt = start_pt;
 
           /* "walk" through the bisector to find all parts until every piece has
            * been created and added to the OutputIterator o */
@@ -1280,6 +1294,21 @@ public:
 
       } // end of segments are not the same
     }
+
+  private:
+
+    template <class OutputIterator>
+    OutputIterator construct_bisector_from_point_to_point(
+      Rat_segment_2 s1, Rat_segment_2 s2,
+      OutputIterator o,
+      Alg_point_2 start_pt, Alg_point_2 end_pt,
+      Alg_direction_2 curr_direction,
+      Alg_delimiter_lines alg_delimiter_lines,
+      std::vector<Rat_line_2> delimiter_lines_vector
+    ) const {
+      return o; //TODO fake (implementation is a literal copy-paste though)
+    }
+
   };
 
   Construct_projected_intersections_2
