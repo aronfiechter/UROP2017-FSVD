@@ -919,6 +919,18 @@ public:
       AK_to_DK to_dbl;
       DK_to_RK to_rat;
 
+      /* this is a very bad solution, and will need to be changed, for example
+       * by using Arr_algebraic_segment_traits_2 that supports both unbounded
+       * and bounded curves (also left-/right-unbounded) */
+      /* save boundary for intersection with it */
+      RT far_l = 10000;
+      std::vector<Rat_segment_2> border = {
+        Rat_segment_2(Rat_point_2(-far_l, -far_l), Rat_point_2(far_l, -far_l)),
+        Rat_segment_2(Rat_point_2(far_l, -far_l), Rat_point_2(far_l, far_l)),
+        Rat_segment_2(Rat_point_2(far_l, far_l), Rat_point_2(-far_l, far_l)),
+        Rat_segment_2(Rat_point_2(-far_l, far_l), Rat_point_2(-far_l, -far_l))
+      };
+
       /* if the two segments are the same (also if one is just the other but
        * reversed), their distance function is the same, so there is no
        * intersection */
@@ -982,15 +994,6 @@ public:
         /* also save segment endpoints "generating" these lines */
         std::vector<Rat_point_2> segment_endpoints = {
           s1.source(), s1.target(), s2.source(), s2.target()
-        };
-
-        /* save boundary for intersection with it */
-        RT far_l = 10000;
-        std::vector<Rat_segment_2> border = {
-          Rat_segment_2(Rat_point_2(-far_l, -far_l), Rat_point_2(far_l, -far_l)),
-          Rat_segment_2(Rat_point_2(far_l, -far_l), Rat_point_2(far_l, far_l)),
-          Rat_segment_2(Rat_point_2(far_l, far_l), Rat_point_2(-far_l, far_l)),
-          Rat_segment_2(Rat_point_2(-far_l, far_l), Rat_point_2(-far_l, -far_l))
         };
 
         /* then compute the 2 or 4 unbounded edges of the bisector.
