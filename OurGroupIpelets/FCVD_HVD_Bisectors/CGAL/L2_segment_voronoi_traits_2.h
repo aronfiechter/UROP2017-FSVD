@@ -894,9 +894,9 @@ public:
   class Construct_projected_intersections_2 {
   public:
     template <class OutputIterator>
-      OutputIterator operator()(const Xy_monotone_surface_3& s1,
-                                const Xy_monotone_surface_3& s2,
-                                OutputIterator o) const {
+    OutputIterator operator()(const Xy_monotone_surface_3& s1,
+                              const Xy_monotone_surface_3& s2,
+                              OutputIterator o) const {
 
       //TODO remove
       std::cout << "Finding bisector of s1 = "
@@ -1274,7 +1274,7 @@ public:
         std::cout << "Created bisector of s1 = "
                   << s1 << " and s2 = " << s2 << std::endl
         ;
-        
+
         /* return one past the end iterator */
         return o;
 
