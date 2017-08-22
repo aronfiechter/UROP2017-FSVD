@@ -1303,26 +1303,30 @@ public:
   class Compare_z_at_xy_3 {
   public:
     Comparison_result operator()(const Point_2& p,
-                                 const Xy_monotone_surface_3& h1,
-                                 const Xy_monotone_surface_3& h2) const {
+                                 const Xy_monotone_surface_3& s1,
+                                 const Xy_monotone_surface_3& s2) const {
       printf("\n ---> Compare at point\n");
-      return CGAL::compare(sqdistance(p, h1), sqdistance(p, h2));
+      return CGAL::compare(sqdistance(p, s1), sqdistance(p, s2));
     }
 
     Comparison_result operator()(const X_monotone_curve_2& cv,
-                                 const Xy_monotone_surface_3& h1,
-                                 const Xy_monotone_surface_3& h2) const {
+                                 const Xy_monotone_surface_3& s1,
+                                 const Xy_monotone_surface_3& s2) const {
       printf("\n ---> Compare at cv\n");
       /* compare using the middle point */
       Point_2 p = construct_middle_point(cv);
-      return this->operator()(p, h1, h2);
+      return this->operator()(p, s1, s2);
     }
 
-    Comparison_result operator()(const Xy_monotone_surface_3& h1,
-                                 const Xy_monotone_surface_3& h2) const {
+    Comparison_result operator()(const Xy_monotone_surface_3& s1,
+                                 const Xy_monotone_surface_3& s2) const {
       printf("\n ---> Compare not intersecting\n");
       /* if the two unbounded surfaces do not intersect, then they must
        * represent the same segment's distance function */
+      CGAL_assertion_msg(
+        (s1 == s2 || s1 == Rat_segment_2(s2.target(), s2.source())),
+        "Distance function surfaces do not intersect but they are not the same"
+      );
       return CGAL::EQUAL; // they are literally the same surface
     }
   };
