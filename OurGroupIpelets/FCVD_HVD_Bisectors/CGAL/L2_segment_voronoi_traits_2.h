@@ -900,6 +900,12 @@ public:
       OutputIterator operator()(const Xy_monotone_surface_3& s1,
                                 const Xy_monotone_surface_3& s2,
                                 OutputIterator o) const {
+
+      //TODO remove
+      std::cout << "Finding bisector of s1 = "
+                << s1 << " and s2 = " << s2 << " --- "
+      ;
+
       /* create converter functors to convert from:
        * - Rational to Algebraic
        * - Algebraic to Cartesian<double>
@@ -1423,11 +1429,11 @@ public:
     std::cout << " Moved midpoint to pt(" << moved_point << ")" << std::endl;
 
     if (sqdistance(moved_point, s1) < sqdistance(moved_point, s2)) {
-      std::cout << " Returning CGAL::SMALLER." << std::endl;
+      std::cout << "Returning CGAL::SMALLER." << std::endl;
       return CGAL::SMALLER;
     }
     else {
-      std::cout << " Returning CGAL::LARGER." << std::endl;
+      std::cout << "Returning CGAL::LARGER." << std::endl;
       return CGAL::LARGER;
     }
 
