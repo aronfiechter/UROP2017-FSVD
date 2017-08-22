@@ -937,6 +937,60 @@ public:
       if (s1 == s2 || s1 == Rat_segment_2(s2.target(), s2.source())) {
         return o;
       }
+      /* if one of the segments is degenerate, the bisector is a parabola and
+       * two rays, if instead they are both degenerate (that is, they are two
+       * two points) the bisector is a line */
+      else if (s1.is_degenerate() || s2.is_degenerate()) {
+        /* line */
+        if (s1.is_degenerate() && s2.is_degenerate()) {
+          Rat_line_2 bisector = CGAL::bisector(s1.source(), s2.source());
+          Rat_point_2 start, end;
+          bool assigned_start = false, assigned_end = false;
+          for (auto& segment : border) {
+            if (CGAL::do_intersect(bisector, segment)) {
+              if (assigned_start && !assigned_end) {
+                assigned_end = true;
+                CGAL_assertion_msg(
+                  CGAL::assign(end, CGAL::intersection(bisector, segment)),
+                  "Could not assing end."
+                );
+              }
+              else if (!assigned_start && !assigned_end) {
+                assigned_start = true;
+                CGAL_assertion_msg(
+                  CGAL::assign(start, CGAL::intersection(bisector, segment)),
+                  "Could not assing start."
+                );
+              }
+            }
+          }
+          Rat_segment_2 seg_bisector(start, end);
+          X_monotone_curve_2 x_seg_bisector = X_monotone_curve_2(seg_bisector);
+          *o++ = CGAL::make_object(
+            Intersection_curve(x_seg_bisector, 0)
+          );
+        }
+        /* parabolic arc and two rays */
+        else {
+          /* determine which one is the non-degenerate segment */
+          bool s1_is_degenerate = s1.is_degenerate();
+          CGAL_assertion_msg(
+            (s1_is_degenerate != s2.is_degenerate()),
+            "One segment should be degenerate and the other one not."
+          );
+
+          /* get directrix and focus */
+          Rat_line_2 directrix =
+            s1_is_degenerate ? s2.supporting_line() : s1.supporting_line()
+          ;
+          Rat_point_2 focus = s1_is_degenerate ? s1.source() : s2.source();
+
+          /* make parabola */
+          // *o++ = CGAL::make_object(
+          //   Intersection_curve(curve_seg, 0)
+          // );
+        }
+      }
       /* if the two segments are not the same, compute all parts of their plane
        * bisector */
       else {
