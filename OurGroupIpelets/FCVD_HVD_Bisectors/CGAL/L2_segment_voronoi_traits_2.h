@@ -861,7 +861,7 @@ public:
       // return o; // the iterator remains empty
 
       /* save boundary for intersection with it */
-      RT far_l = 2000;
+      RT far_l = 10000;
       std::vector<Rat_segment_2> border = {
         Rat_segment_2(Rat_point_2(-far_l, -far_l), Rat_point_2(far_l, -far_l)),
         Rat_segment_2(Rat_point_2(far_l, -far_l), Rat_point_2(far_l, far_l)),
@@ -892,9 +892,6 @@ public:
 /* ########################################################################## */
 
   class Construct_projected_intersections_2 {
-  private:
-      Rational UNBOUNDED_RAY_LENGTH = Rational(10, 1);
-
   public:
     template <class OutputIterator>
       OutputIterator operator()(const Xy_monotone_surface_3& s1,
@@ -982,7 +979,7 @@ public:
         };
 
         /* save boundary for intersection with it */
-        RT far_l = 2000;
+        RT far_l = 10000;
         std::vector<Rat_segment_2> border = {
           Rat_segment_2(Rat_point_2(-far_l, -far_l), Rat_point_2(far_l, -far_l)),
           Rat_segment_2(Rat_point_2(far_l, -far_l), Rat_point_2(far_l, far_l)),
@@ -1039,30 +1036,27 @@ public:
              * can be saved as an X_monotone_curve_2, because the Conic_traits
              * require that curves are bounded */
             Rat_point_2 start_point = ray_info.first.source();
-            // Rat_point_2 end_point = start_point
-            //   + UNBOUNDED_RAY_LENGTH * ray_info.first.direction().vector();
             Rat_point_2 end_point;
             bool assigned = false;
             for (auto& seg : border) {
               if (assigned) break;
-              if (CGAL::do_intersect(ray_info.first, seg)) {
-                if (!assigned) {
-                  assigned = true;
-                  CGAL_assertion_msg(
-                    CGAL::assign(
-                      end_point,
-                      CGAL::intersection(ray_info.first, seg)
-                    ),
-                    "Could not assing end."
-                  );
-                }
+              else if (CGAL::do_intersect(ray_info.first, seg) && !assigned) {
+                assigned = true;
+                CGAL_assertion_msg(
+                  CGAL::assign(
+                    end_point,
+                    CGAL::intersection(ray_info.first, seg)
+                  ),
+                  "Could not assing end."
+                );
               }
             }
 
+            CGAL_assertion_msg(assigned, "Could not find ray end_point.");
             Rat_segment_2 seg(start_point, end_point);
             X_monotone_curve_2 curve_seg(seg);
             *o++ = CGAL::make_object(
-              Intersection_curve(curve_seg, 1)
+              Intersection_curve(curve_seg, 0)
             );
           }
         }
