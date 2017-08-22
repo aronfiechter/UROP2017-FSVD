@@ -643,7 +643,7 @@ private:
     std::vector<CGAL::Object> pre_x_mono_curves;
     make_x_monotone(cv, std::back_inserter(pre_x_mono_curves));
 
-    /* cast all CGAL::Objects into X_monotone_segment_2 and add to list */
+    /* cast all CGAL::Objects into X_monotone_curve_2 and add to list */
     for(size_t i = 0; i < pre_x_mono_curves.size(); i++ ) {
       X_monotone_curve_2 curr;
       bool check = CGAL::assign(curr, pre_x_mono_curves[i]);
