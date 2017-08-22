@@ -1305,12 +1305,14 @@ public:
     Comparison_result operator()(const Point_2& p,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
+      printf("\n ---> Compare at point\n");
       return CGAL::compare(sqdistance(p, h1), sqdistance(p, h2));
     }
 
     Comparison_result operator()(const X_monotone_curve_2& cv,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
+      printf("\n ---> Compare at cv\n");
       /* compare using the middle point */
       Point_2 p = construct_middle_point(cv);
       return this->operator()(p, h1, h2);
@@ -1318,6 +1320,7 @@ public:
 
     Comparison_result operator()(const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const {
+      printf("\n ---> Compare not intersecting\n");
       /* if the two unbounded surfaces do not intersect, then they must
        * represent the same segment's distance function */
       return CGAL::EQUAL; // they are literally the same surface
@@ -1326,6 +1329,7 @@ public:
 
   Compare_z_at_xy_3 compare_z_at_xy_3_object() const
   {
+    printf("\n#################################\nCreated Compare_z_at_xy_3 obj#################################\n");
     return Compare_z_at_xy_3();
   }
 
