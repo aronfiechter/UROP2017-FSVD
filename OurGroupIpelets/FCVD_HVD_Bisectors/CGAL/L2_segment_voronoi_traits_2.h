@@ -1105,182 +1105,6 @@ public:
             alg_delimiter_lines,    // delimiter lines of s1 and s2
             delimiter_lines_vector  // same but as vector and in rational
           );
-
-          Alg_point_2 curr_pt = start_pt;
-
-          /* "walk" through the bisector to find all parts until every piece has
-           * been created and added to the OutputIterator o */
-          while (curr_pt != end_pt) {
-            /* find next intersection with delimiter_lines when going in the
-             * direction saved in "curr_direction", then find a middle point
-             * between curr_pt and that intersection */
-            Alg_point_2 approximate_next_intersection = find_next_intersection(
-              curr_direction, curr_pt, delimiter_lines_vector
-            );
-            Alg_point_2 midpoint = CGAL::midpoint(
-              curr_pt,
-              approximate_next_intersection
-            );
-
-            /* to store the true next intersection and the next direction */
-            Alg_point_2 actual_next_intersection;
-            Alg_direction_2 next_direction;
-
-            /* determine where this middle point is relative to the two segments
-             * s1 and s2, and create the correct piece of the bisector. The
-             * objects o1 and o2 that are passed will store in the cases:
-             * - PARABOLIC_ARC:       o1 = focus/directrix  o2 = focus/directrix
-             * - SUPP_LINE_BISECTOR:  o1 = supp_line1,      o2 = supp_line2
-             * - ENDPOINT_BISECTOR:   o1 = endpoint_1,      o2 = endpoint_2   */
-            Object o1, o2;
-            Curve_2 piece_of_bisector;
-            switch (find_position(midpoint, alg_delimiter_lines, s1, s2, o1, o2)) {
-
-              case PARABOLIC_ARC: {
-                /* extract directrix and focus */
-                Rat_line_2 directrix; Rat_point_2 focus;
-                if (CGAL::assign(directrix, o1)) {
-                  CGAL_assertion(CGAL::assign(focus, o2));
-                }
-                else {
-                  CGAL_assertion(CGAL::assign(focus, o1));
-                  CGAL_assertion(CGAL::assign(directrix, o2));
-                }
-
-                /* keep or invert directrix based on curr_direction */
-                if (!generally_same_direction(
-                  to_alg(directrix), curr_direction
-                )) {
-                  directrix = directrix.opposite();
-                }
-
-                /* create parabola */
-                Parabola supporting_conic(directrix, focus);
-                CGAL_assertion(supporting_conic.has_on(curr_pt));
-
-                /* find actual next intersection of parabola */
-                actual_next_intersection = supporting_conic.next_intersection(
-                  curr_pt, delimiter_lines_vector
-                );
-
-                /* get parabolic arc, save as Curve_2 in "piece_of_bisector" */
-                piece_of_bisector = supporting_conic.construct_parabolic_arc(
-                  curr_pt,
-                  actual_next_intersection
-                );
-
-                Alg_line_2 tangent = supporting_conic.tangent_at_point(
-                  actual_next_intersection
-                );
-                next_direction = tangent.direction();
-
-                break;
-              }
-
-              case SUPP_LINE_BISECTOR: {
-                /* extract two supporting lines */
-                Rat_line_2 supp_line1; Rat_line_2 supp_line2;
-                CGAL_assertion(CGAL::assign(supp_line1, o1));
-                CGAL_assertion(CGAL::assign(supp_line2, o2));
-
-                /* orient supporting lines according to curr_direction, get
-                 * bisector, assert that curr_pt is on it and get direction */
-                if (!generally_same_direction(
-                  to_alg(supp_line1), curr_direction
-                )) {
-                  supp_line1 = supp_line1.opposite();
-                }
-                if (!generally_same_direction(
-                  to_alg(supp_line2), curr_direction
-                )) {
-                  supp_line2 = supp_line2.opposite();
-                }
-                Alg_line_2 supp_line_bisector = CGAL::bisector(
-                  to_alg(supp_line1),
-                  to_alg(supp_line2)
-                );
-                CGAL_assertion_msg(
-                  supp_line_bisector.has_on(curr_pt),
-                  "The point curr_pt should be on the bisector, but it is not"
-                );
-
-                /* save next_direction, find actual next intersection */
-                next_direction = supp_line_bisector.direction();
-                actual_next_intersection = find_next_intersection(
-                  next_direction, curr_pt, delimiter_lines_vector
-                );
-
-                /* get segment, save as Curve_2 in "piece_of_bisector" */
-                Rat_segment_2 segment(to_rat(to_dbl(
-                  Alg_segment_2(curr_pt, actual_next_intersection)
-                )));
-                piece_of_bisector = Curve_2(segment);
-                /* the segment is slightly approximated when saved in the
-                 * OutputIterator o, but this has to be done because the
-                 * `Arr_conic_traits_2` class does not support bounded curves
-                 * supported by Algebraic coefficients */
-
-                break;
-              }
-
-              case ENDPOINT_BISECTOR: {
-                /* extract two endpoints */
-                Rat_point_2 endpoint1; Rat_point_2 endpoint2;
-                CGAL_assertion(CGAL::assign(endpoint1, o1));
-                CGAL_assertion(CGAL::assign(endpoint2, o2));
-
-                /* create bisector, orient it according to curr_direction */
-                Alg_line_2 endpoint_bisector = to_alg(Rat_line_2(
-                  endpoint1, endpoint2
-                )).perpendicular(to_alg(CGAL::midpoint(endpoint1, endpoint2)));
-                if (!generally_same_direction(
-                  endpoint_bisector, curr_direction
-                )) {
-                  endpoint_bisector = endpoint_bisector.opposite();
-                }
-
-                /* assert curr_pt is on bisector */
-                CGAL_assertion(endpoint_bisector.has_on(curr_pt));
-
-                /* save next_direction, find actual next intersection */
-                next_direction = endpoint_bisector.direction();
-                actual_next_intersection = find_next_intersection(
-                  next_direction, curr_pt, delimiter_lines_vector
-                );
-
-                /* get segment, save as Curve_2 in "piece_of_bisector" */
-                Rat_segment_2 segment(to_rat(to_dbl(
-                  Alg_segment_2(curr_pt, actual_next_intersection)
-                )));
-                piece_of_bisector = Curve_2(segment);
-                /* the segment is slightly approximated when saved in the
-                 * OutputIterator o, but this has to be done because the
-                 * `Arr_conic_traits_2` class does not support bounded curves
-                 * supported by Algebraic coefficients */
-
-                break;
-              }
-
-              default: break; // should never happen
-            }
-
-            /* add the piece of the bisector to the OutputIterator o, update the
-             * curr_pt to be the next intersection found (corrected when
-             * determining the actual correct piece of the bisector), update the
-             * curr_direction to be the direction of the bisector at curr_pt */
-            std::vector<X_monotone_curve_2> arc_x_mono_parts;
-            make_curve_2_into_many_x_monotone_curve_2(
-              piece_of_bisector,
-              arc_x_mono_parts
-            );
-            for (auto& x_mono_curve : arc_x_mono_parts) {
-              *o++ = CGAL::make_object(
-                Intersection_curve(x_mono_curve, 0) //TODO multiplicity?
-              );
-            }
-            curr_pt = actual_next_intersection;
-            curr_direction = next_direction;
-          }
         } // end of segments do not intersect
 
         /* if instead they do intersect, assert it, then proceed to computing
@@ -1315,10 +1139,197 @@ public:
       Alg_delimiter_lines alg_delimiter_lines,
       std::vector<Rat_line_2> delimiter_lines_vector
     ) const {
-      return o; //TODO fake (implementation is a literal copy-paste though)
-    }
+      /* create converter functors to convert from:
+       * - Rational to Algebraic
+       * - Algebraic to Cartesian<double>
+       * - Cartesian<double> to Rational
+       * The last two are used together to convert by approximation from
+       * Algebraic to Rational */
+      RK_to_AK to_alg;
+      AK_to_DK to_dbl;
+      DK_to_RK to_rat;
 
-  };
+      /* rename start point */
+      Alg_point_2 curr_pt = start_pt;
+
+      /* "walk" through the bisector to find all parts until every piece has
+       * been created and added to the OutputIterator o */
+      while (curr_pt != end_pt) {
+        /* find next intersection with delimiter_lines when going in the
+         * direction saved in "curr_direction", then find a middle point
+         * between curr_pt and that intersection */
+        Alg_point_2 approximate_next_intersection = find_next_intersection(
+          curr_direction, curr_pt, delimiter_lines_vector
+        );
+        Alg_point_2 midpoint = CGAL::midpoint(
+          curr_pt,
+          approximate_next_intersection
+        );
+
+        /* to store the true next intersection and the next direction */
+        Alg_point_2 actual_next_intersection;
+        Alg_direction_2 next_direction;
+
+        /* determine where this middle point is relative to the two segments
+         * s1 and s2, and create the correct piece of the bisector. The
+         * objects o1 and o2 that are passed will store in the cases:
+         * - PARABOLIC_ARC:       o1 = focus/directrix  o2 = focus/directrix
+         * - SUPP_LINE_BISECTOR:  o1 = supp_line1,      o2 = supp_line2
+         * - ENDPOINT_BISECTOR:   o1 = endpoint_1,      o2 = endpoint_2   */
+        Object o1, o2;
+        Curve_2 piece_of_bisector;
+        switch (find_position(midpoint, alg_delimiter_lines, s1, s2, o1, o2)) {
+
+          case PARABOLIC_ARC: {
+            /* extract directrix and focus */
+            Rat_line_2 directrix; Rat_point_2 focus;
+            if (CGAL::assign(directrix, o1)) {
+              CGAL_assertion(CGAL::assign(focus, o2));
+            }
+            else {
+              CGAL_assertion(CGAL::assign(focus, o1));
+              CGAL_assertion(CGAL::assign(directrix, o2));
+            }
+
+            /* keep or invert directrix based on curr_direction */
+            if (!generally_same_direction(
+              to_alg(directrix), curr_direction
+            )) {
+              directrix = directrix.opposite();
+            }
+
+            /* create parabola */
+            Parabola supporting_conic(directrix, focus);
+            CGAL_assertion(supporting_conic.has_on(curr_pt));
+
+            /* find actual next intersection of parabola */
+            actual_next_intersection = supporting_conic.next_intersection(
+              curr_pt, delimiter_lines_vector
+            );
+
+            /* get parabolic arc, save as Curve_2 in "piece_of_bisector" */
+            piece_of_bisector = supporting_conic.construct_parabolic_arc(
+              curr_pt,
+              actual_next_intersection
+            );
+
+            Alg_line_2 tangent = supporting_conic.tangent_at_point(
+              actual_next_intersection
+            );
+            next_direction = tangent.direction();
+
+            break;
+          }
+
+          case SUPP_LINE_BISECTOR: {
+            /* extract two supporting lines */
+            Rat_line_2 supp_line1; Rat_line_2 supp_line2;
+            CGAL_assertion(CGAL::assign(supp_line1, o1));
+            CGAL_assertion(CGAL::assign(supp_line2, o2));
+
+            /* orient supporting lines according to curr_direction, get
+             * bisector, assert that curr_pt is on it and get direction */
+            if (!generally_same_direction(
+              to_alg(supp_line1), curr_direction
+            )) {
+              supp_line1 = supp_line1.opposite();
+            }
+            if (!generally_same_direction(
+              to_alg(supp_line2), curr_direction
+            )) {
+              supp_line2 = supp_line2.opposite();
+            }
+            Alg_line_2 supp_line_bisector = CGAL::bisector(
+              to_alg(supp_line1),
+              to_alg(supp_line2)
+            );
+            CGAL_assertion_msg(
+              supp_line_bisector.has_on(curr_pt),
+              "The point curr_pt should be on the bisector, but it is not"
+            );
+
+            /* save next_direction, find actual next intersection */
+            next_direction = supp_line_bisector.direction();
+            actual_next_intersection = find_next_intersection(
+              next_direction, curr_pt, delimiter_lines_vector
+            );
+
+            /* get segment, save as Curve_2 in "piece_of_bisector" */
+            Rat_segment_2 segment(to_rat(to_dbl(
+              Alg_segment_2(curr_pt, actual_next_intersection)
+            )));
+            piece_of_bisector = Curve_2(segment);
+            /* the segment is slightly approximated when saved in the
+             * OutputIterator o, but this has to be done because the
+             * `Arr_conic_traits_2` class does not support bounded curves
+             * supported by Algebraic coefficients */
+
+            break;
+          }
+
+          case ENDPOINT_BISECTOR: {
+            /* extract two endpoints */
+            Rat_point_2 endpoint1; Rat_point_2 endpoint2;
+            CGAL_assertion(CGAL::assign(endpoint1, o1));
+            CGAL_assertion(CGAL::assign(endpoint2, o2));
+
+            /* create bisector, orient it according to curr_direction */
+            Alg_line_2 endpoint_bisector = to_alg(Rat_line_2(
+              endpoint1, endpoint2
+            )).perpendicular(to_alg(CGAL::midpoint(endpoint1, endpoint2)));
+            if (!generally_same_direction(
+              endpoint_bisector, curr_direction
+            )) {
+              endpoint_bisector = endpoint_bisector.opposite();
+            }
+
+            /* assert curr_pt is on bisector */
+            CGAL_assertion(endpoint_bisector.has_on(curr_pt));
+
+            /* save next_direction, find actual next intersection */
+            next_direction = endpoint_bisector.direction();
+            actual_next_intersection = find_next_intersection(
+              next_direction, curr_pt, delimiter_lines_vector
+            );
+
+            /* get segment, save as Curve_2 in "piece_of_bisector" */
+            Rat_segment_2 segment(to_rat(to_dbl(
+              Alg_segment_2(curr_pt, actual_next_intersection)
+            )));
+            piece_of_bisector = Curve_2(segment);
+            /* the segment is slightly approximated when saved in the
+             * OutputIterator o, but this has to be done because the
+             * `Arr_conic_traits_2` class does not support bounded curves
+             * supported by Algebraic coefficients */
+
+            break;
+          }
+
+          default: break; // should never happen
+        }
+
+        /* add the piece of the bisector to the OutputIterator o, update the
+         * curr_pt to be the next intersection found (corrected when
+         * determining the actual correct piece of the bisector), update the
+         * curr_direction to be the direction of the bisector at curr_pt */
+        std::vector<X_monotone_curve_2> arc_x_mono_parts;
+        make_curve_2_into_many_x_monotone_curve_2(
+          piece_of_bisector,
+          arc_x_mono_parts
+        );
+        for (auto& x_mono_curve : arc_x_mono_parts) {
+          *o++ = CGAL::make_object(
+            Intersection_curve(x_mono_curve, 0) //TODO multiplicity?
+          );
+        }
+        curr_pt = actual_next_intersection;
+        curr_direction = next_direction;
+      }
+
+      /* return one past the end iterator */
+      return o;
+    }
+  }; // end of class Construct_projected_intersections_2
 
   Construct_projected_intersections_2
   construct_projected_intersections_2_object() const {
