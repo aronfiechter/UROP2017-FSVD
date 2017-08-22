@@ -557,6 +557,12 @@ private:
 
   /* Returns the squared distance between a point and a segment in L2 metric. */
   static Algebraic sqdistance(const Point_2& p, const Rat_segment_2& s) {
+    /* if segment is degenerate (a point), call other function */
+    if (s.is_degenerate()) {
+      RK_to_AK to_alg;
+      return sqdistance(p, to_alg(s.source()));
+    }
+
     /* find projection of p on supporting line of s */
     Alg_segment_2 alg_s(
       Alg_point_2(s.source().x(), s.source().y()),
