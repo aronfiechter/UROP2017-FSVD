@@ -1167,7 +1167,65 @@ public:
          * intersection is not by one or two endpoints (weak intersection) */
         else {
           CGAL_assertion(CGAL::do_intersect(s1, s2)); // they HAVE to intersect
-          CGAL_assertion(ray_info_list.size() == 4); //TODO correct for touching segments
+
+          //TODO add check for touching segments, maybe even before (also add
+          // check for three collinear points among the segments)
+
+          /* starting from the source of one unbounded ray and finishing at the
+           * source of the other, compute the rest of the bisector, consisting
+           * of:
+           * - parabolic arcs: when we are in the "area of influence" of the
+           *   interior of a segment and of one endpoint of the other
+           * - segments: when we are in the "area of influence" of the interiors
+           *   of the two segments or of two endpoints of the two segments
+           * Since in this case we have four rays, do this process twice. */
+          CGAL_assertion(ray_info_list.size() == 4);
+          Ray_info start_ray_info_one = ray_info_list.front();
+          ray_info_list.pop_front();
+          Ray_info start_ray_info_two = ray_info_list.front();
+          ray_info_list.pop_front();
+          Ray_info end_ray_info_one = ray_info_list.front();
+          ray_info_list.pop_front();
+          Ray_info end_ray_info_two = ray_info_list.front();
+          ray_info_list.pop_front();
+
+          CGAL_assertion_msg(
+            ray_info_list.empty(),
+            "There were more than 4 rays."
+          );
+
+          /* get start point, end point and direction for both cases */
+          Alg_point_2 start_pt_one = to_alg(start_ray_info_one.first.source());
+          Alg_point_2 end_pt_one = to_alg(end_ray_info_one.first.source());
+          Alg_direction_2 curr_direction_one = to_alg(
+            - start_ray_info_one.first.direction()
+          );
+          Alg_point_2 start_pt_two = to_alg(start_ray_info_two.first.source());
+          Alg_point_2 end_pt_two = to_alg(end_ray_info_two.first.source());
+          Alg_direction_2 curr_direction_two = to_alg(
+            - start_ray_info_two.first.direction()
+          );
+
+          /* call big private function that iteratively constructs the parts of
+           * the bisector of s1 and s2 starting from a start point going in a
+           * given direction and finishing at an end point. Do this two times,
+           * for both bisectors */
+          o = this->construct_bisector_from_point_to_point(
+            s1, s2,                   // the two segments
+            o,                        // OutputIterator
+            start_pt_one, end_pt_one, // construct bisector from start to end
+            curr_direction_one,        // initial direction, updated
+            alg_delimiter_lines,      // delimiter lines of s1 and s2
+            delimiter_lines_vector    // same but as vector and in rational
+          );
+          o = this->construct_bisector_from_point_to_point(
+            s1, s2,                   // the two segments
+            o,                        // OutputIterator
+            start_pt_two, end_pt_two, // construct bisector from start to end
+            curr_direction_two,        // initial direction, updated
+            alg_delimiter_lines,      // delimiter lines of s1 and s2
+            delimiter_lines_vector    // same but as vector and in rational
+          );
         } // end of segments intersect
 
 
@@ -1308,13 +1366,47 @@ public:
               next_direction, curr_pt, delimiter_lines_vector
             );
 
-            /* get segment, save as Curve_2 in "piece_of_bisector" */
-            Rat_segment_2 segment(to_rat(to_dbl(
-              Alg_segment_2(curr_pt, actual_next_intersection)
-            )));
-            piece_of_bisector = Curve_2(segment);
-            /* the segment is slightly approximated when saved in the
-             * OutputIterator o, but this has to be done because the
+            /* get bisector part, check if it intersects the two segments (this
+             * happens when the segments intersect) and if yes split it in two
+             * parts */
+            Alg_segment_2 bisector_part(curr_pt, actual_next_intersection);
+            if (CGAL::do_intersect(bisector_part, to_alg(s1))) {
+              /* must also intersect s2 */
+              CGAL_assertion(CGAL::do_intersect(bisector_part, to_alg(s2)));
+
+              /* should also intersect with s2 at exactly the same point */
+              Alg_point_2 segments_intersection_1, segments_intersection_2;
+              CGAL_assertion(CGAL::assign(
+                segments_intersection_1,
+                CGAL::intersection(bisector_part, to_alg(s1))
+              ));
+              CGAL_assertion(CGAL::assign(
+                segments_intersection_2,
+                CGAL::intersection(bisector_part, to_alg(s2))
+              ));
+              CGAL_assertion_msg(
+                (segments_intersection_1 == segments_intersection_2),
+                "The bisector should intersect the two segments exactly on the "
+                "intersection of the two segments."
+              );
+
+              /* add first part to OutputIterator o, save second part as Curve_2
+               * in "piece_of_bisector" */
+              Curve_2 first_piece_of_bisector(to_rat(to_dbl(
+                Alg_segment_2(curr_pt, segments_intersection_1)
+              )));
+              X_monotone_curve_2 x_mono_piece(first_piece_of_bisector);
+              *o++ = CGAL::make_object(Intersection_curve(x_mono_piece, 0));
+              piece_of_bisector = Curve_2(to_rat(to_dbl(
+                Alg_segment_2(segments_intersection_1, actual_next_intersection)
+              )));
+            }
+            else {
+              /* save as Curve_2 in "piece_of_bisector" */
+              piece_of_bisector = Curve_2(to_rat(to_dbl(bisector_part)));
+            }
+            /* in both cases the segment is slightly approximated when saved in
+             * the OutputIterator o, but this has to be done because the
              * `Arr_conic_traits_2` class does not support bounded curves
              * supported by Algebraic coefficients */
 
