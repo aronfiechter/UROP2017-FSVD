@@ -736,12 +736,9 @@ private:
       if (CGAL::do_intersect(to_alg(delimiter), ray)) {
         Alg_point_2 intersection;
         CGAL::assign(intersection, CGAL::intersection(to_alg(delimiter), ray));
-        std::cout << " ---> Found intersection" << intersection << " <--- ";
         if (intersection != start_pt) {
-          std::cout << "(added)";
           intersections.push_back(intersection);
         }
-        std::cout << '\n';
       }
     }
 
@@ -1118,7 +1115,7 @@ public:
                     end_point,
                     CGAL::intersection(ray_info.first, seg)
                   ),
-                  "Could not assing end."
+                  "Could not assign end."
                 );
               }
             }
@@ -1604,7 +1601,7 @@ public:
     char message[100];
     sprintf(
       message,
-      RED "Warning: " YELLOW "s1 and s2 are not equidistand, difference: %lf" RESET,
+      RED "Warning: " YELLOW "s1 and s2 are not equidistant, difference: %lf" RESET,
       CGAL::to_double(difference)
     );
     CGAL_warning_msg((difference == 0), message);
