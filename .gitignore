@@ -1,6 +1,9 @@
 # ignore folder containing save of old files
 old/
 
+# ignore Ipe drawings for testing
+Ipe_drawings/
+
 # ignore all build files. To build, look at documentation
 CMakeFiles/
 CMakeCache.txt
