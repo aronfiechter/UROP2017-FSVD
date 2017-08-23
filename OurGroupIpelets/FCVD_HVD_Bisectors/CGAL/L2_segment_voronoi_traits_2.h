@@ -593,7 +593,7 @@ private:
     typename K::Point_2 p,
     std::list<typename K::Point_2> points
   ) {
-    CGAL_precondition_msg(points.size() < 0, "List of points cannot be empty.");
+    CGAL_precondition_msg(points.size() > 0, "List of points cannot be empty.");
     typename K::Point_2 result;
     typename K::FT smaller_sqdistance = -1;
     for (auto& q : points) {
