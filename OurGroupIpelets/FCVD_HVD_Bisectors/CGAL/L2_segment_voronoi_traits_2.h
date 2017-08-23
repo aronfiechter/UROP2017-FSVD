@@ -724,7 +724,7 @@ private:
     Ray_info result;
     if (dir.dx() == 0) {
       std::cout << "Returning result from intersections_y: ";
-      result =  (dir.dy() > 0) ? intersections_y.back() : intersections_x.front();
+      result =  (dir.dy() > 0) ? intersections_y.back() : intersections_y.front();
     }
     else {
       std::cout << "Returning result from intersections_x: ";
