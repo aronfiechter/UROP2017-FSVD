@@ -1275,7 +1275,6 @@ public:
         /* find next intersection with delimiter_lines when going in the
          * direction saved in "curr_direction", then find a middle point
          * between curr_pt and that intersection */
-        printf("\nFinding approximate_next_intersection\n");
         Alg_point_2 approximate_next_intersection = find_next_intersection(
           curr_direction, curr_pt, delimiter_lines_vector
         );
