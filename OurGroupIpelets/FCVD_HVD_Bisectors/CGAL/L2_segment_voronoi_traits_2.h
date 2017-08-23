@@ -586,12 +586,14 @@ private:
   }
 
 
-  /* Given a point p and a list of points, return the closest point */
+  /* Given a point p and a list of points, return the closest point.
+   * Precondition (checked): the list of points is not empty */
   template <class K>
   static typename K::Point_2 closest_point(
     typename K::Point_2 p,
     std::list<typename K::Point_2> points
   ) {
+    CGAL_precondition_msg(points.size() < 0, "List of points cannot be empty.");
     typename K::Point_2 result;
     typename K::FT smaller_sqdistance = -1;
     for (auto& q : points) {
@@ -706,12 +708,30 @@ private:
 
     /* find the farthest point according to the direction of bisector */
     Rat_direction_2 dir = bisector.direction();
+    std::cout << "\n\n#######################################\n\n"
+              << "The direction is (" << dir << ")\n"
+              << "The points sorted by x are "
+              << "(" << intersections_x[0].first.source() << "), "
+              << "(" << intersections_x[1].first.source() << "), "
+              << "(" << intersections_x[2].first.source() << "), "
+              << "(" << intersections_x[3].first.source() << ")\n"
+              << "The points sorted by y are "
+              << "(" << intersections_y[0].first.source() << "), "
+              << "(" << intersections_y[1].first.source() << "), "
+              << "(" << intersections_y[2].first.source() << "), "
+              << "(" << intersections_y[3].first.source() << ")\n"
+    ;
+    Ray_info result;
     if (dir.dx() == 0) {
-      return (dir.dy() > 0) ? intersections_y.back() : intersections_x.front();
+      std::cout << "Returning result from intersections_y: ";
+      result =  (dir.dy() > 0) ? intersections_y.back() : intersections_x.front();
     }
     else {
-      return (dir.dx() > 0) ? intersections_x.back() : intersections_x.front();
+      std::cout << "Returning result from intersections_x: ";
+      result = (dir.dx() > 0) ? intersections_x.back() : intersections_x.front();
     }
+    std::cout << "(" << result.first.source() << ")" << '\n';
+    return result;
   }
 
 
@@ -1270,6 +1290,7 @@ public:
         /* find next intersection with delimiter_lines when going in the
          * direction saved in "curr_direction", then find a middle point
          * between curr_pt and that intersection */
+        printf("\nFinding approximate_next_intersection\n");
         Alg_point_2 approximate_next_intersection = find_next_intersection(
           curr_direction, curr_pt, delimiter_lines_vector
         );
