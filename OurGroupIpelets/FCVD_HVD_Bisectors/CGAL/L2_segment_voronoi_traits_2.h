@@ -677,7 +677,6 @@ private:
     Rat_line_2 bisector,
     Rat_delimiter_lines delimiters
   ) {
-
     /* get the four intersection points, add them to two lists, sort one by x
      * and the other one by y */
     Rat_point_2 p1; // intersection between bisector and delimiters[0][0]
@@ -708,30 +707,12 @@ private:
 
     /* find the farthest point according to the direction of bisector */
     Rat_direction_2 dir = bisector.direction();
-    std::cout << "\n\n#######################################\n\n"
-              << "The direction is (" << dir << ")\n"
-              << "The points sorted by x are "
-              << "(" << intersections_x[0].first.source() << "), "
-              << "(" << intersections_x[1].first.source() << "), "
-              << "(" << intersections_x[2].first.source() << "), "
-              << "(" << intersections_x[3].first.source() << ")\n"
-              << "The points sorted by y are "
-              << "(" << intersections_y[0].first.source() << "), "
-              << "(" << intersections_y[1].first.source() << "), "
-              << "(" << intersections_y[2].first.source() << "), "
-              << "(" << intersections_y[3].first.source() << ")\n"
-    ;
-    Ray_info result;
     if (dir.dx() == 0) {
-      std::cout << "Returning result from intersections_y: ";
-      result =  (dir.dy() > 0) ? intersections_y.back() : intersections_y.front();
+      return (dir.dy() > 0) ? intersections_y.back() : intersections_y.front();
     }
     else {
-      std::cout << "Returning result from intersections_x: ";
-      result = (dir.dx() > 0) ? intersections_x.back() : intersections_x.front();
+      return dir.dx() > 0) ? intersections_x.back() : intersections_x.front();
     }
-    std::cout << "(" << result.first.source() << ")" << '\n';
-    return result;
   }
 
 
@@ -755,9 +736,16 @@ private:
       if (CGAL::do_intersect(to_alg(delimiter), ray)) {
         Alg_point_2 intersection;
         CGAL::assign(intersection, CGAL::intersection(to_alg(delimiter), ray));
-        if (intersection != start_pt) intersections.push_back(intersection);
+        std::cout << " ---> Found intersection" << intersection << " <--- ";
+        if (intersection != start_pt) {
+          std::cout << "(added)";
+          intersections.push_back(intersection);
+        }
+        std::cout << '\n';
       }
     }
+
+    CGAL_assertion_msg(intersections.size() > 0, "There must be intersections");
 
     /* all intersections are in the correct direction because we used a ray
      * starting from start_pt, so return the closest one */
@@ -1290,6 +1278,7 @@ public:
         /* find next intersection with delimiter_lines when going in the
          * direction saved in "curr_direction", then find a middle point
          * between curr_pt and that intersection */
+        printf("\nFinding approximate_next_intersection\n");
         Alg_point_2 approximate_next_intersection = find_next_intersection(
           curr_direction, curr_pt, delimiter_lines_vector
         );
