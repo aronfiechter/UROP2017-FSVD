@@ -1579,7 +1579,7 @@ public:
     Algebraic difference = sqdistance(midpoint, s1) - sqdistance(midpoint, s2);
 
     std::cout << std::endl << "##############################" << std::endl;
-    std::cout << "Compare s1[" << s1 << "] and s2[" << s2 << "] "
+    std::cout << "# Compare s1[" << s1 << "] and s2[" << s2 << "] "
               << (compare_above ? "above" : "below") << " cv=[ "
               << cv.r() << "x^2 + "
               << cv.s() << "y^2 + "
@@ -1589,7 +1589,7 @@ public:
               << cv.w() << std::endl
     ;
 
-    std::cout << "midpoint(" << midpoint << ") , ";
+    std::cout << "# midpoint(" << midpoint << ") , ";
 
     /* print warning if necessary */
     /* colour */
@@ -1625,11 +1625,15 @@ public:
     std::cout << " Moved midpoint to pt(" << moved_point << ")" << std::endl;
 
     if (sqdistance(moved_point, s1) < sqdistance(moved_point, s2)) {
-      std::cout << "Returning CGAL::SMALLER." << std::endl;
+      std::cout << "# Returning CGAL::SMALLER." << std::endl
+                << "##############################" << std::endl
+      ;
       return CGAL::SMALLER;
     }
     else {
-      std::cout << "Returning CGAL::LARGER." << std::endl;
+      std::cout << "# Returning CGAL::LARGER." << std::endl
+                << "##############################" << std::endl
+      ;
       return CGAL::LARGER;
     }
 
