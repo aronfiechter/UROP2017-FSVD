@@ -708,12 +708,30 @@ private:
 
     /* find the farthest point according to the direction of bisector */
     Rat_direction_2 dir = bisector.direction();
+    std::cout << "\n\n#######################################\n\n"
+              << "The direction is (" << dir << ")\n"
+              << "The points sorted by x are "
+              << "(" << intersections_x[0].first.source() << "), "
+              << "(" << intersections_x[1].first.source() << "), "
+              << "(" << intersections_x[2].first.source() << "), "
+              << "(" << intersections_x[3].first.source() << ")\n"
+              << "The points sorted by y are "
+              << "(" << intersections_y[0].first.source() << "), "
+              << "(" << intersections_y[1].first.source() << "), "
+              << "(" << intersections_y[2].first.source() << "), "
+              << "(" << intersections_y[3].first.source() << ")\n"
+    ;
+    Ray_info result;
     if (dir.dx() == 0) {
-      return (dir.dy() > 0) ? intersections_y.back() : intersections_y.front();
+      std::cout << "Returning result from intersections_y: ";
+      result =  (dir.dy() > 0) ? intersections_y.back() : intersections_y.front();
     }
     else {
-      return (dir.dx() > 0) ? intersections_x.back() : intersections_x.front();
+      std::cout << "Returning result from intersections_x: ";
+      result = (dir.dx() > 0) ? intersections_x.back() : intersections_x.front();
     }
+    std::cout << "(" << result.first.source() << ")" << '\n';
+    return result;
   }
 
 
