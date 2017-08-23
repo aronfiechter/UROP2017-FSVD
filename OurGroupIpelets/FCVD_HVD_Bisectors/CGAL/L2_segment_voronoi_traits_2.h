@@ -711,7 +711,7 @@ private:
       return (dir.dy() > 0) ? intersections_y.back() : intersections_y.front();
     }
     else {
-      return dir.dx() > 0) ? intersections_x.back() : intersections_x.front();
+      return (dir.dx() > 0) ? intersections_x.back() : intersections_x.front();
     }
   }
 
