@@ -165,7 +165,8 @@ public:
   boost::function_output_iterator<Cluster_grabber<output_iterator> >
   cluster_grabber(output_iterator it){
     return boost::make_function_output_iterator(
-      Cluster_grabber<output_iterator>(it));
+      Cluster_grabber<output_iterator>(it)
+    );
   }
 
 private:
@@ -351,12 +352,14 @@ void bisectorIpelet::protected_run(int fn) {
         std::list<Cluster_2>::iterator clusterit;
         for (clusterit = cluster_list.begin();
              clusterit != cluster_list.end();
-             clusterit++) {
+             clusterit++
+        ) {
           VD_Cluster_2 tempcluster;
           Cluster_2::Vertex_iterator it;
           for (it = clusterit->vertices_begin();
                it != clusterit->vertices_end();
-               it++) {
+               it++
+          ) {
             tempcluster.push_back(VD_Point_2(it->x(), it->y()));
           } // individual cluster for end
           vd_cluster_list.push_back(tempcluster);
@@ -383,7 +386,8 @@ void bisectorIpelet::protected_run(int fn) {
           Cluster_2::Vertex_iterator it;
           for (it = clusterit->vertices_begin();
                it != clusterit->vertices_end();
-               it++) {
+               it++
+          ) {
             vd_pt_list.push_back(VD_Point_2(it->x(), it->y()));
           }
         }
@@ -472,7 +476,7 @@ void bisectorIpelet::protected_run(int fn) {
       Ray_2 r1(firstpt, pcl.get_incoming());
       draw_in_ipe(r1);
       Inf_bis::Polychainline::Vertex_const_iterator it2 = it1+1;
-      for(; it2!=pcl.vertices_end(); ++it1, ++it2) {
+      for (; it2!=pcl.vertices_end(); ++it1, ++it2) {
         draw_in_ipe(Segment_2(*it1, *it2));
       }
       draw_in_ipe(Ray_2(*it1, pcl.get_outgoing()));
@@ -497,7 +501,7 @@ void bisectorIpelet::protected_run(int fn) {
     Point_2 pt = *it2;
     draw_in_ipe(Ray_2(pt, pcl.get_incoming()));
     Inf_bis::Polychainline::Vertex_const_iterator it3 = it2+1;
-    for(; it3!=pcl.vertices_end(); ++it2, ++it3) {
+    for (; it3!=pcl.vertices_end(); ++it2, ++it3) {
       draw_in_ipe(Segment_2(*it2, *it3));
     }
     draw_in_ipe(Ray_2(*it2, pcl.get_outgoing()));
@@ -520,7 +524,6 @@ void bisectorIpelet::protected_run(int fn) {
       ++ptIt;
       Point_2 q = *ptIt;
       sq = Site_2::construct_site_2(q);
-
     }
     //PS and SP
     else if (pt_list.size() == 1 and sg_list.size() == 1) {
@@ -543,7 +546,7 @@ void bisectorIpelet::protected_run(int fn) {
     Point_2 pt = *it2;
     draw_in_ipe(Ray_2(pt, pcl.get_incoming()));
     Inf_bis::Polychainline::Vertex_const_iterator it3 = it2+1;
-    for(; it3!=pcl.vertices_end(); ++it2, ++it3) {
+    for (; it3!=pcl.vertices_end(); ++it2, ++it3) {
       draw_in_ipe(Segment_2(*it2, *it3));
     }
     draw_in_ipe(Ray_2(*it2, pcl.get_outgoing()));
@@ -554,51 +557,77 @@ void bisectorIpelet::protected_run(int fn) {
   if (fn == 4) {
     VD_Envelope_diagram_2 *m_envelope_diagram;
     m_envelope_diagram = new VD_Envelope_diagram_2();
-    CGAL::lower_envelope_3
-      (vd_pt_list.begin(), vd_pt_list.end(), *m_envelope_diagram);
+    CGAL::lower_envelope_3(
+      vd_pt_list.begin(),
+      vd_pt_list.end(),
+      *m_envelope_diagram
+    );
 
     //computes the bounding box
-    VD_Point_2 bottom_left (bbox.min().x(), bbox.min().y());
-    VD_Point_2 top_right (bbox.max().x(), bbox.max().y());
+    VD_Point_2 bottom_left(bbox.min().x(), bbox.min().y());
+    VD_Point_2 top_right(bbox.max().x(), bbox.max().y());
 
-    for(VD_Envelope_diagram_2::Vertex_const_iterator vit =
+    for (VD_Envelope_diagram_2::Vertex_const_iterator vit =
           m_envelope_diagram->vertices_begin();
-        vit != m_envelope_diagram->vertices_end();
-        vit++) {
-        VD_Point_2 vp = VD_Point_2(vit->point());
-      if(CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER) bottom_left = VD_Point_2(vp.x(), bottom_left.y());
-      if(CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER) bottom_left = VD_Point_2(bottom_left.x(), vp.y());
-      if(CGAL::compare(vp.x(), top_right.x()) == CGAL::LARGER) top_right = VD_Point_2(vp.x(), top_right.y());
-      if(CGAL::compare(vp.y(), top_right.y()) == CGAL::LARGER) top_right = VD_Point_2(top_right.x(), vp.y());
+         vit != m_envelope_diagram->vertices_end();
+         vit++
+    ) {
+      VD_Point_2 vp = VD_Point_2(vit->point());
+      if (CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
+        bottom_left = VD_Point_2(vp.x(), bottom_left.y());
+      if (CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER)
+        bottom_left = VD_Point_2(bottom_left.x(), vp.y());
+      if (CGAL::compare(vp.x(), top_right.x()) == CGAL::LARGER)
+        top_right = VD_Point_2(vp.x(), top_right.y());
+      if (CGAL::compare(vp.y(), top_right.y()) == CGAL::LARGER)
+        top_right = VD_Point_2(top_right.x(), vp.y());
 
        //if one wants to display vertices of the VD as well, that's it
       //Point_2 p (to_double(vp.x()), to_double(vp.y()));
       //draw_in_ipe(p);
     }
 
-    Point_2 bl (to_double(bottom_left.x()), to_double(bottom_left.y()));
-    Point_2 tr (to_double(top_right.x()), to_double(top_right.y()));
+    Point_2 bl(to_double(bottom_left.x()), to_double(bottom_left.y()));
+    Point_2 tr(to_double(top_right.x()), to_double(top_right.y()));
 
     Kernel::FT incr_len= 50;
 
     bbox = Iso_rectangle_2(
-                  bl + Kernel::Vector_2(-incr_len,-incr_len),
-                  tr + Kernel::Vector_2(incr_len,incr_len));
+      bl + Kernel::Vector_2(-incr_len,-incr_len),
+      tr + Kernel::Vector_2(incr_len,incr_len)
+    );
 
     // draws edges
-    for(VD_Envelope_diagram_2::Edge_const_iterator eit = m_envelope_diagram->edges_begin();
+    VD_Envelope_diagram_2::Edge_const_iterator eit;
+    for (eit = m_envelope_diagram->edges_begin();
     eit != m_envelope_diagram->edges_end(); eit++) {
-      if(eit->curve().is_segment()){
-              Point_2 p1 (to_double(eit->curve().segment().source().x()), to_double(eit->curve().segment().source().y()));
-              Point_2 p2 (to_double(eit->curve().segment().target().x()), to_double(eit->curve().segment().target().y()));
-              draw_in_ipe(Segment_2(p1, p2), bbox);
-      } else if (eit->curve().is_ray()){
-              Point_2 p (to_double(eit->curve().ray().source().x()), to_double(eit->curve().ray().source().y()));
-              CGAL::Direction_2<Kernel> d (to_double(eit->curve().ray().direction().dx()), to_double(eit->curve().ray().direction().dy()));
-              draw_in_ipe(Ray_2(p, d), bbox);
-      } else if(eit->curve().is_line()){
-              Line_2 l (to_double(eit->curve().line().a()), to_double(eit->curve().line().b()), to_double(eit->curve().line().c()));
-              draw_in_ipe(l, bbox);
+      if (eit->curve().is_segment()) {
+        Point_2 p1(
+          to_double(eit->curve().segment().source().x()),
+          to_double(eit->curve().segment().source().y())
+        );
+        Point_2 p2(
+          to_double(eit->curve().segment().target().x()),
+          to_double(eit->curve().segment().target().y())
+        );
+        draw_in_ipe(Segment_2(p1, p2), bbox);
+      } else if (eit->curve().is_ray()) {
+        Point_2 p(
+          to_double(eit->curve().ray().source().x()),
+          to_double(eit->curve().ray().source().y())
+        );
+        CGAL::Direction_2<Kernel> d(
+          to_double(eit->curve().ray().direction().dx()),
+          to_double(eit->curve().ray().direction().dy())
+        );
+        draw_in_ipe(Ray_2(p, d), bbox);
+      } else if (eit->curve().is_line()) {
+        Line_2 l(
+          to_double(eit->curve().line().a()),
+          to_double(eit->curve().line().b()),
+          to_double(eit->curve().line().c())
+        );
+        draw_in_ipe(l, bbox);
       }
     }
   } // end of case: fn == 4
@@ -611,30 +640,37 @@ void bisectorIpelet::protected_run(int fn) {
     L2_VD_Envelope_diagram_2 *m_envelope_diagram;
     m_envelope_diagram = new L2_VD_Envelope_diagram_2();
     if ((fn == 5) or (fn == 7)) {
-      CGAL::upper_envelope_3
-        (vd_pt_list.begin(), vd_pt_list.end(), *m_envelope_diagram);
+      CGAL::upper_envelope_3(
+        vd_pt_list.begin(),
+        vd_pt_list.end(),
+        *m_envelope_diagram
+      );
     } else {
       // NVD
-      CGAL::lower_envelope_3
-        (vd_pt_list.begin(), vd_pt_list.end(), *m_envelope_diagram);
+      CGAL::lower_envelope_3(
+        vd_pt_list.begin(),
+        vd_pt_list.end(),
+        *m_envelope_diagram
+      );
     }
 
     //computes the bounding box
-    VD_Point_2 bottom_left (bbox.min().x(), bbox.min().y());
-    VD_Point_2 top_right (bbox.max().x(), bbox.max().y());
+    VD_Point_2 bottom_left(bbox.min().x(), bbox.min().y());
+    VD_Point_2 top_right(bbox.max().x(), bbox.max().y());
 
-    for(L2_VD_Envelope_diagram_2::Vertex_const_iterator vit =
+    for (L2_VD_Envelope_diagram_2::Vertex_const_iterator vit =
           m_envelope_diagram->vertices_begin();
-        vit != m_envelope_diagram->vertices_end();
-        vit++) {
-        VD_Point_2 vp = VD_Point_2(vit->point());
-      if(CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
+         vit != m_envelope_diagram->vertices_end();
+         vit++
+    ) {
+      VD_Point_2 vp = VD_Point_2(vit->point());
+      if (CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
         bottom_left = VD_Point_2(vp.x(), bottom_left.y());
-      if(CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER)
+      if (CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER)
         bottom_left = VD_Point_2(bottom_left.x(), vp.y());
-      if(CGAL::compare(vp.x(), top_right.x()) == CGAL::LARGER)
+      if (CGAL::compare(vp.x(), top_right.x()) == CGAL::LARGER)
         top_right = VD_Point_2(vp.x(), top_right.y());
-      if(CGAL::compare(vp.y(), top_right.y()) == CGAL::LARGER)
+      if (CGAL::compare(vp.y(), top_right.y()) == CGAL::LARGER)
         top_right = VD_Point_2(top_right.x(), vp.y());
 
       //if one wants to display vertices of the VD as well, that's it
@@ -642,37 +678,48 @@ void bisectorIpelet::protected_run(int fn) {
       //draw_in_ipe(p);
     }
 
-    Point_2 bl (to_double(bottom_left.x()), to_double(bottom_left.y()));
-    Point_2 tr (to_double(top_right.x()), to_double(top_right.y()));
+    Point_2 bl(to_double(bottom_left.x()), to_double(bottom_left.y()));
+    Point_2 tr(to_double(top_right.x()), to_double(top_right.y()));
 
     Kernel::FT incr_len = 50;
 
     bbox = Iso_rectangle_2(
-                  bl + Kernel::Vector_2(-incr_len,-incr_len),
-                  tr + Kernel::Vector_2(incr_len,incr_len));
+      bl + Kernel::Vector_2(-incr_len,-incr_len),
+      tr + Kernel::Vector_2(incr_len,incr_len)
+    );
 
     // draws edges
-    for(L2_VD_Envelope_diagram_2::Edge_const_iterator eit =
+    for (L2_VD_Envelope_diagram_2::Edge_const_iterator eit =
           m_envelope_diagram->edges_begin();
-        eit != m_envelope_diagram->edges_end();
-        eit++) {
+         eit != m_envelope_diagram->edges_end();
+         eit++
+    ) {
       if (eit->curve().is_segment()) {
-        Point_2 p1 (to_double(eit->curve().segment().source().x()),
-                    to_double(eit->curve().segment().source().y()));
-        Point_2 p2 (to_double(eit->curve().segment().target().x()),
-                    to_double(eit->curve().segment().target().y()));
+        Point_2 p1(
+          to_double(eit->curve().segment().source().x()),
+          to_double(eit->curve().segment().source().y())
+        );
+        Point_2 p2(
+          to_double(eit->curve().segment().target().x()),
+          to_double(eit->curve().segment().target().y())
+        );
         draw_in_ipe(Segment_2(p1, p2), bbox);
       } else if (eit->curve().is_ray()) {
-        Point_2 p (to_double(eit->curve().ray().source().x()),
-                   to_double(eit->curve().ray().source().y()));
-        CGAL::Direction_2<Kernel> d
-          (to_double(eit->curve().ray().direction().dx()),
-           to_double(eit->curve().ray().direction().dy()));
+        Point_2 p(
+          to_double(eit->curve().ray().source().x()),
+          to_double(eit->curve().ray().source().y())
+        );
+        CGAL::Direction_2<Kernel> d(
+          to_double(eit->curve().ray().direction().dx()),
+          to_double(eit->curve().ray().direction().dy())
+        );
         draw_in_ipe(Ray_2(p, d), bbox);
       } else if (eit->curve().is_line()) {
-        Line_2 l (to_double(eit->curve().line().a()),
-                  to_double(eit->curve().line().b()),
-                  to_double(eit->curve().line().c()));
+        Line_2 l(
+          to_double(eit->curve().line().a()),
+          to_double(eit->curve().line().b()),
+          to_double(eit->curve().line().c())
+        );
         draw_in_ipe(l, bbox);
       }
     } // end of draw edges
@@ -683,25 +730,29 @@ void bisectorIpelet::protected_run(int fn) {
     HVD_Envelope_diagram_2 *m_envelope_diagram;
     m_envelope_diagram = new HVD_Envelope_diagram_2();
 
-    CGAL::lower_envelope_3
-      (vd_cluster_list.begin(), vd_cluster_list.end(), *m_envelope_diagram);
+    CGAL::lower_envelope_3(
+      vd_cluster_list.begin(),
+      vd_cluster_list.end(),
+      *m_envelope_diagram
+    );
 
     //computes the bounding box
-    VD_Point_2 bottom_left (bbox.min().x(), bbox.min().y());
-    VD_Point_2 top_right (bbox.max().x(), bbox.max().y());
+    VD_Point_2 bottom_left(bbox.min().x(), bbox.min().y());
+    VD_Point_2 top_right(bbox.max().x(), bbox.max().y());
 
-    for(HVD_Envelope_diagram_2::Vertex_const_iterator vit =
+    for (HVD_Envelope_diagram_2::Vertex_const_iterator vit =
           m_envelope_diagram->vertices_begin();
-        vit != m_envelope_diagram->vertices_end();
-        vit++) {
-        VD_Point_2 vp = VD_Point_2(vit->point());
-      if(CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
+         vit != m_envelope_diagram->vertices_end();
+         vit++
+    ) {
+      VD_Point_2 vp = VD_Point_2(vit->point());
+      if (CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
         bottom_left = VD_Point_2(vp.x(), bottom_left.y());
-      if(CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER)
+      if (CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER)
         bottom_left = VD_Point_2(bottom_left.x(), vp.y());
-      if(CGAL::compare(vp.x(), top_right.x()) == CGAL::LARGER)
+      if (CGAL::compare(vp.x(), top_right.x()) == CGAL::LARGER)
         top_right = VD_Point_2(vp.x(), top_right.y());
-      if(CGAL::compare(vp.y(), top_right.y()) == CGAL::LARGER)
+      if (CGAL::compare(vp.y(), top_right.y()) == CGAL::LARGER)
         top_right = VD_Point_2(top_right.x(), vp.y());
 
       //if one wants to display vertices of the VD as well, that's it
@@ -709,37 +760,47 @@ void bisectorIpelet::protected_run(int fn) {
       //draw_in_ipe(p);
     }
 
-    Point_2 bl (to_double(bottom_left.x()), to_double(bottom_left.y()));
-    Point_2 tr (to_double(top_right.x()), to_double(top_right.y()));
+    Point_2 bl(to_double(bottom_left.x()), to_double(bottom_left.y()));
+    Point_2 tr(to_double(top_right.x()), to_double(top_right.y()));
 
     Kernel::FT incr_len = 50;
 
     bbox = Iso_rectangle_2(
-                  bl + Kernel::Vector_2(-incr_len,-incr_len),
-                  tr + Kernel::Vector_2(incr_len,incr_len));
+      bl + Kernel::Vector_2(-incr_len,-incr_len),
+      tr + Kernel::Vector_2(incr_len,incr_len)
+    );
 
     // draws edges
-    for(HVD_Envelope_diagram_2::Edge_const_iterator eit =
+    for (HVD_Envelope_diagram_2::Edge_const_iterator eit =
           m_envelope_diagram->edges_begin();
-        eit != m_envelope_diagram->edges_end();
-        eit++) {
+         eit != m_envelope_diagram->edges_end();
+         eit++) {
       if (eit->curve().is_segment()) {
-        Point_2 p1 (to_double(eit->curve().segment().source().x()),
-                    to_double(eit->curve().segment().source().y()));
-        Point_2 p2 (to_double(eit->curve().segment().target().x()),
-                    to_double(eit->curve().segment().target().y()));
+        Point_2 p1(
+          to_double(eit->curve().segment().source().x()),
+          to_double(eit->curve().segment().source().y())
+        );
+        Point_2 p2(
+          to_double(eit->curve().segment().target().x()),
+          to_double(eit->curve().segment().target().y())
+        );
         draw_in_ipe(Segment_2(p1, p2), bbox);
       } else if (eit->curve().is_ray()) {
-        Point_2 p (to_double(eit->curve().ray().source().x()),
-                   to_double(eit->curve().ray().source().y()));
-        CGAL::Direction_2<Kernel> d
-          (to_double(eit->curve().ray().direction().dx()),
-           to_double(eit->curve().ray().direction().dy()));
+        Point_2 p(
+          to_double(eit->curve().ray().source().x()),
+          to_double(eit->curve().ray().source().y())
+        );
+        CGAL::Direction_2<Kernel> d(
+          to_double(eit->curve().ray().direction().dx()),
+          to_double(eit->curve().ray().direction().dy())
+        );
         draw_in_ipe(Ray_2(p, d), bbox);
       } else if (eit->curve().is_line()) {
-        Line_2 l (to_double(eit->curve().line().a()),
-                  to_double(eit->curve().line().b()),
-                  to_double(eit->curve().line().c()));
+        Line_2 l(
+          to_double(eit->curve().line().a()),
+          to_double(eit->curve().line().b()),
+          to_double(eit->curve().line().c())
+        );
         draw_in_ipe(l, bbox);
       }
     } // end of draw edges
@@ -757,18 +818,19 @@ void bisectorIpelet::protected_run(int fn) {
     VD_Point_2 bottom_left (bbox.min().x(), bbox.min().y());
     VD_Point_2 top_right (bbox.max().x(), bbox.max().y());
 
-    for(FCVD_Envelope_diagram_2::Vertex_const_iterator vit =
+    for (FCVD_Envelope_diagram_2::Vertex_const_iterator vit =
           m_envelope_diagram->vertices_begin();
-        vit != m_envelope_diagram->vertices_end();
-        vit++) {
+         vit != m_envelope_diagram->vertices_end();
+         vit++
+    ) {
         VD_Point_2 vp = VD_Point_2(vit->point());
-      if(CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
+      if (CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
         bottom_left = VD_Point_2(vp.x(), bottom_left.y());
-      if(CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER)
+      if (CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER)
         bottom_left = VD_Point_2(bottom_left.x(), vp.y());
-      if(CGAL::compare(vp.x(), top_right.x()) == CGAL::LARGER)
+      if (CGAL::compare(vp.x(), top_right.x()) == CGAL::LARGER)
         top_right = VD_Point_2(vp.x(), top_right.y());
-      if(CGAL::compare(vp.y(), top_right.y()) == CGAL::LARGER)
+      if (CGAL::compare(vp.y(), top_right.y()) == CGAL::LARGER)
         top_right = VD_Point_2(top_right.x(), vp.y());
 
       //if one wants to display vertices of the VD as well, that's it
@@ -786,10 +848,11 @@ void bisectorIpelet::protected_run(int fn) {
                   tr + Kernel::Vector_2(incr_len,incr_len));
 
     // draws edges
-    for(FCVD_Envelope_diagram_2::Edge_const_iterator eit =
+    for (FCVD_Envelope_diagram_2::Edge_const_iterator eit =
           m_envelope_diagram->edges_begin();
-        eit != m_envelope_diagram->edges_end();
-        eit++) {
+         eit != m_envelope_diagram->edges_end();
+         eit++
+    ) {
       if (eit->curve().is_segment()) {
         Point_2 p1 (to_double(eit->curve().segment().source().x()),
                     to_double(eit->curve().segment().source().y()));
@@ -819,7 +882,11 @@ void bisectorIpelet::protected_run(int fn) {
     m_envelope_diagram = new L2_FSVD_Envelope_diagram_2();
 
     /* compute the diagram */
-    CGAL::lower_envelope_3(vd_sg_list.begin(), vd_sg_list.end(), *m_envelope_diagram);
+    CGAL::lower_envelope_3(
+      vd_sg_list.begin(),
+      vd_sg_list.end(),
+      *m_envelope_diagram
+    );
 
     /* print informative message */
     char message[100];
@@ -855,7 +922,8 @@ void bisectorIpelet::protected_run(int fn) {
     L2_FSVD_Envelope_diagram_2::Vertex_const_iterator vit;
     for (vit = m_envelope_diagram->vertices_begin();
          vit != m_envelope_diagram->vertices_end();
-         ++vit) {
+         ++vit
+    ) {
       Alg_point_2 vp = Alg_point_2(vit->point());
       if (CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
         bottom_left = Alg_point_2(vp.x(), bottom_left.y());
