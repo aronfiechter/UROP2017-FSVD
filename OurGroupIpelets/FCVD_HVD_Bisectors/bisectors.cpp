@@ -819,7 +819,7 @@ void bisectorIpelet::protected_run(int fn) {
     m_envelope_diagram = new L2_FSVD_Envelope_diagram_2();
 
     /* compute the diagram */
-    CGAL::upper_envelope_3(vd_sg_list.begin(), vd_sg_list.end(), *m_envelope_diagram);
+    CGAL::lower_envelope_3(vd_sg_list.begin(), vd_sg_list.end(), *m_envelope_diagram);
 
     /* print informative message */
     char message[100];
