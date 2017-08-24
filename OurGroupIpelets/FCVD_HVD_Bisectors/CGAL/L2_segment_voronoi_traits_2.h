@@ -45,22 +45,22 @@
 
 namespace CGAL {
 
-template <class Conic_traits_2, class Kernel_>
-class L2_segment_voronoi_traits_2 : public Conic_traits_2 {
+template <class Traits_2_, class Alg_kernel_, class Rat_kernel_, class Nt_traits_>
+class L2_segment_voronoi_traits_2 : public Traits_2_ {
 
 public:
-  typedef Kernel_                                     Kernel;
-  typedef Conic_traits_2                              C_traits_2;
-  typedef L2_segment_voronoi_traits_2<C_traits_2, Kernel> Self;
+  typedef Traits_2_                                   Traits_2;
+  typedef Alg_kernel_                                 Alg_kernel;
+  typedef Rat_kernel_                                 Rat_kernel;
+  typedef Nt_traits_                                  Nt_traits;
+  typedef L2_segment_voronoi_traits_2<
+  Traits_2, Alg_kernel, Rat_kernel, Nt_traits
+  >                                                   Self;
 
-  typedef typename C_traits_2::Point_2                Point_2;
-  typedef typename C_traits_2::Curve_2                Curve_2;
-  typedef typename C_traits_2::X_monotone_curve_2     X_monotone_curve_2;
-  typedef typename C_traits_2::Multiplicity           Multiplicity;
-
-  typedef typename C_traits_2::Rat_kernel             Rat_kernel;
-  typedef typename C_traits_2::Alg_kernel             Alg_kernel;
-  typedef typename C_traits_2::Nt_traits              Nt_traits;
+  typedef typename Traits_2::Point_2                  Point_2;
+  typedef typename Traits_2::Curve_2                  Curve_2;
+  typedef typename Traits_2::X_monotone_curve_2       X_monotone_curve_2;
+  typedef typename Traits_2::Multiplicity             Multiplicity;
 
   typedef typename Rat_kernel::FT                     Rational;
   typedef typename Rat_kernel::Point_2                Rat_point_2;
@@ -91,8 +91,8 @@ public:
   typedef CGAL::Cartesian_converter<D_kernel, Rat_kernel> DK_to_RK;
 
   /* Define segments as surfaces for simplicity. Each segment should be thought
-   * of as a surface representing the function distance, with higher values on
-   * the z axis mean farthest points */
+   * of as a surface representing the distance function, where higher values on
+   * the z axis mean points farthest from the segment */
   typedef Rat_segment_2                               Surface_3;
   typedef Surface_3                                   Xy_monotone_surface_3;
 
@@ -637,9 +637,9 @@ private:
     );
 
     /* instantiate traits, we need the provided function */
-    C_traits_2 c_traits;
-    typename C_traits_2::Make_x_monotone_2 make_x_monotone =
-      c_traits.make_x_monotone_2_object();
+    Traits_2 traits;
+    typename Traits_2::Make_x_monotone_2 make_x_monotone =
+      traits.make_x_monotone_2_object();
 
     /* call the provided function */
     std::vector<CGAL::Object> pre_x_mono_curves;

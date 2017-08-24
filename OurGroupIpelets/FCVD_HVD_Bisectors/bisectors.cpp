@@ -41,7 +41,7 @@
 
 // added for FSVD, fn == 10
 #include <CGAL/CORE_algebraic_number_traits.h>
-#include <CGAL/Arr_conic_traits_2.h>
+#include <CGAL/Arr_algebraic_segment_traits_2.h>
 #include <CGAL/L2_segment_voronoi_traits_2.h>
 // end added for FSVD
 
@@ -90,6 +90,7 @@ typedef CGAL::Envelope_diagram_2<L2_VD_Traits_3>        L2_VD_Envelope_diagram_2
 
 /* Added for FSVD, fn == 10 */
 typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
+typedef Nt_traits::Integer                              Integer;
 typedef Nt_traits::Rational                             Rational;
 typedef Nt_traits::Algebraic                            Algebraic;
 typedef CGAL::Cartesian<Rational>                       Rat_kernel;
@@ -98,10 +99,16 @@ typedef typename Rat_kernel::Segment_2                  Rat_segment_2;
 typedef typename Rat_kernel::Point_2                    Rat_point_2;
 typedef typename Alg_kernel::Point_2                    Alg_point_2;
 
-typedef CGAL::Arr_conic_traits_2<Rat_kernel, Alg_kernel, Nt_traits> Conic_traits_2;
-typedef CGAL::L2_segment_voronoi_traits_2<Conic_traits_2, VD_Kernel> L2_FSVD_Traits_3;
+typedef CGAL::Arr_algebraic_segment_traits_2<Integer>   Alg_seg_traits_2;
+typedef typename Alg_seg_traits_2::Algebraic_real_1     Algebraic_real_1;
+typedef typename Alg_seg_traits_2::Point_2              Alg_seg_traits_point_2;
+
+typedef CGAL::L2_segment_voronoi_traits_2<
+  Alg_seg_traits_2, Alg_kernel, Rat_kernel, Nt_traits
+>                                                       L2_FSVD_Traits_3;
 typedef CGAL::Envelope_diagram_2<L2_FSVD_Traits_3>      L2_FSVD_Envelope_diagram_2;
-typedef Conic_traits_2::X_monotone_curve_2              X_monotone_curve_2;
+typedef Alg_seg_traits_2::X_monotone_curve_2            X_monotone_curve_2;
+typedef Alg_seg_traits_2::Curve_2                       Curve_2;
 /* end added for FSVD */
 
 typedef CGAL::L2_HVD_traits_2<VD_Kernel>                HVD_Traits_3;
@@ -169,24 +176,45 @@ public:
   }
 
 private:
-  Algebraic PRECISION = Algebraic(5); // values under 0.5 take too long
+  double PRECISION = 5.0f; // values under 0.5 take too long
 
 
   /* Find a number of points on the curve cv such that they are all close enough
    * to approximate the curve. Then create segments between these points and add
    * them to the provided list. */
-  void arc_to_segments(const X_monotone_curve_2& cv, std::list<Segment_2>& segments) {
+  void arc_to_segments(
+    const X_monotone_curve_2& xcv,
+    std::list<Segment_2>& segments
+  ) {
 
-    /* create points on the arc, create segments between them and push segments */
-    Algebraic current_x = cv.left().x();
-    Algebraic end_x = cv.right().x();
+    /* assert that parabolic arc is finite */
+    CGAL_assertion_msg(
+      (xcv.is_finite(CGAL::ARR_MIN_END) && xcv.is_finite(CGAL::ARR_MAX_END)),
+      "The curve should be bounded."
+    );
 
-    for (; current_x + PRECISION < end_x; current_x += PRECISION) {
-      Alg_point_2 current = Alg_point_2(current_x, 0);
-      Alg_point_2 next = Alg_point_2(current_x + PRECISION, 0);
-      /* project points on arc */
-      Alg_point_2 arc_segment_start_pt = cv.point_at_x(current);
-      Alg_point_2 arc_segment_end_pt = cv.point_at_x(next);
+    /* get start and end x coordinates */
+    double current_x = CGAL::to_double(xcv.curve_end(CGAL::ARR_MIN_END).x());
+    double end_x = CGAL::to_double(xcv.curve_end(CGAL::ARR_MAX_END).x());
+
+    /* get point constructor functor, curve and arcno */
+    Alg_seg_traits_2 arr_traits;
+    Alg_seg_traits_2::Construct_point_2 construct_point
+      = arr_traits.construct_point_2_object();
+    Curve_2 cv = xcv.curve();
+    int arcno = xcv.arcno();
+
+    /* iterate over the x-range of the curve, build points on it, push segments
+     * on the list of segments */
+    for (; current_x + PRECISION < end_x; current_x = current_x + PRECISION) {
+      double next_x = current_x + PRECISION;
+      /* construct points on arc */
+      Alg_seg_traits_point_2 arc_segment_start_pt = construct_point(
+        Algebraic_real_1(current_x), cv, arcno
+      );
+      Alg_seg_traits_point_2 arc_segment_end_pt = construct_point(
+        Algebraic_real_1(next_x), cv, arcno
+      );
       /* create segment between two points */
       Segment_2 * arc_segment = new Segment_2(
         Point_2(
@@ -202,9 +230,12 @@ private:
     }
 
     /* push last segment */
-    Alg_point_2 current = Alg_point_2(current_x, 0);
-    Alg_point_2 last_arc_segment_start_pt = cv.point_at_x(current);
-    Alg_point_2 last_arc_segment_end_pt = cv.right();
+    Alg_seg_traits_point_2 last_arc_segment_start_pt = construct_point(
+      Algebraic_real_1(current_x), cv, arcno
+    );
+    Alg_seg_traits_point_2 last_arc_segment_end_pt = xcv.curve_end(
+      CGAL::ARR_MAX_END
+    );
     Segment_2 * last_arc_segment = new Segment_2(
       Point_2(
         CGAL::to_double(last_arc_segment_start_pt.x()),
@@ -856,7 +887,7 @@ void bisectorIpelet::protected_run(int fn) {
     for (vit = m_envelope_diagram->vertices_begin();
          vit != m_envelope_diagram->vertices_end();
          ++vit) {
-      Alg_point_2 vp = Alg_point_2(vit->point());
+      Alg_point_2 vp = Alg_point_2(vit->point().x(), vit->point().y());
       if (CGAL::compare(vp.x(), bottom_left.x()) == CGAL::SMALLER)
         bottom_left = Alg_point_2(vp.x(), bottom_left.y());
       if (CGAL::compare(vp.y(), bottom_left.y()) == CGAL::SMALLER)
