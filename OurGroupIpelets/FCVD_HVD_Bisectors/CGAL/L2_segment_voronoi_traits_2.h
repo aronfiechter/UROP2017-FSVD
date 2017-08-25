@@ -1255,6 +1255,28 @@ public:
       AK_to_DK to_dbl;
       DK_to_RK to_rat;
 
+      /* list to store all Curve_2 bisector part. They all will be converted to
+       * X_monotone_curve_2 and inserted into OutputIterator o at the end of
+       * this method */
+      std::list<Curve_2> bisector_parts;
+
+      /* when computing the straight parts of the bisector between two conic
+       * arcs, it is likely that the starting and ending points of these
+       * straight parts (segments) are algebraic points. These cannot be added
+       * as Curve_2 objects because their supporting conic (a line) would have
+       * algebraic coefficients, and this is not supported.
+       * As a solution, keep the coefficients of the parabola of the previous
+       * arc and wait until the coefficients of the parabola of the next arc are
+       * available; then, just approximate the algebraic segment with the
+       * closest possible rational segment, correct the endpoints of the
+       * previous and next arc so that they are the intersections with the line
+       * supporting the segment, and add the segment itself (the endpoints
+       * will be rational points)
+       */
+      bool part_to_approximate_exists = false;
+      Curve_2 prev_arc;
+      Alg_segment_2 part_to_approximate;
+
       /* rename start point */
       Alg_point_2 curr_pt = start_pt;
 
@@ -1283,7 +1305,6 @@ public:
          * - SUPP_LINE_BISECTOR:  o1 = supp_line1,      o2 = supp_line2
          * - ENDPOINT_BISECTOR:   o1 = endpoint_1,      o2 = endpoint_2   */
         Object o1, o2;
-        Curve_2 piece_of_bisector;
         switch (find_position(midpoint, alg_delimiter_lines, s1, s2, o1, o2)) {
 
           case PARABOLIC_ARC: {
@@ -1313,16 +1334,26 @@ public:
               curr_pt, delimiter_lines_vector
             );
 
-            /* get parabolic arc, save as Curve_2 in "piece_of_bisector" */
-            piece_of_bisector = supporting_conic.construct_parabolic_arc(
-              curr_pt,
-              actual_next_intersection
-            );
-
+            /* get tangent with correctly oriented direction */
             Alg_line_2 tangent = supporting_conic.tangent_at_point(
               actual_next_intersection
             );
             next_direction = tangent.direction();
+
+            /* get parabolic arc */
+            Curve_2 parabolic_arc = supporting_conic.construct_parabolic_arc(
+              curr_pt,
+              actual_next_intersection
+            );
+
+            /* deal with approximation of segment if necessary */
+            if (part_to_approximate_exists) {
+              //TODO
+            }
+
+            /* save as Curve_2 in list of bisector parts, save this curve */
+            bisector_parts.push_back(parabolic_arc);
+            prev_arc = parabolic_arc;
 
             break;
           }
@@ -1384,25 +1415,21 @@ public:
                 "intersection of the two segments."
               );
 
-              /* add first part to OutputIterator o, save second part as Curve_2
-               * in "piece_of_bisector" */
-              Curve_2 first_piece_of_bisector(to_rat(to_dbl(
+              //TODO update to smart approximation of segment version
+              /* save first part as Curve_2 in list of bisector parts */
+              bisector_parts.push_back(Curve_2(to_rat(to_dbl(
                 Alg_segment_2(curr_pt, segments_intersection_1)
-              )));
-              X_monotone_curve_2 x_mono_piece(first_piece_of_bisector);
-              *o++ = CGAL::make_object(Intersection_curve(x_mono_piece, 0));
-              piece_of_bisector = Curve_2(to_rat(to_dbl(
+              ))));
+              /* save second part as Curve_2 in list of bisector parts */
+              bisector_parts.push_back(Curve_2(to_rat(to_dbl(
                 Alg_segment_2(segments_intersection_1, actual_next_intersection)
-              )));
+              ))));
             }
             else {
-              /* save as Curve_2 in "piece_of_bisector" */
-              piece_of_bisector = Curve_2(to_rat(to_dbl(bisector_part)));
+              //TODO update to smart approximation of segment version
+              /* save as Curve_2 in list of bisector parts */
+              bisector_parts.push_back(Curve_2(to_rat(to_dbl(bisector_part))));
             }
-            /* in both cases the segment is slightly approximated when saved in
-             * the OutputIterator o, but this has to be done because the
-             * `Arr_conic_traits_2` class does not support bounded curves
-             * supported by Algebraic coefficients */
 
             break;
           }
@@ -1412,6 +1439,8 @@ public:
             Rat_point_2 endpoint1; Rat_point_2 endpoint2;
             CGAL_assertion(CGAL::assign(endpoint1, o1));
             CGAL_assertion(CGAL::assign(endpoint2, o2));
+
+            /* TODO review because segment can be rational, actually */
 
             /* create bisector, orient it according to curr_direction */
             Alg_line_2 endpoint_bisector = to_alg(Rat_line_2(
