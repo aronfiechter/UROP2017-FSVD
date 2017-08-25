@@ -1457,14 +1457,22 @@ public:
               next_direction, curr_pt, delimiter_lines_vector
             );
 
-            //TODO no need to approximate, the supporting line is rational,
-            // just save curve with rational coefficients and the two alg points
-            // as endpoints, orientation COLLINEAR
-            /* save as Curve_2 in list of bisector parts */
-            Rat_segment_2 segment(to_rat(to_dbl(
-              Alg_segment_2(curr_pt, actual_next_intersection)
-            )));
-            bisector_parts.push_back(Curve_2(segment));
+            /* no need to approximate the segment in this case: the supporting
+             * conic (a line) has rational coefficients; just save curve with
+             * rational coefficients and the two alg points as endpoints,
+             * orientation COLLINEAR.
+             * save as Curve_2 in list of bisector parts */
+            bisector_parts.push_back(Curve_2(
+              0,
+              0,
+              0,
+              endpoint_bisector.a(),
+              endpoint_bisector.b(),
+              endpoint_bisector.c(),
+              CGAL::COLLINEAR,
+              curr_pt,
+              actual_next_intersection
+            ));
 
             break;
           }
