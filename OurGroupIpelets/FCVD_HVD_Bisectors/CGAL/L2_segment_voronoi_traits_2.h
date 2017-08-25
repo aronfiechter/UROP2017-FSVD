@@ -100,14 +100,6 @@ protected:
   typedef std::pair<X_monotone_curve_2, Multiplicity> Intersection_curve;
 
 private:
-  enum Seg_endpoint {
-    S1_SOURCE,
-    S1_TARGET,
-    S2_SOURCE,
-    S2_TARGET,
-  };
-  typedef typename std::pair<Rat_ray_2, Seg_endpoint> Ray_info;
-
   typedef typename std::pair<
     std::pair<Rat_line_2, Rat_line_2>,
     std::pair<Rat_line_2, Rat_line_2>
@@ -671,9 +663,8 @@ private:
   /* Given a bisector finds the point that is the furthest intersection
    * (following the direction of the bisector) of the bisector with the four
    * lines saved in delimiters.
-   * Return a pair with the unbounded ray and the segment endpoint whose
-   * orthogonal delimiter intersects the ray's source. */
-  static Ray_info find_unbounded_ray(
+   * Return the unbounded ray. */
+  static Rat_ray_2 find_unbounded_ray(
     Rat_line_2 bisector,
     Rat_delimiter_lines delimiters
   ) {
@@ -687,22 +678,22 @@ private:
     CGAL::assign(p2, CGAL::intersection(bisector, delimiters.first.second));
     CGAL::assign(p3, CGAL::intersection(bisector, delimiters.second.first));
     CGAL::assign(p4, CGAL::intersection(bisector, delimiters.second.second));
-    std::vector<Ray_info> intersections_x = {
-      std::make_pair(Rat_ray_2(p1, bisector.direction()), S1_SOURCE),
-      std::make_pair(Rat_ray_2(p2, bisector.direction()), S1_TARGET),
-      std::make_pair(Rat_ray_2(p3, bisector.direction()), S2_SOURCE),
-      std::make_pair(Rat_ray_2(p4, bisector.direction()), S1_TARGET)
+    std::vector<Rat_ray_2> intersections_x = {
+      Rat_ray_2(p1, bisector.direction()),
+      Rat_ray_2(p2, bisector.direction()),
+      Rat_ray_2(p3, bisector.direction()),
+      Rat_ray_2(p4, bisector.direction())
     };
-    std::vector<Ray_info> intersections_y;
+    std::vector<Rat_ray_2> intersections_y;
     std::copy(intersections_x.begin(), intersections_x.end(),
               std::back_inserter(intersections_y));
     std::sort(intersections_x.begin(), intersections_x.end(),
-      [](Ray_info a, Ray_info b) {
-      return a.first.source().x() < b.first.source().x();
+      [](Rat_ray_2 a, Rat_ray_2 b) {
+      return a.source().x() < b.source().x();
     });
     std::sort(intersections_y.begin(), intersections_y.end(),
-      [](Ray_info a, Ray_info b) {
-      return a.first.source().y() < b.first.source().y();
+      [](Rat_ray_2 a, Rat_ray_2 b) {
+      return a.source().y() < b.source().y();
     });
 
     /* find the farthest point according to the direction of bisector */
@@ -1079,10 +1070,8 @@ public:
         CGAL_assertion(ch_polygon.is_convex()); // it is a hull
         CGAL_assertion(ch_polygon.area() >= 0); // it is counterclockwise
 
-        /* list to save starting points of unbounded rays, together with an
-         * indication of which segment endpoint generates the orthogonal line
-         * that caused the intersection */
-        std::list<Ray_info> ray_info_list;
+        /* list to save the unbounded rays of the bisector */
+        std::list<Rat_ray_2> unbounded_ray_list;
 
         for ( // for all edges
           Edge_iterator eit = ch_polygon.edges_begin();
@@ -1095,25 +1084,25 @@ public:
               eit->target(), eit->source()
             );
             /* find "farthest" intersection with delimiters, ray starts there */
-            Ray_info ray_info = find_unbounded_ray(
+            Rat_ray_2 unbounded_ray = find_unbounded_ray(
               bisector_line, delimiter_lines
             );
-            ray_info_list.push_back(ray_info);
+            unbounded_ray_list.push_back(unbounded_ray);
 
             /* make very long segment to represent an unbounded ray, so that it
              * can be saved as an X_monotone_curve_2, because the Conic_traits
              * require that curves are bounded */
-            Rat_point_2 start_point = ray_info.first.source();
+            Rat_point_2 start_point = unbounded_ray.source();
             Rat_point_2 end_point;
             bool assigned = false;
             for (auto& seg : border) {
               if (assigned) break;
-              else if (CGAL::do_intersect(ray_info.first, seg) && !assigned) {
+              else if (CGAL::do_intersect(unbounded_ray, seg) && !assigned) {
                 assigned = true;
                 CGAL_assertion_msg(
                   CGAL::assign(
                     end_point,
-                    CGAL::intersection(ray_info.first, seg)
+                    CGAL::intersection(unbounded_ray, seg)
                   ),
                   "Could not assign end."
                 );
@@ -1121,10 +1110,10 @@ public:
             }
 
             CGAL_assertion_msg(assigned, "Could not find ray end_point.");
-            Rat_segment_2 seg(start_point, end_point);
-            X_monotone_curve_2 curve_seg(seg);
+            Rat_segment_2 segment(start_point, end_point);
+            X_monotone_curve_2 segment_curve(segment); // it's just straight
             *o++ = CGAL::make_object(
-              Intersection_curve(curve_seg, 0)
+              Intersection_curve(segment_curve, 0)
             );
           }
         }
@@ -1134,7 +1123,7 @@ public:
          * using the delimiter_lines.
          * In this case, the ray start points should be only two. */
         if (!CGAL::do_intersect(s1, s2)) { // segments do not intersect
-          CGAL_assertion(ray_info_list.size() == 2);
+          CGAL_assertion(unbounded_ray_list.size() == 2);
 
           /* starting from the source of one unbounded ray and finishing at the
            * source of the other, compute the rest of the bisector, consisting
@@ -1143,19 +1132,19 @@ public:
            *   interior of a segment and of one endpoint of the other
            * - segments: when we are in the "area of influence" of the interiors
            *   of the two segments or of two endpoints of the two segments */
-          Ray_info start_ray_info = ray_info_list.front();
-          Ray_info end_ray_info = ray_info_list.back();
+          Rat_ray_2 start_ray = unbounded_ray_list.front();
+          Rat_ray_2 end_ray = unbounded_ray_list.back();
 
-          Alg_point_2 start_pt = to_alg(start_ray_info.first.source());
-          Alg_point_2 end_pt = to_alg(end_ray_info.first.source());
+          Alg_point_2 start_pt = to_alg(start_ray.source());
+          Alg_point_2 end_pt = to_alg(end_ray.source());
 
           Alg_direction_2 curr_direction = to_alg(
-            - start_ray_info.first.direction()
+            - start_ray.direction()
           );
 
           /* call big private function that iteratively constructs the parts of
-           * the bisector of s1 and s2 starting from a start point going in a
-           * given direction and finishing at an end point */
+           * the plane bisector of the segments s1 and s2 starting from a start
+           * point going in a given direction and finishing at an end point */
           o = this->construct_bisector_from_point_to_point(
             s1, s2,                 // the two segments
             o,                      // OutputIterator
@@ -1184,31 +1173,31 @@ public:
            * - segments: when we are in the "area of influence" of the interiors
            *   of the two segments or of two endpoints of the two segments
            * Since in this case we have four rays, do this process twice. */
-          CGAL_assertion(ray_info_list.size() == 4);
-          Ray_info start_ray_info_one = ray_info_list.front();
-          ray_info_list.pop_front();
-          Ray_info start_ray_info_two = ray_info_list.front();
-          ray_info_list.pop_front();
-          Ray_info end_ray_info_one = ray_info_list.front();
-          ray_info_list.pop_front();
-          Ray_info end_ray_info_two = ray_info_list.front();
-          ray_info_list.pop_front();
+          CGAL_assertion(unbounded_ray_list.size() == 4);
+          Rat_ray_2 start_ray_one = unbounded_ray_list.front();
+          unbounded_ray_list.pop_front();
+          Rat_ray_2 start_ray_two = unbounded_ray_list.front();
+          unbounded_ray_list.pop_front();
+          Rat_ray_2 end_ray_one = unbounded_ray_list.front();
+          unbounded_ray_list.pop_front();
+          Rat_ray_2 end_ray_two = unbounded_ray_list.front();
+          unbounded_ray_list.pop_front();
 
           CGAL_assertion_msg(
-            ray_info_list.empty(),
-            "There were more than 4 rays."
+            unbounded_ray_list.empty(),
+            "There should only be 4 rays, and all were popped."
           );
 
           /* get start point, end point and direction for both cases */
-          Alg_point_2 start_pt_one = to_alg(start_ray_info_one.first.source());
-          Alg_point_2 end_pt_one = to_alg(end_ray_info_one.first.source());
+          Alg_point_2 start_pt_one = to_alg(start_ray_one.source());
+          Alg_point_2 end_pt_one = to_alg(end_ray_one.source());
           Alg_direction_2 curr_direction_one = to_alg(
-            - start_ray_info_one.first.direction()
+            - start_ray_one.direction()
           );
-          Alg_point_2 start_pt_two = to_alg(start_ray_info_two.first.source());
-          Alg_point_2 end_pt_two = to_alg(end_ray_info_two.first.source());
+          Alg_point_2 start_pt_two = to_alg(start_ray_two.source());
+          Alg_point_2 end_pt_two = to_alg(end_ray_two.source());
           Alg_direction_2 curr_direction_two = to_alg(
-            - start_ray_info_two.first.direction()
+            - start_ray_two.direction()
           );
 
           /* call big private function that iteratively constructs the parts of
