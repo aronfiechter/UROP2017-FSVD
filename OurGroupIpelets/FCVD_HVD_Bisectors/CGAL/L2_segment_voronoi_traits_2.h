@@ -1382,6 +1382,21 @@ public:
       ;
     }
 
+    /* Given three Curve_2 in sequence, update the endpoints to make themselves
+     * connected, if they are not already.
+     * Keep curr like it is, update the others.
+     * Precondition (not checked): the three curved arcs are oriented in the
+     * correct way, so that they are directed from the source of prev to the
+     * target of next.
+     * Precondition (not checked): the source and target of curr lie on prev and
+     * on next respectively.
+     */
+    void update_endpoints(Curve_2& prev, Curve_2& curr, Curve_2 next) const {
+      if (prev.target() != curr.source()) prev.set_target(curr.source());
+      if (next.source() != curr.target()) next.set_source(curr.target());
+      return;
+    }
+
     /* Helper function for the construction of the plane bisecotr of two line
      * segments.
      * Given a start point and and end point, iteratively constructs all pieces
@@ -1577,10 +1592,11 @@ public:
                         << approx_last_segment_curve << "\n"
               ;
 
-              /* update prev_arc and this_arc end and start point to coincide
-               * with start and end of this new approximated segment curve */
-              prev_arc.set_target(approx_last_segment_curve.source());
-              this_arc.set_source(approx_last_segment_curve.target());
+              /* if needed (because the endpoints might just be the same ones,
+               * for example if the approximation was exact), update prev_arc
+               * and this_arc end and start point to coincide with start and end
+               * of this new approximated segment curve */
+              update_endpoints(prev_arc, approx_last_segment_curve, this_arc);
 
               /* push in list of bisector parts the updated prev_arc and the
                * now approximated segment curve */
