@@ -1263,19 +1263,28 @@ public:
       /* when computing the straight parts of the bisector between two conic
        * arcs, it is likely that the starting and ending points of these
        * straight parts (segments) are algebraic points. These cannot be added
-       * as Curve_2 objects because their supporting conic (a line) would have
-       * algebraic coefficients, and this is not supported.
+       * as Curve_2 objects because their supporting conic (a line) could have
+       * algebraic coefficients, and this is not supported by the arrangement
+       * traits class (Arr_conic_traits_2).
        * As a solution, keep the coefficients of the parabola of the previous
        * arc and wait until the coefficients of the parabola of the next arc are
-       * available; then, just approximate the algebraic segment with the
-       * closest possible rational segment, correct the endpoints of the
-       * previous and next arc so that they are the intersections with the line
-       * supporting the segment, and add the segment itself (the endpoints
-       * will be rational points)
+       * available; then, just use the Curve_2 constructor that does not require
+       * the exact endpoints, but the three conic coefficients lists and two
+       * approximate endpoints: it computes the actual endpoints as the
+       * intersections of the three curves closest to the approximate endpoints.
+       * Then, get the computed endpoints of the new curve and update the
+       * end point of the previous Curve_2 and the start point of the successive
+       * Curve_2
+       *
+       * Keep two parts to approximate for the case in which the segment is the
+       * part of the bisector that intersects the two segments at their
+       * intersection (so this happens only when the two segments are
+       * intersecting, of course).
        */
-      bool part_to_approximate_exists = false;
       Curve_2 prev_arc;
-      Alg_segment_2 part_to_approximate;
+      bool part_to_approximate_exists = false;
+      Alg_segment_2 part_to_approximate_1;
+      Alg_segment_2 part_to_approximate_2;
 
       /* rename start point */
       Alg_point_2 curr_pt = start_pt;
@@ -1346,7 +1355,7 @@ public:
               actual_next_intersection
             );
 
-            /* deal with approximation of segment if necessary */
+            /* deal with approximation of previous segment if necessary */
             if (part_to_approximate_exists) {
               //TODO
             }
