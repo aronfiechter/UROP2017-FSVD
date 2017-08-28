@@ -1317,18 +1317,12 @@ public:
 
       std::cout << "\n\n____________________________________________________\n"
                 << "Approximating algebraic segment: ("
-                << segment.source().x() << ", "
-                << segment.source().y()
+                << segment.source().x().toString() << ", "
+                << segment.source().y().toString()
                 << ") --> ("
-                << segment.target().x() << ", "
-                << segment.target().y()
+                << segment.target().x().toString() << ", "
+                << segment.target().y().toString()
                 << ")" << ":\n"
-                << "It has approximated Rational coordinates ("
-                << segment.source().x().BigRatValue()
-                << ", " << segment.source().y().BigRatValue() << ") --> ("
-                << segment.target().x().BigRatValue()
-                << ", " << segment.target().y().BigRatValue() << ")"
-                << "\n____________________________________________________\n\n"
       ;
 
       //TODO this is very fake but might work in some cases
@@ -1367,6 +1361,8 @@ public:
       else {
         std::cout << "move" << '\n';
       }
+
+      std::cout << "\n____________________________________________________\n\n";
 
       return to_rat(to_dbl(segment.supporting_line()));
     }
