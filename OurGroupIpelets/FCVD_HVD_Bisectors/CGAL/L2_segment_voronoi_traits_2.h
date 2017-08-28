@@ -1335,6 +1335,39 @@ public:
       AK_to_DK to_dbl;
       DK_to_RK to_rat;
 
+      /* determine if we have to rotate or translate: if the orientation of the
+       * previous and of the next arc is the same, we have to translate the
+       * algebraic segment up or down, if the orientations are different instead
+       * we have to slightly rotate the segment.
+       * This is to ensure that the supporting_line line of the approximated
+       * Rational segment still intersects both curves.
+       *
+       * There are two main cases:
+       * - the curves have the same orientation. In this case, the approximated
+       *   segment needs to be slightly moved towards the "interior" of both
+       *   curves, so that it definitely intersects still both of them
+       * - the curves have a different orietnat. In this case, the approximated
+       *   segment needs to be slightly rotated so that the source is in the
+       *   "interior" of the prev_arc, and the target of the next_arc
+       *
+       * To approximate, we work on the single coordinates of the points, so we
+       * need to create four Rational numbers.
+       * According to which direction each point needs to be moved, we multiply
+       * the Algebraic coordinate by a large multiple of 2 (say, 2^16), then we
+       * take the ceiling or floor of this number so to get an Integer, then
+       * create a Rational that is this integer divided by the large multiple of
+       * 2 (again, for example 2^16).
+       */
+
+      /* rotate */
+      if (prev_arc.orientation() != next_arc.orientation()) {
+        std::cout << "rotate" << '\n';
+      }
+      /* move up or down */
+      else {
+        std::cout << "move" << '\n';
+      }
+
       return to_rat(to_dbl(segment.supporting_line()));
     }
 
