@@ -1577,7 +1577,9 @@ public:
               );
 
               //TODO remove
-              std::cout << " approximated segment: " << approx_last_segment_curve;
+              std::cout << "\n approximated segment from before to: "
+                        << approx_last_segment_curve << "\n"
+              ;
 
               /* update prev_arc and this_arc end and start point to coincide
                * with start and end of this new approximated segment curve */
@@ -1593,6 +1595,9 @@ public:
             /* save as Curve_2 in list of bisector parts, save this curve */
             bisector_parts.push_back(this_arc);
             prev_arc = this_arc;
+
+            //TODO remove
+            std::cout << bisector_parts.back() << '\n';
 
             break;
           }
@@ -1676,6 +1681,9 @@ public:
               part_to_approximate_exists = true;
             }
 
+            //TODO remove
+            std::cout << bisector_part << " (not added, to approximate)" << '\n';
+
             break;
           }
 
@@ -1720,14 +1728,14 @@ public:
               actual_next_intersection
             ));
 
+            //TODO remove
+            std::cout << bisector_parts.back() << '\n';
+
             break;
           }
 
           default: break; // should never happen
         }
-
-        //TODO remove
-        std::cout << bisector_parts.back() << '\n';
 
         /* update current starting point and current direction of the next piece
          * of the bisector */
