@@ -966,7 +966,7 @@ public:
             Intersection_curve(x_seg_bisector, 0)
           );
         }
-        /* parabolic arc and two rays */
+        /* parabolic arc and two rays (or in other special cases just lines) */
         else {
           /* determine which one is the non-degenerate segment */
           bool s1_is_degenerate = s1.is_degenerate();
@@ -976,10 +976,74 @@ public:
           );
 
           /* get directrix and focus */
-          Rat_line_2 directrix =
-            s1_is_degenerate ? s2.supporting_line() : s1.supporting_line()
-          ;
+          Rat_segment_2 directrix_generator = s1_is_degenerate ? s2 : s1;
+          Rat_line_2 directrix = directrix_generator.supporting_line();
           Rat_point_2 focus = s1_is_degenerate ? s1.source() : s2.source();
+
+          /* if segment and point collinear, the bisector is just the bisector
+           * of the closest endpoint and the point */
+          if (CGAL::collinear(
+            focus,
+            directrix_generator.source(),
+            directrix_generator.target())
+          ) {
+            Rat_line_2 bisector;
+
+            /* if the point is not on the segment just get the bisector */
+            if (!directrix_generator.has_on(focus)) {
+
+              /* get bisector */
+              if (
+                sqdistance(focus, directrix_generator.source())
+                <
+                sqdistance(focus, directrix_generator.target())
+              ) {
+                bisector = CGAL::bisector(focus, directrix_generator.source());
+              }
+              else {
+                bisector = CGAL::bisector(focus, directrix_generator.target());
+              }
+            }
+            /* otherwise the bisector is the line on orthogonal to the segment
+             * that goes through the point on it */
+            else {
+              bisector = directrix.perpendicular(focus);
+            }
+
+            /* find endpoints */ //TODO abstract this part
+            Rat_point_2 start, end;
+            bool assigned_start = false, assigned_end = false;
+            for (auto& segment : border) {
+              if (CGAL::do_intersect(bisector, segment)) {
+                if (assigned_start && !assigned_end) {
+                  assigned_end = true;
+                  CGAL_assertion_msg(
+                    CGAL::assign(end, CGAL::intersection(bisector, segment)),
+                    "Could not assing end."
+                  );
+                }
+                else if (!assigned_start && !assigned_end) {
+                  assigned_start = true;
+                  CGAL_assertion_msg(
+                    CGAL::assign(
+                      start,
+                      CGAL::intersection(bisector, segment)
+                    ),
+                    "Could not assing start."
+                  );
+                }
+              }
+            }
+            Rat_segment_2 sg_bisector(start, end);
+            X_monotone_curve_2 x_sg_bisector = X_monotone_curve_2(sg_bisector);
+            *o++ = CGAL::make_object(
+              Intersection_curve(x_sg_bisector, 0)
+            );
+          }
+          /* otherwise, we have the actual parabola and the two rays */
+          else {
+            /* ... */
+          }
 
           /* make parabola */
           // *o++ = CGAL::make_object(
@@ -1228,10 +1292,10 @@ public:
                   << s1 << " and s2 = " << s2 << std::endl
         ;
 
-        /* return one past the end iterator */
-        return o;
-
       } // end of segments are not the same
+
+      /* return one past the end iterator */
+      return o;
     }
 
   private:
