@@ -62,6 +62,8 @@ public:
   typedef typename C_traits_2::Alg_kernel             Alg_kernel;
   typedef typename C_traits_2::Nt_traits              Nt_traits;
 
+  typedef typename Nt_traits::Integer                 BigInt;
+
   typedef typename Rat_kernel::FT                     Rational;
   typedef typename Rat_kernel::Point_2                Rat_point_2;
   typedef typename Rat_kernel::Segment_2              Rat_segment_2;
@@ -109,6 +111,8 @@ private:
     std::pair<Alg_line_2, Alg_line_2>
   >                                                   Alg_delimiter_lines;
 
+  /* Enum to store the three type of bisector parts that can be found in the
+   * bisector of two segments (excluding the unbounded rays) */
   enum Bisector_type {
     PARABOLIC_ARC,
     SUPP_LINE_BISECTOR,
@@ -597,6 +601,49 @@ private:
 
     CGAL_assertion(smaller_sqdistance >= 0);
     return result;
+  }
+
+  /* Given an Algebraic number, approximate it to a Rational according to the
+   * given flag (ceiling or floor) */
+  static RT approximate_algebraic(AT n, bool up) {
+    /* precision, better if power of 2 */
+    BigInt precision(65536); // use string for more precision
+
+    /* multiply number by precision, take ceil or floor */
+    AT big_n = n * precision;
+    BigInt approximate_big_n;
+    if (up) approximate_big_n = big_n.BigIntValue() + 1;  // ceil
+    else approximate_big_n = big_n.BigIntValue();         // floor
+
+    /* create rational with approximate_big_n and precision */
+    RT result(approximate_big_n, precision);
+    return result;
+  }
+
+  /* Given a segment, rotate it very slightly according to the flag. It
+   * doesn't matter if the length changes.
+   * The supporting line must keep approximately the same orientation.
+   * Return the rotated segment, it has rational coordinates. */
+  static Rat_segment_2 slightly_rotate_segment(Alg_segment_2 s, bool ccw) {
+    /* if vertical, move on x coordinate:  */
+    if (s.is_vertical()) {
+
+    }
+  }
+
+  /* Given two Curve_2 objects, return true if they are the same */
+  static bool same_curves(Curve_2 cv1, Curve_2 cv2) {
+    return
+      (cv1.r() == cv2.r()) &&
+      (cv1.s() == cv2.s()) &&
+      (cv1.t() == cv2.t()) &&
+      (cv1.u() == cv2.u()) &&
+      (cv1.v() == cv2.v()) &&
+      (cv1.w() == cv2.w()) &&
+      (cv1.orientation() == cv2.orientation()) &&
+      (cv1.source() == cv2.source()) &&
+      (cv1.target() == cv2.target())
+    ;
   }
 
   /* Construct a point in the middle of the curve cv. This function is copied
@@ -1325,8 +1372,6 @@ public:
       ;
 
       //TODO this is very fake but might work in some cases
-      AK_to_DK to_dbl;
-      DK_to_RK to_rat;
 
       /* determine if we have to rotate or translate: if the orientation of the
        * previous and of the next arc is the same, we have to translate the
@@ -1354,35 +1399,39 @@ public:
       Rat_segment_2 approximated_segment;
 
       /* rotate */
-      if (prev_arc.orientation() != next_arc.orientation()) {
-        std::cout << "[by rotation]:\n";
-      }
-      /* move up or down */
-      else {
-        std::cout << "[by translation]:\n";
-      }
+      // if (prev_arc.orientation() != next_arc.orientation()) {
+      //   std::cout << "[by rotation]:\n";
+      //
+      //   /* rotate segment counterclockwise */
+      //   if (prev_arc.orientation() == CGAL::CLOCKWISE) {
+      //     approximated_segment = slightly_rotate_segment(segment, true);
+      //   }
+      //   /* rotate segment clockwise */
+      //   else {
+      //     approximated_segment = slightly_rotate_segment(segment, false);
+      //   }
+      //
+      // }
+      // /* translate "up or down" */
+      // else {
+      //   std::cout << "[by translation]:\n";
+      // }
 
-      approximated_segment = to_rat(to_dbl(segment));
+      approximated_segment = Rat_segment_2(
+        Rat_point_2(
+          approximate_algebraic(segment.source().x(), true),
+          approximate_algebraic(segment.source().y(), true)
+        ),
+        Rat_point_2(
+          approximate_algebraic(segment.target().x(), true),
+          approximate_algebraic(segment.target().y(), true)
+        )
+      );
 
       std::cout << "Approximated to: " << approximated_segment;
       std::cout << "\n____________________________________________________\n\n";
 
       return approximated_segment.supporting_line();
-    }
-
-    /* Given two Curve_2 objects, return true if they are the same */
-    bool same_curves(Curve_2 cv1, Curve_2 cv2) const {
-      return
-        (cv1.r() == cv2.r()) &&
-        (cv1.s() == cv2.s()) &&
-        (cv1.t() == cv2.t()) &&
-        (cv1.u() == cv2.u()) &&
-        (cv1.v() == cv2.v()) &&
-        (cv1.w() == cv2.w()) &&
-        (cv1.orientation() == cv2.orientation()) &&
-        (cv1.source() == cv2.source()) &&
-        (cv1.target() == cv2.target())
-      ;
     }
 
     /* Given three Curve_2 in sequence, update the endpoints to make themselves
