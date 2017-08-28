@@ -1305,7 +1305,7 @@ public:
      * rational coefficients. The supporting MUST intersect both arcs.
      * The arcs are tangent to the segment to approximate at its endpoints.
      * Precondition (not checked): the arcs and the segment are oriented in the
-     * correct way, so that the are directed from the source of prev_arc to the
+     * correct way, so that they are directed from the source of prev_arc to the
      * target of next_arc.
      * Return this supporting line.
      */
