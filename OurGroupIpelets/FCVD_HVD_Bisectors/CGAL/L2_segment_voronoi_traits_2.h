@@ -1300,6 +1300,52 @@ public:
 
   private:
 
+    /* Given a two Curve_2 parabolic arcs and an algebraic segment that
+     * connects them, find an approximated segment supported by a line with
+     * rational coefficients. The supporting MUST intersect both arcs.
+     * The arcs are tangent to the segment to approximate at its endpoints.
+     * Return this supporting line.
+     */
+    Rat_line_2 get_approximated_inner_segment_supporting_line(
+      Alg_segment_2& part_to_approximate,
+      Curve_2& prev_arc,
+      Curve_2& this_arc
+    ) const {
+
+      //TODO this is very fake but might work in some cases
+      AK_to_DK to_dbl;
+      DK_to_RK to_rat;
+
+      return to_rat(to_dbl(part_to_approximate.supporting_line()));
+    }
+
+    /* Given two Curve_2 objects, return true if they are the same */
+    bool same_curves(Curve_2 cv1, Curve_2 cv2) const {
+      return
+        (cv1.r() == cv2.r()) &&
+        (cv1.s() == cv2.s()) &&
+        (cv1.t() == cv2.t()) &&
+        (cv1.u() == cv2.u()) &&
+        (cv1.v() == cv2.v()) &&
+        (cv1.w() == cv2.w()) &&
+        (cv1.orientation() == cv2.orientation()) &&
+        (cv1.source() == cv2.source()) &&
+        (cv1.target() == cv2.target())
+      ;
+    }
+
+    /* Helper function for the construction of the plane bisecotr of two line
+     * segments.
+     * Given a start point and and end point, iteratively constructs all pieces
+     * of the bisector. Other objects passed to the function are the segments
+     * themselves, the initial direction where the bisector must continue from
+     * start_pt, the iterator where to store the pieces of the bisector as
+     * Intersection_curve objects (containing X_monotone_curve_2), and two
+     * different instances of the delimiter lines, that are the lines orthogonal
+     * to the segments' endpoints, such that each segment is inside the negative
+     * part of his couple of delimiter lines.
+     * Returns a one past the end iterator of the list of Intersection_curve.
+     */
     template <class OutputIterator>
     OutputIterator construct_bisector_from_point_to_point(
       Rat_segment_2 s1, Rat_segment_2 s2,
@@ -1340,15 +1386,16 @@ public:
        * end point of the previous Curve_2 and the start point of the successive
        * Curve_2
        *
-       * Keep two parts to approximate for the case in which the segment is the
-       * part of the bisector that intersects the two segments at their
-       * intersection (so this happens only when the two segments are
-       * intersecting, of course).
+      //  * Keep two parts to approximate for the case in which the segment is the
+      //  * part of the bisector that intersects the two segments at their
+      //  * intersection (so this happens only when the two segments are
+      //  * intersecting, of course).
        */
       Curve_2 prev_arc;
       bool part_to_approximate_exists = false;
-      Alg_segment_2 part_to_approximate_1;
-      Alg_segment_2 part_to_approximate_2;
+      Alg_segment_2 part_to_approximate;
+      // Alg_segment_2 part_to_approximate_1;
+      // Alg_segment_2 part_to_approximate_2;
 
       /* rename start point */
       Alg_point_2 curr_pt = start_pt;
@@ -1414,19 +1461,72 @@ public:
             next_direction = tangent.direction();
 
             /* get parabolic arc */
-            Curve_2 parabolic_arc = supporting_conic.construct_parabolic_arc(
+            Curve_2 this_arc = supporting_conic.construct_parabolic_arc(
               curr_pt,
               actual_next_intersection
             );
 
             /* deal with approximation of previous segment if necessary */
             if (part_to_approximate_exists) {
-              //TODO
+              /* get the approximated segment supporting_conic (a line) */
+              Rat_line_2 approx_last_segment_line =
+                get_approximated_inner_segment_supporting_line(
+                part_to_approximate,
+                prev_arc,
+                this_arc
+              );
+
+              /* the prev_arc must be the last one in the list */
+              Curve_2 prev_arc_in_list = bisector_parts.back();
+              CGAL_assertion_msg(
+                same_curves(prev_arc_in_list, prev_arc),
+                "prev_arc should be last element in list of parts of bisector."
+              );
+              bisector_parts.pop_back(); // remove last curve
+
+              /* create new segment curve */
+              Curve_2 approx_last_segment_curve(
+                0,
+               	0,  // supporting conic is a line, so it's linear
+               	0,
+               	approx_last_segment_line.a(),
+               	approx_last_segment_line.b(),
+               	approx_last_segment_line.c(),
+                CGAL::COLLINEAR,
+                part_to_approximate.source(),
+               	prev_arc.r(),
+               	prev_arc.s(),
+               	prev_arc.t(),
+               	prev_arc.u(),
+               	prev_arc.v(),
+               	prev_arc.w(),
+                part_to_approximate.target(),
+               	this_arc.r(),
+               	this_arc.s(),
+               	this_arc.t(),
+               	this_arc.u(),
+               	this_arc.v(),
+               	this_arc.w()
+              );
+              CGAL_assertion_msg(
+                approx_last_segment_curve.is_valid(),
+                "Created approximated segment curve is not valid"
+              );
+
+              /* update prev_arc and this_arc end and start point to coincide
+               * with start and end of this new approximated segment curve */
+              prev_arc.set_target(approx_last_segment_curve.source());
+              this_arc.set_source(approx_last_segment_curve.target());
+
+              /* push in list of bisector parts the updated prev_arc and the
+               * now approximated segment curve */
+              bisector_parts.push_back(prev_arc);
+              bisector_parts.push_back(approx_last_segment_curve);
             }
 
             /* save as Curve_2 in list of bisector parts, save this curve */
-            bisector_parts.push_back(parabolic_arc);
-            prev_arc = parabolic_arc;
+            bisector_parts.push_back(this_arc);
+            prev_arc = this_arc;
 
             break;
           }
@@ -1499,9 +1599,14 @@ public:
               ))));
             }
             else {
-              //TODO update to smart approximation of segment version
-              /* save as Curve_2 in list of bisector parts */
-              bisector_parts.push_back(Curve_2(to_rat(to_dbl(bisector_part))));
+              /* save this algebraic segment in the `part_to_approximate`
+               * variable; when the next bisector part will be constructed (and
+               * it should be an arc) or at the end of the loop (if this is the
+               * last part) this segment will be approximated and added to the
+               * list of pieces of the bisector
+               */
+              part_to_approximate = bisector_part;
+              part_to_approximate_exists = true;
             }
 
             break;
@@ -1537,7 +1642,7 @@ public:
              * save as Curve_2 in list of bisector parts */
             bisector_parts.push_back(Curve_2(
               0,
-              0,
+              0,  // supporting conic is a line, so it's linear
               0,
               endpoint_bisector.a(),
               endpoint_bisector.b(),
