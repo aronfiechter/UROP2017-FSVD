@@ -1322,7 +1322,7 @@ public:
                 << ") --> ("
                 << segment.target().x().toString() << ", "
                 << segment.target().y().toString()
-                << ")" << ":\n"
+                << ")" << ":"
       ;
 
       //TODO this is very fake but might work in some cases
@@ -1352,19 +1352,23 @@ public:
        * create a Rational that is this integer divided by the large multiple of
        * 2 (again, for example 2^16).
        */
+      Rat_segment_2 approximated_segment;
 
       /* rotate */
       if (prev_arc.orientation() != next_arc.orientation()) {
-        std::cout << "rotate" << '\n';
+        std::cout << "[by rotation]:\n";
       }
       /* move up or down */
       else {
-        std::cout << "move" << '\n';
+        std::cout << "[by translation]:\n";
       }
 
+      approximated_segment = to_rat(to_dbl(segment));
+
+      std::cout << "Approximated to: " << approximated_segment;
       std::cout << "\n____________________________________________________\n\n";
 
-      return to_rat(to_dbl(segment.supporting_line()));
+      return approximated_segment.supporting_line();
     }
 
     /* Given two Curve_2 objects, return true if they are the same */
@@ -1540,6 +1544,9 @@ public:
               actual_next_intersection
             );
 
+            //TODO remove
+            std::cout << this_arc << '\n';
+
             /* deal with approximation of previous segment if necessary */
             if (part_to_approximate_exists) {
               /* get the approximated segment supporting_conic (a line) */
@@ -1588,8 +1595,8 @@ public:
               );
 
               //TODO remove
-              std::cout << "\n approximated segment from before to: "
-                        << approx_last_segment_curve << "\n"
+              std::cout << " ---> (approximated segment from before to: "
+                        << approx_last_segment_curve << ")\n"
               ;
 
               /* if needed (because the endpoints might just be the same ones,
@@ -1607,9 +1614,6 @@ public:
             /* save as Curve_2 in list of bisector parts, save this curve */
             bisector_parts.push_back(this_arc);
             prev_arc = this_arc;
-
-            //TODO remove
-            std::cout << bisector_parts.back() << '\n';
 
             break;
           }
