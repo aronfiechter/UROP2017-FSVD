@@ -1304,19 +1304,38 @@ public:
      * connects them, find an approximated segment supported by a line with
      * rational coefficients. The supporting MUST intersect both arcs.
      * The arcs are tangent to the segment to approximate at its endpoints.
+     * Precondition (not checked): the arcs and the segment are oriented in the
+     * correct way, so that the are directed from the source of prev_arc to the
+     * target of next_arc.
      * Return this supporting line.
      */
     Rat_line_2 get_approximated_inner_segment_supporting_line(
-      Alg_segment_2& part_to_approximate,
+      Alg_segment_2& segment,
       Curve_2& prev_arc,
-      Curve_2& this_arc
+      Curve_2& next_arc
     ) const {
+
+      std::cout << "\n\n____________________________________________________\n"
+                << "Approximating algebraic segment: ("
+                << segment.source().x() << ", "
+                << segment.source().y()
+                << ") --> ("
+                << segment.target().x() << ", "
+                << segment.target().y()
+                << ")" << ":\n"
+                << "It has approximated Rational coordinates ("
+                << segment.source().x().BigRatValue()
+                << ", " << segment.source().y().BigRatValue() << ") --> ("
+                << segment.target().x().BigRatValue()
+                << ", " << segment.target().y().BigRatValue() << ")"
+                << "\n____________________________________________________\n\n"
+      ;
 
       //TODO this is very fake but might work in some cases
       AK_to_DK to_dbl;
       DK_to_RK to_rat;
 
-      return to_rat(to_dbl(part_to_approximate.supporting_line()));
+      return to_rat(to_dbl(segment.supporting_line()));
     }
 
     /* Given two Curve_2 objects, return true if they are the same */
@@ -1400,9 +1419,19 @@ public:
       /* rename start point */
       Alg_point_2 curr_pt = start_pt;
 
+      //TODO remove
+      int iteration = 0;
+      std::cout << "\n####################################\n"
+                << "#        Starting while loop       #"
+                << "\n####################################\n"
+      ;
+
       /* "walk" through the bisector to find all parts until every piece has
        * been created and added to the OutputIterator o */
       while (curr_pt != end_pt) {
+        //TODO remove
+        std::cout << iteration++ << ": ";
+
         /* find next intersection with delimiter_lines when going in the
          * direction saved in "curr_direction", then find a middle point
          * between curr_pt and that intersection */
@@ -1428,6 +1457,7 @@ public:
         switch (find_position(midpoint, alg_delimiter_lines, s1, s2, o1, o2)) {
 
           case PARABOLIC_ARC: {
+            std::cout << "- PARABOLIC_ARC - ";
             /* extract directrix and focus */
             Rat_line_2 directrix; Rat_point_2 focus;
             if (CGAL::assign(directrix, o1)) {
@@ -1513,6 +1543,9 @@ public:
                 "Created approximated segment curve is not valid"
               );
 
+              //TODO remove
+              std::cout << " approximated segment: " << approx_last_segment_curve;
+
               /* update prev_arc and this_arc end and start point to coincide
                * with start and end of this new approximated segment curve */
               prev_arc.set_target(approx_last_segment_curve.source());
@@ -1532,6 +1565,7 @@ public:
           }
 
           case SUPP_LINE_BISECTOR: {
+            std::cout << "- SUPP_LINE_BISECTOR - ";
             /* extract two supporting lines */
             Rat_line_2 supp_line1; Rat_line_2 supp_line2;
             CGAL_assertion(CGAL::assign(supp_line1, o1));
@@ -1613,6 +1647,7 @@ public:
           }
 
           case ENDPOINT_BISECTOR: {
+            std::cout << "- ENDPOINT_BISECTOR - ";
             /* extract two endpoints */
             Rat_point_2 endpoint1; Rat_point_2 endpoint2;
             CGAL_assertion(CGAL::assign(endpoint1, o1));
@@ -1657,6 +1692,9 @@ public:
 
           default: break; // should never happen
         }
+
+        //TODO remove
+        std::cout << bisector_parts.back() << '\n';
 
         /* update current starting point and current direction of the next piece
          * of the bisector */
