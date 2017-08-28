@@ -577,7 +577,6 @@ private:
     }
   }
 
-
   /* Given a point p and a list of points, return the closest point.
    * Precondition (checked): the list of points is not empty */
   template <class K>
