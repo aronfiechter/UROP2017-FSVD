@@ -1581,7 +1581,7 @@ public:
      * Precondition (not checked): the source and target of curr lie on prev and
      * on next respectively.
      */
-    void update_endpoints(Curve_2& prev, Curve_2& curr, Curve_2 next) const {
+    void update_endpoints(Curve_2& prev, Curve_2& curr, Curve_2& next) const {
       if (prev.target() != curr.source()) {
         std::cout << "[updated target of prev] ";
         prev.set_target(curr.source());
