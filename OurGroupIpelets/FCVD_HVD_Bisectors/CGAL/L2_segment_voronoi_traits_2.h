@@ -659,7 +659,7 @@ private:
     AT big_n = n * precision;
     BigInt approximate_big_n;
     if (up) approximate_big_n = big_n.BigIntValue() + 1;  // ceil
-    else approximate_big_n = big_n.BigIntValue();         // floor
+    else approximate_big_n = big_n.BigIntValue() - 1;     // floor
 
     /* create rational with approximate_big_n and precision */
     RT result(approximate_big_n, precision);
