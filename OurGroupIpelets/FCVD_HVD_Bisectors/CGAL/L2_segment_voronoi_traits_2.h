@@ -1104,9 +1104,9 @@ public:
                               const Xy_monotone_surface_3& s2,
                               OutputIterator o) const {
 
-      //TODO remove
-      std::cout << "Finding bisector of s1 = "
-                << s1 << " and s2 = " << s2 << " --- "
+      std::cout << "\n#######################################################\n"
+                << "#\tFinding bisector of s1 = {"
+                << s1 << "} and s2 = {" << s2 << "}:\n"
       ;
 
       /* create converter functors to convert from:
@@ -1490,12 +1490,6 @@ public:
           );
         } // end of segments intersect
 
-
-        //TODO remove
-        std::cout << "Created bisector of s1 = "
-                  << s1 << " and s2 = " << s2 << std::endl
-        ;
-
       } // end of segments are not the same
 
       /* return one past the end iterator */
@@ -1518,17 +1512,6 @@ public:
       Curve_2& prev_arc,
       Curve_2& next_arc
     ) const {
-
-      std::cout << "\n\n____________________________________________________\n"
-                << "Approximating algebraic segment: ("
-                << segment.source().x().toString() << ", "
-                << segment.source().y().toString()
-                << ") --> ("
-                << segment.target().x().toString() << ", "
-                << segment.target().y().toString()
-                << ")"
-      ;
-
       /* determine if we have to rotate or translate: if the orientation of the
        * previous and of the next arc is the same, we have to translate the
        * algebraic segment up or down, if the orientations are different instead
@@ -1556,8 +1539,6 @@ public:
 
       /* rotate */
       if (prev_arc.orientation() != next_arc.orientation()) {
-        std::cout << " [by rotation]:\n";
-
         /* rotate segment counterclockwise */
         if (prev_arc.orientation() == CGAL::CLOCKWISE) {
           approximated_segment = slightly_rotate_segment(segment, true);
@@ -1570,8 +1551,6 @@ public:
       }
       /* translate "up or down" */
       else {
-        std::cout << " [by translation]:\n";
-
         /* move "up" (positive side) */
         if (prev_arc.orientation() == CGAL::COUNTERCLOCKWISE) {
           approximated_segment = slightly_translate_segment(segment, true);
@@ -1581,9 +1560,6 @@ public:
           approximated_segment = slightly_translate_segment(segment, false);
         }
       }
-
-      std::cout << "Approximated to: " << approximated_segment;
-      std::cout << "\n____________________________________________________\n\n";
 
       return approximated_segment.supporting_line();
     }
@@ -1669,19 +1645,9 @@ public:
       /* rename start point */
       Alg_point_2 curr_pt = start_pt;
 
-      //TODO remove
-      int iteration = 0;
-      std::cout << "\n####################################\n"
-                << "#        Starting while loop       #"
-                << "\n####################################\n"
-      ;
-
       /* "walk" through the bisector to find all parts until every piece has
        * been created and added to the OutputIterator o */
       while (curr_pt != end_pt) {
-        //TODO remove
-        std::cout << iteration++ << ": ";
-
         /* find next intersection with delimiter_lines when going in the
          * direction saved in "curr_direction", then find a middle point
          * between curr_pt and that intersection */
@@ -1707,7 +1673,6 @@ public:
         switch (find_position(midpoint, alg_delimiter_lines, s1, s2, o1, o2)) {
 
           case PARABOLIC_ARC: {
-            std::cout << "- PARABOLIC_ARC - ";
             /* extract directrix and focus */
             Rat_line_2 directrix; Rat_point_2 focus;
             if (CGAL::assign(directrix, o1)) {
@@ -1745,9 +1710,6 @@ public:
               curr_pt,
               actual_next_intersection
             );
-
-            //TODO remove
-            std::cout << this_arc << '\n';
 
             /* deal with approximation of previous segment if necessary */
             if (part_to_approximate_exists) {
@@ -1796,11 +1758,6 @@ public:
                 "Created approximated segment curve is not valid"
               );
 
-              //TODO remove
-              std::cout << " ---> (approximated segment from before to: "
-                        << approx_last_segment_curve << ")\n"
-              ;
-
               /* if needed (because the endpoints might just be the same ones,
                * for example if the approximation was exact), update prev_arc
                * and this_arc end and start point to coincide with start and end
@@ -1821,7 +1778,6 @@ public:
           }
 
           case SUPP_LINE_BISECTOR: {
-            std::cout << "- SUPP_LINE_BISECTOR - ";
             /* extract two supporting lines */
             Rat_line_2 supp_line1; Rat_line_2 supp_line2;
             CGAL_assertion(CGAL::assign(supp_line1, o1));
@@ -1899,14 +1855,10 @@ public:
               part_to_approximate_exists = true;
             }
 
-            //TODO remove
-            std::cout << bisector_part << " (not added, to approximate)" << '\n';
-
             break;
           }
 
           case ENDPOINT_BISECTOR: {
-            std::cout << "- ENDPOINT_BISECTOR - ";
             /* extract two endpoints */
             Rat_point_2 endpoint1; Rat_point_2 endpoint2;
             CGAL_assertion(CGAL::assign(endpoint1, o1));
@@ -1945,9 +1897,6 @@ public:
               curr_pt,
               actual_next_intersection
             ));
-
-            //TODO remove
-            std::cout << bisector_parts.back() << '\n';
 
             break;
           }
