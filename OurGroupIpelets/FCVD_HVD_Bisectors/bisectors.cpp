@@ -171,7 +171,7 @@ public:
 
 private:
   Algebraic PRECISION = Algebraic(5); // values under 0.5 take too long
-
+  Rational BOUNDARY = Rational(10000);
 
   /* Find a number of points on the curve cv such that they are all close enough
    * to approximate the curve. Then create segments between these points and add
@@ -219,6 +219,15 @@ private:
     segments.push_back(*last_arc_segment);
 
     return;
+  }
+
+  /* Check if two points are both on the boundary of the diagram. This boundary
+   * is added artificially in FSVD (fn: 10). */
+  bool on_boundary(Point_2 p1, Point_2 p2) {
+    return
+      (CGAL::abs(p1.x()) == BOUNDARY && CGAL::abs(p2.x()) == BOUNDARY) ||
+      (CGAL::abs(p1.y()) == BOUNDARY && CGAL::abs(p2.y()) == BOUNDARY)
+    ;
   }
 
 }; // end of class bisectorIpelet
@@ -882,7 +891,7 @@ void bisectorIpelet::protected_run(int fn) {
     m_envelope_diagram = new L2_FSVD_Envelope_diagram_2();
 
     /* compute the diagram */
-    CGAL::lower_envelope_3(
+    CGAL::upper_envelope_3(
       vd_sg_list.begin(),
       vd_sg_list.end(),
       *m_envelope_diagram
@@ -956,6 +965,7 @@ void bisectorIpelet::protected_run(int fn) {
     // draw_in_ipe(bbox);
 
     /* draw FSVD edges. It's Voronice! */
+    std::list<Segment_2> segments_to_draw;
     L2_FSVD_Envelope_diagram_2::Edge_const_iterator eit;
     for (eit = m_envelope_diagram->edges_begin();
          eit != m_envelope_diagram->edges_end();
@@ -970,8 +980,11 @@ void bisectorIpelet::protected_run(int fn) {
           CGAL::to_double(eit->curve().target().x()),
           CGAL::to_double(eit->curve().target().y())
         );
-        if (p1 == p2) draw_in_ipe(p1); // it could be a point
-        else draw_in_ipe(Segment_2(p1, p2), bbox);
+        /* if it's in the inside of the diagram, draw it */
+        if (!on_boundary(p1, p2)) {
+          segments_to_draw.push_back(Segment_2(p1, p2));
+        }
+        /* do not draw it if it's on the boundary */
       }
       /* the edge is a parabolic arc */
       else {
@@ -981,9 +994,15 @@ void bisectorIpelet::protected_run(int fn) {
         );
         std::list<Segment_2> segments;
         arc_to_segments(eit->curve(), segments);
-        draw_in_ipe(segments.begin(), segments.end(), true);
+        segments_to_draw.insert(
+          segments_to_draw.end(),
+          segments.begin(),
+          segments.end()
+        );
       }
-    } // end of draw FSVD edges
+    }
+    draw_in_ipe(segments_to_draw.begin(), segments_to_draw.end(), true);
+    // end of draw FSVD edges
 
   } // enf of case: fn == 10
 
