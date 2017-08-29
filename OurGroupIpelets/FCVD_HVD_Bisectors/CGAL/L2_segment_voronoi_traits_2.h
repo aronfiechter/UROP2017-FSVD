@@ -45,6 +45,13 @@
 
 namespace CGAL {
 
+/* colour */
+#define COUT_COLOUR_RESET   "\033[0m"
+#define COUT_COLOUR_RED     "\033[31m"      /* Red */
+#define COUT_COLOUR_GREEN   "\033[32m"      /* Green */
+#define COUT_COLOUR_YELLOW  "\033[33m"      /* Yellow */
+#define COUT_COLOUR_BLUE    "\033[34m"      /* Blue */
+
 template <class Conic_traits_2, class Kernel_>
 class L2_segment_voronoi_traits_2 : public Conic_traits_2 {
 
@@ -1104,7 +1111,8 @@ public:
                               const Xy_monotone_surface_3& s2,
                               OutputIterator o) const {
 
-      std::cout << "\n#######################################################\n"
+      std::cout << "\n#######################################################"
+                << "#######################################################\n"
                 << "#\tFinding bisector of s1 = {"
                 << s1 << "} and s2 = {" << s2 << "}:\n"
       ;
@@ -1673,6 +1681,7 @@ public:
         switch (find_position(midpoint, alg_delimiter_lines, s1, s2, o1, o2)) {
 
           case PARABOLIC_ARC: {
+            std::cout << "PARABOLIC_ARC -> " << '\n';
             /* extract directrix and focus */
             Rat_line_2 directrix; Rat_point_2 focus;
             if (CGAL::assign(directrix, o1)) {
@@ -1778,6 +1787,7 @@ public:
           }
 
           case SUPP_LINE_BISECTOR: {
+            std::cout << "SUPP_LINE_BISECTOR ->" << '\n';
             /* extract two supporting lines */
             Rat_line_2 supp_line1; Rat_line_2 supp_line2;
             CGAL_assertion(CGAL::assign(supp_line1, o1));
@@ -1859,6 +1869,7 @@ public:
           }
 
           case ENDPOINT_BISECTOR: {
+            std::cout << "ENDPOINT_BISECTOR -> " << '\n';
             /* extract two endpoints */
             Rat_point_2 endpoint1; Rat_point_2 endpoint2;
             CGAL_assertion(CGAL::assign(endpoint1, o1));
@@ -1909,6 +1920,7 @@ public:
         curr_pt = actual_next_intersection;
         curr_direction = next_direction;
       }
+      std::cout << "FINISHED\n";
 
       /* iterate over all Curve_2 (inner parts of the bisector) to convert them
        * all to X_monotone_curve_2, add them all to the OutputIterator o.
@@ -1916,12 +1928,13 @@ public:
       Alg_point_2 connection = start_pt;
       for (auto& current_cv : bisector_parts) {
         /* check and update */
-        CGAL_assertion_msg(
+        std::cout << current_cv << '\n';
+        CGAL_warning_msg(
           (current_cv.source() == connection),
-          "The curve is not connected."
+          COUT_COLOUR_RED "Warning" COUT_COLOUR_YELLOW
+          "The curve is not connected." COUT_COLOUR_RESET
         );
         connection = current_cv.target();
-        std::cout << current_cv << '\n';
 
         /* convert and add */
         std::vector<X_monotone_curve_2> arc_x_mono_parts;
@@ -2057,16 +2070,11 @@ public:
     std::cout << "# midpoint(" << midpoint << ") , ";
 
     /* print warning if necessary */
-    /* colour */
-    #define RESET   "\033[0m"
-    #define RED     "\033[31m"      /* Red */
-    #define GREEN   "\033[32m"      /* Green */
-    #define YELLOW  "\033[33m"      /* Yellow */
-    #define BLUE    "\033[34m"      /* Blue */
     char message[100];
     sprintf(
       message,
-      RED "Warning: " YELLOW "s1 and s2 are not equidistant, difference: %lf" RESET,
+      COUT_COLOUR_RED "Warning: " COUT_COLOUR_YELLOW
+      "s1 and s2 are not equidistant, difference: %lf" COUT_COLOUR_RESET,
       CGAL::to_double(difference)
     );
     CGAL_warning_msg((difference == 0), message);
