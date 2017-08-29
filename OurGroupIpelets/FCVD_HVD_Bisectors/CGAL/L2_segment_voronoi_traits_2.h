@@ -1371,8 +1371,6 @@ public:
                 << ")" << ":"
       ;
 
-      //TODO this is very fake but might work in some cases
-
       /* determine if we have to rotate or translate: if the orientation of the
        * previous and of the next arc is the same, we have to translate the
        * algebraic segment up or down, if the orientations are different instead
@@ -1917,7 +1915,7 @@ public:
     const Xy_monotone_surface_3& s2,
     bool compare_above
   ) {
-    Algebraic move_by = 10;
+    Algebraic move_by = 1;
 
     /* construct a point on the curve cv, assert equidistant from s1 and s2 */
     Alg_point_2 midpoint = construct_middle_point(cv);
@@ -1950,7 +1948,7 @@ public:
       CGAL::to_double(difference)
     );
     CGAL_warning_msg((difference == 0), message);
-    std::cout << "the difference is: " << difference << ".";
+    std::cout << "the difference is: " << difference.toString() << ".";
 
     /* get converter and convert */
     RK_to_AK to_alg;
@@ -1959,12 +1957,15 @@ public:
 
     Alg_point_2 moved_point;
     Algebraic displacement = compare_above ? move_by : -move_by;
-    if (!cv.is_vertical()) {
-      moved_point = Alg_point_2(midpoint.x(), midpoint.y() + displacement);
-    }
-    else {
+    if (cv.is_vertical()) {
       std::cout << " -- CV IS VERTICAL --";
       moved_point = Alg_point_2(midpoint.x() - displacement, midpoint.y());
+    }
+    // else if (more_vertical_than_horizontal(cv)) {
+    //   moved_point = Alg_point_2(midpoint.x() - displacement, midpoint.y());
+    // }
+    else {
+      moved_point = Alg_point_2(midpoint.x(), midpoint.y() + displacement);
     }
 
     std::cout << " Moved midpoint to pt(" << moved_point << ")" << std::endl;
@@ -1985,6 +1986,14 @@ public:
     CGAL_error_msg("This function is not working properly");
     return CGAL::EQUAL;
   }
+
+  // static more_vertical_than_horizontal(X_monotone_curve_2 cv) {
+  //   return
+  //     CGAL::abs(cv.source().x() - cv.target().x())  // dx
+  //     <
+  //     CGAL::abs(cv.source().y() - cv.target().y())  // dy
+  //   ;
+  // }
 
 }; // class L2_segment_voronoi_traits_2
 } // namespace CGAL
