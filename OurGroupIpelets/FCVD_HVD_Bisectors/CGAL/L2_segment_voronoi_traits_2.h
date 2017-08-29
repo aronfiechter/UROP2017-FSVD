@@ -1545,8 +1545,16 @@ public:
        */
       Rat_segment_2 approximated_segment;
 
+      /* for checks */
+      RK_to_AK to_alg;
+
+      std::cout << "\nApproximating [" << segment << "] with supporting line ["
+                << segment.supporting_line() << "] "
+      ;
+
       /* rotate */
       if (prev_arc.orientation() != next_arc.orientation()) {
+        std::cout << "by rotation ";
         /* rotate segment counterclockwise */
         if (prev_arc.orientation() == CGAL::CLOCKWISE) {
           approximated_segment = slightly_rotate_segment(segment, true);
@@ -1559,15 +1567,42 @@ public:
       }
       /* translate "up or down" */
       else {
+        std::cout << "by translation ";
         /* move "up" (positive side) */
         if (prev_arc.orientation() == CGAL::COUNTERCLOCKWISE) {
           approximated_segment = slightly_translate_segment(segment, true);
+          /* check */
+          Alg_segment_2 alg_approx_seg = to_alg(approximated_segment);
+          CGAL_assertion_msg(
+            (segment.supporting_line().has_on_positive_side(
+              alg_approx_seg.source()
+            )
+            &&
+            segment.supporting_line().has_on_positive_side(
+              alg_approx_seg.target()
+            )),
+            "The approximated segment should be above initial segment."
+          );
         }
         /* move "down" (negative side) */
         else {
           approximated_segment = slightly_translate_segment(segment, false);
+          /* check */
+          Alg_segment_2 alg_approx_seg = to_alg(approximated_segment);
+          CGAL_assertion_msg(
+            (segment.supporting_line().has_on_negative_side(
+              alg_approx_seg.source()
+            )
+            &&
+            segment.supporting_line().has_on_negative_side(
+              alg_approx_seg.target()
+            )),
+            "The approximated segment should be below initial segment."
+          );
         }
       }
+
+      std::cout << "to [" << approximated_segment << "]" << '\n';
 
       return approximated_segment.supporting_line();
     }
@@ -1582,14 +1617,21 @@ public:
      * on next respectively.
      */
     void update_endpoints(Curve_2& prev, Curve_2& curr, Curve_2& next) const {
+      bool one = false, two = false;
       if (prev.target() != curr.source()) {
-        std::cout << "[updated target of prev] ";
         prev.set_target(curr.source());
+        one = true;
       }
       if (next.source() != curr.target()) {
-        std::cout << "[updated source of next] ";
         next.set_source(curr.target());
+        two = true;
       }
+      std::cout << "[updated "
+                << (one ? "prev " : "")
+                << (two ? "next " : "")
+                << (!(one || two) ? "nothing" : "")
+                << "] "
+      ;
       return;
     }
 
@@ -1744,6 +1786,11 @@ public:
                 "prev_arc should be last element in list of parts of bisector."
               );
               bisector_parts.pop_back(); // remove last curve
+
+              std::cout << "Prev, segment, next:\n";
+              std::cout << prev_arc << '\n';
+              std::cout << approx_last_segment_line << '\n';
+              std::cout << this_arc << '\n';
 
               /* create new segment curve */
               Curve_2 approx_last_segment_curve(
