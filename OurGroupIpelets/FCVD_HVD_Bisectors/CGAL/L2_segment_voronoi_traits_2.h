@@ -1582,8 +1582,14 @@ public:
      * on next respectively.
      */
     void update_endpoints(Curve_2& prev, Curve_2& curr, Curve_2 next) const {
-      if (prev.target() != curr.source()) prev.set_target(curr.source());
-      if (next.source() != curr.target()) next.set_source(curr.target());
+      if (prev.target() != curr.source()) {
+        std::cout << "[updated target of prev] ";
+        prev.set_target(curr.source());
+      }
+      if (next.source() != curr.target()) {
+        std::cout << "[updated source of next] ";
+        next.set_source(curr.target());
+      }
       return;
     }
 
@@ -1926,13 +1932,14 @@ public:
       /* iterate over all Curve_2 (inner parts of the bisector) to convert them
        * all to X_monotone_curve_2, add them all to the OutputIterator o.
        * While iterating, also keep checking if the curves are all connected */
+      int piece = 0;
       Alg_point_2 connection = start_pt;
       for (auto& current_cv : bisector_parts) {
         /* check and update */
-        std::cout << current_cv << '\n';
+        std::cout << piece++ << ": " << current_cv << '\n';
         CGAL_warning_msg(
           (current_cv.source() == connection),
-          COUT_COLOUR_RED "Warning" COUT_COLOUR_YELLOW
+          COUT_COLOUR_RED "Warning: " COUT_COLOUR_YELLOW
           "The curve is not connected." COUT_COLOUR_RESET
         );
         connection = current_cv.target();
