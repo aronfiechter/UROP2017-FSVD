@@ -119,6 +119,15 @@ private:
     ENDPOINT_BISECTOR
   };
 
+  /* Enum to store the four possible quadrants something can be oriented to.
+   * Used when rotating a segment. */
+  enum Quadrant {
+    FIRST_Q,
+    SECOND_Q,
+    THIRD_Q,
+    FOURTH_Q
+  };
+
   /* Parabola class used to provide methods to find intersections with lines,
    * to check point location with respect to a parabola, to create parabolic
    * arcs, to get tangent directions at points. */
@@ -583,7 +592,7 @@ private:
 
   /* Given a point p and a list of points, return the closest point.
    * Precondition (checked): the list of points is not empty */
-  template <class K>
+  template <class K> // Kernel
   static typename K::Point_2 closest_point(
     typename K::Point_2 p,
     std::list<typename K::Point_2> points
@@ -603,6 +612,36 @@ private:
     return result;
   }
 
+  /* Given a segment, determine the Quadrant where it is oriented "into".
+   * Precondition (checked): the segment is not degenerate.
+   * Return the Quadrant. */
+  template <class K> // Kernel
+  static Quadrant general_direction(typename K::Segment_2 s) {
+    CGAL_precondition_msg(!s.is_degenerate(), "Segment cannot be degenerate.");
+
+    /* get direction */
+    typename K::Direction_2 s_direction = s.direction();
+    typename K::RT dx = s_direction.dx(), dy = s_direction.dy();
+
+    /* for each quadrant, always include the "starting" vertical or horizontal
+     * direction of the quadrant, but exclude the last direction */
+    if (dx > 0 && dy >= 0) {
+      return FIRST_Q;
+    }
+    else if (dx <= 0 && dy > 0) {
+      return SECOND_Q;
+    }
+    else if (dx < 0 && dy <= 0) {
+      return THIRD_Q;
+    }
+    else if (dx >= 0 && dy < 0) {
+      return FOURTH_Q;
+    }
+    else {
+      CGAL_error_msg("This function is not working properly.");
+    }
+  }
+
   /* Given an Algebraic number, approximate it to a Rational according to the
    * given flag (ceiling or floor) */
   static RT approximate_algebraic(AT n, bool up) {
@@ -620,14 +659,133 @@ private:
     return result;
   }
 
-  /* Given a segment, rotate it very slightly according to the flag. It
-   * doesn't matter if the length changes.
+  /* Given a segment, rotate it very slightly clockwise or counterclockwise
+   * according to the flag. It doesn't matter if the length changes.
    * The supporting line must keep approximately the same orientation.
    * Return the rotated segment, it has rational coordinates. */
   static Rat_segment_2 slightly_rotate_segment(Alg_segment_2 s, bool ccw) {
-    /* if vertical, move on x coordinate:  */
-    if (s.is_vertical()) {
+    /* depending on towards which Quadrant the segment is oriented, rotate it
+     * by changing individually each one of its coordinates according to the
+     * given flag ccw (if true, rotate counterclockwise) */
+    switch (general_direction<Alg_kernel>(s)) {
+      case FIRST_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ ccw),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ !ccw)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ !ccw),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ ccw)
+          )
+        );
+        break;
+      }
+      case SECOND_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ ccw),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ ccw)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ !ccw),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ !ccw)
+          )
+        );
+        break;
+      }
+      case THIRD_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ !ccw),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ ccw)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ ccw),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ !ccw)
+          )
+        );
+        break;
+      }
+      case FOURTH_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ !ccw),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ !ccw)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ ccw),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ ccw)
+          )
+        );
+        break;
+      }
+      default: break; // should never happen
+    }
+  }
 
+  /* Given a segment, translate it very slightly up or down according to the
+   * given flag. It doesn't matter if the length changes.
+   * The supporting line must keep approximately the same orientation.
+   * Return the translated segment, it has rational coordinates. */
+  static Rat_segment_2 slightly_translate_segment(Alg_segment_2 s, bool up) {
+    /* depending on towards which Quadrant the segment is oriented, translate it
+     * by changing individually each one of its coordinates according to the
+     * given flag up (if true, translate towards positive side) */
+    switch (general_direction<Alg_kernel>(s)) {
+      case FIRST_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ !up),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ up)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ !up),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ up)
+          )
+        );
+        break;
+      }
+      case SECOND_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ !up),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ !up)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ !up),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ !up)
+          )
+        );
+        break;
+      }
+      case THIRD_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ up),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ !up)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ up),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ !up)
+          )
+        );
+        break;
+      }
+      case FOURTH_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ up),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ up)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ up),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ up)
+          )
+        );
+        break;
+      }
+      default: break; // should never happen
     }
   }
 
