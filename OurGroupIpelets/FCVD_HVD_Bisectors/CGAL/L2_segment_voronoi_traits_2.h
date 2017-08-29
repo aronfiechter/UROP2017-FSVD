@@ -1526,7 +1526,7 @@ public:
                 << ") --> ("
                 << segment.target().x().toString() << ", "
                 << segment.target().y().toString()
-                << ")" << ":"
+                << ")"
       ;
 
       /* determine if we have to rotate or translate: if the orientation of the
@@ -1555,34 +1555,32 @@ public:
       Rat_segment_2 approximated_segment;
 
       /* rotate */
-      // if (prev_arc.orientation() != next_arc.orientation()) {
-      //   std::cout << "[by rotation]:\n";
-      //
-      //   /* rotate segment counterclockwise */
-      //   if (prev_arc.orientation() == CGAL::CLOCKWISE) {
-      //     approximated_segment = slightly_rotate_segment(segment, true);
-      //   }
-      //   /* rotate segment clockwise */
-      //   else {
-      //     approximated_segment = slightly_rotate_segment(segment, false);
-      //   }
-      //
-      // }
-      // /* translate "up or down" */
-      // else {
-      //   std::cout << "[by translation]:\n";
-      // }
+      if (prev_arc.orientation() != next_arc.orientation()) {
+        std::cout << " [by rotation]:\n";
 
-      approximated_segment = Rat_segment_2(
-        Rat_point_2(
-          approximate_algebraic(segment.source().x(), true),
-          approximate_algebraic(segment.source().y(), true)
-        ),
-        Rat_point_2(
-          approximate_algebraic(segment.target().x(), true),
-          approximate_algebraic(segment.target().y(), true)
-        )
-      );
+        /* rotate segment counterclockwise */
+        if (prev_arc.orientation() == CGAL::CLOCKWISE) {
+          approximated_segment = slightly_rotate_segment(segment, true);
+        }
+        /* rotate segment clockwise */
+        else {
+          approximated_segment = slightly_rotate_segment(segment, false);
+        }
+
+      }
+      /* translate "up or down" */
+      else {
+        std::cout << " [by translation]:\n";
+
+        /* move "up" (positive side) */
+        if (prev_arc.orientation() == CGAL::COUNTERCLOCKWISE) {
+          approximated_segment = slightly_translate_segment(segment, true);
+        }
+        /* move "down" (negative side) */
+        else {
+          approximated_segment = slightly_translate_segment(segment, false);
+        }
+      }
 
       std::cout << "Approximated to: " << approximated_segment;
       std::cout << "\n____________________________________________________\n\n";
