@@ -1681,7 +1681,7 @@ public:
         switch (find_position(midpoint, alg_delimiter_lines, s1, s2, o1, o2)) {
 
           case PARABOLIC_ARC: {
-            std::cout << "PARABOLIC_ARC -> " << '\n';
+            std::cout << "PARABOLIC_ARC -> ";
             /* extract directrix and focus */
             Rat_line_2 directrix; Rat_point_2 focus;
             if (CGAL::assign(directrix, o1)) {
@@ -1722,6 +1722,7 @@ public:
 
             /* deal with approximation of previous segment if necessary */
             if (part_to_approximate_exists) {
+              part_to_approximate_exists = false; // reset flag
               /* get the approximated segment supporting_conic (a line) */
               Rat_line_2 approx_last_segment_line =
                 get_approximated_inner_segment_supporting_line(
@@ -1787,7 +1788,7 @@ public:
           }
 
           case SUPP_LINE_BISECTOR: {
-            std::cout << "SUPP_LINE_BISECTOR ->" << '\n';
+            std::cout << "SUPP_LINE_BISECTOR -> ";
             /* extract two supporting lines */
             Rat_line_2 supp_line1; Rat_line_2 supp_line2;
             CGAL_assertion(CGAL::assign(supp_line1, o1));
@@ -1869,7 +1870,7 @@ public:
           }
 
           case ENDPOINT_BISECTOR: {
-            std::cout << "ENDPOINT_BISECTOR -> " << '\n';
+            std::cout << "ENDPOINT_BISECTOR -> ";
             /* extract two endpoints */
             Rat_point_2 endpoint1; Rat_point_2 endpoint2;
             CGAL_assertion(CGAL::assign(endpoint1, o1));
