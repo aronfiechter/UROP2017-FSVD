@@ -1910,9 +1910,20 @@ public:
         curr_direction = next_direction;
       }
 
-      /* convert all Curve_2 to X_monotone_curve_2, add them all to the
-       * OutputIterator o */
+      /* iterate over all Curve_2 (inner parts of the bisector) to convert them
+       * all to X_monotone_curve_2, add them all to the OutputIterator o.
+       * While iterating, also keep checking if the curves are all connected */
+      Alg_point_2 connection = start_pt;
       for (auto& current_cv : bisector_parts) {
+        /* check and update */
+        CGAL_assertion_msg(
+          (current_cv.source() == connection),
+          "The curve is not connected."
+        );
+        connection = current_cv.target();
+        std::cout << current_cv << '\n';
+
+        /* convert and add */
         std::vector<X_monotone_curve_2> arc_x_mono_parts;
         make_curve_2_into_many_x_monotone_curve_2(
           current_cv,
@@ -1925,6 +1936,12 @@ public:
           );
         }
       }
+
+      /* check connection of last curve to end_pt */
+      CGAL_assertion_msg(
+        (bisector_parts.back().target() == end_pt),
+        "The curve is not connected at the end."
+      );
 
       /* return one past the end iterator */
       return o;
