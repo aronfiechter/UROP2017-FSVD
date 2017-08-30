@@ -1411,9 +1411,6 @@ public:
           Rat_ray_2 start_ray = unbounded_ray_list.front();
           Rat_ray_2 end_ray = unbounded_ray_list.back();
 
-          Alg_point_2 start_pt = to_alg(start_ray.source());
-          Alg_point_2 end_pt = to_alg(end_ray.source());
-
           Alg_direction_2 curr_direction = to_alg(
             - start_ray.direction()
           );
@@ -1424,7 +1421,7 @@ public:
           o = this->construct_bisector_from_point_to_point(
             s1, s2,                 // the two segments
             o,                      // OutputIterator
-            start_pt, end_pt,       // construct bisector from start to end
+            start_ray, end_ray,       // construct bisector between two sources
             curr_direction,         // initial direction, updated
             alg_delimiter_lines,    // delimiter lines of s1 and s2
             delimiter_lines_vector  // same but as vector and in rational
@@ -1464,14 +1461,10 @@ public:
             "There should only be 4 rays, and all were popped."
           );
 
-          /* get start point, end point and direction for both cases */
-          Alg_point_2 start_pt_one = to_alg(start_ray_one.source());
-          Alg_point_2 end_pt_one = to_alg(end_ray_one.source());
+          /* get direction for both cases */
           Alg_direction_2 curr_direction_one = to_alg(
             - start_ray_one.direction()
           );
-          Alg_point_2 start_pt_two = to_alg(start_ray_two.source());
-          Alg_point_2 end_pt_two = to_alg(end_ray_two.source());
           Alg_direction_2 curr_direction_two = to_alg(
             - start_ray_two.direction()
           );
@@ -1481,20 +1474,20 @@ public:
            * given direction and finishing at an end point. Do this two times,
            * for both bisectors */
           o = this->construct_bisector_from_point_to_point(
-            s1, s2,                   // the two segments
-            o,                        // OutputIterator
-            start_pt_one, end_pt_one, // construct bisector from start to end
-            curr_direction_one,        // initial direction, updated
-            alg_delimiter_lines,      // delimiter lines of s1 and s2
-            delimiter_lines_vector    // same but as vector and in rational
+            s1, s2,                     // the two segments
+            o,                          // OutputIterator
+            start_ray_one, end_ray_one, // construct bisector between sources
+            curr_direction_one,         // initial direction, updated
+            alg_delimiter_lines,        // delimiter lines of s1 and s2
+            delimiter_lines_vector      // same but as vector and in rational
           );
           o = this->construct_bisector_from_point_to_point(
-            s1, s2,                   // the two segments
-            o,                        // OutputIterator
-            start_pt_two, end_pt_two, // construct bisector from start to end
-            curr_direction_two,        // initial direction, updated
-            alg_delimiter_lines,      // delimiter lines of s1 and s2
-            delimiter_lines_vector    // same but as vector and in rational
+            s1, s2,                     // the two segments
+            o,                          // OutputIterator
+            start_ray_two, end_ray_two, // construct bisector between sources
+            curr_direction_two,         // initial direction, updated
+            alg_delimiter_lines,        // delimiter lines of s1 and s2
+            delimiter_lines_vector      // same but as vector and in rational
           );
         } // end of segments intersect
 
@@ -1651,7 +1644,7 @@ public:
     OutputIterator construct_bisector_from_point_to_point(
       Rat_segment_2 s1, Rat_segment_2 s2,
       OutputIterator o,
-      Alg_point_2 start_pt, Alg_point_2 end_pt,
+      Rat_ray_2 start_ray, Rat_ray_2 end_ray,
       Alg_direction_2 curr_direction,
       Alg_delimiter_lines alg_delimiter_lines,
       std::vector<Rat_line_2> delimiter_lines_vector
@@ -1665,6 +1658,10 @@ public:
       RK_to_AK to_alg;
       AK_to_DK to_dbl;
       DK_to_RK to_rat;
+
+      /* get start and end points, they are the sources of the rays */
+      Alg_point_2 start_pt = to_alg(start_ray.source());
+      Alg_point_2 end_pt = to_alg(end_ray.source());
 
       /* list to store all Curve_2 bisector part. They all will be converted to
        * X_monotone_curve_2 and inserted into OutputIterator o at the end of
@@ -1692,8 +1689,9 @@ public:
       //  * intersection (so this happens only when the two segments are
       //  * intersecting, of course).
        */
-      Curve_2 prev_arc;
+      bool prev_arc_exists = false;
       bool part_to_approximate_exists = false;
+      Curve_2 prev_arc;
       Alg_segment_2 part_to_approximate;
       // Alg_segment_2 part_to_approximate_1;
       // Alg_segment_2 part_to_approximate_2;
@@ -1769,7 +1767,7 @@ public:
             );
 
             /* deal with approximation of previous segment if necessary */
-            if (part_to_approximate_exists) {
+            if (part_to_approximate_exists && prev_arc_exists) {
               part_to_approximate_exists = false; // reset flag
               /* get the approximated segment supporting_conic (a line) */
               Rat_line_2 approx_last_segment_line =
@@ -1836,6 +1834,7 @@ public:
             /* save as Curve_2 in list of bisector parts, save this curve */
             bisector_parts.push_back(this_arc);
             prev_arc = this_arc;
+            prev_arc_exists = true;
 
             break;
           }
@@ -1874,10 +1873,70 @@ public:
               next_direction, curr_pt, delimiter_lines_vector
             );
 
-            /* get bisector part, check if it intersects the two segments (this
+            /* get bisector part */
+            Alg_segment_2 bisector_part(curr_pt, actual_next_intersection);
+
+            /* special cases: if this SUPP_LINE_BISECTOR is the first or the
+             * last part of the internal parts of the bisector (that is,
+             * excluding the rays), then it can be added easily as it is just an
+             * "extension" of that ray, with the same slope (rational).
+             * No need to approximate it.
+             */
+            if (curr_pt == start_pt) {
+              Rat_line_2 supporting_conic = start_ray.supporting_line();
+
+              /* direction should be opposite */
+              CGAL_assertion_msg(
+                - to_alg(supporting_conic).direction() == next_direction,
+                "Start ray direction should be the opposite as the current."
+              );
+              supporting_conic = supporting_conic.opposite();
+
+              /* add segment */
+              bisector_parts.push_back(Curve_2(
+                0,
+                0,  // supporting conic is a line, so it's linear
+                0,
+                supporting_conic.a(),
+                supporting_conic.b(),
+                supporting_conic.c(),
+                CGAL::COLLINEAR,
+                start_pt,
+                actual_next_intersection
+              ));
+
+              /* BREAK here because we already added the bisector part */
+              break;
+            }
+            else if (actual_next_intersection == end_pt) {
+              Rat_line_2 supporting_conic = end_ray.supporting_line();
+
+              /* direction should be the same */
+              CGAL_assertion_msg(
+                to_alg(supporting_conic).direction() == next_direction,
+                "Start ray direction should be the opposite as the current."
+              );
+
+              /* add segment */
+              bisector_parts.push_back(Curve_2(
+                0,
+                0,  // supporting conic is a line, so it's linear
+                0,
+                supporting_conic.a(),
+                supporting_conic.b(),
+                supporting_conic.c(),
+                CGAL::COLLINEAR,
+                curr_pt,
+                end_pt
+              ));
+
+              /* BREAK here because we already added the bisector part */
+              break;
+            }
+
+            /* check if it intersects the two segments (this
              * happens when the segments intersect) and if yes split it in two
              * parts */
-            Alg_segment_2 bisector_part(curr_pt, actual_next_intersection);
             if (CGAL::do_intersect(bisector_part, to_alg(s1))) {
               /* must also intersect s2 */
               CGAL_assertion(CGAL::do_intersect(bisector_part, to_alg(s2)));
@@ -1946,6 +2005,14 @@ public:
               next_direction, curr_pt, delimiter_lines_vector
             );
 
+            /* check that there is no SUPP_LINE_BISECTOR to approximate */
+            CGAL_assertion_msg(
+              !part_to_approximate_exists,
+              "There cannot be a SUPP_LINE_BISECTOR followed by an "
+              "ENDPOINT_BISECTOR that is internal (i.e. not a ray)."
+            );
+            if (prev_arc_exists) prev_arc_exists = false;
+
             /* no need to approximate the segment in this case: the supporting
              * conic (a line) has rational coefficients; just save curve with
              * rational coefficients and the two alg points as endpoints,
@@ -1975,6 +2042,16 @@ public:
         curr_direction = next_direction;
       }
       std::cout << "FINISHED\n";
+
+      /* deal with approximation of supp_line_bisector segment if necessary;
+       * this could happen in the case in which the supp_line_bisector is
+       * not followed by an arc but directly by the unbounded_ray.
+       * This is actually easier because it means that the segment itself has
+       * the same slope as the ray, and is therefore rational.
+       */
+      if (part_to_approximate_exists) {
+        part_to_approximate_exists = false; // reset flag
+      }
 
       /* iterate over all Curve_2 (inner parts of the bisector) to convert them
        * all to X_monotone_curve_2, add them all to the OutputIterator o.
@@ -2032,14 +2109,14 @@ public:
     Comparison_result operator()(const Point_2& p,
                                  const Xy_monotone_surface_3& s1,
                                  const Xy_monotone_surface_3& s2) const {
-      printf("\n ---> Compare at point\n");
+      printf("---> Compare at point\n");
       return CGAL::compare(sqdistance(p, s1), sqdistance(p, s2));
     }
 
     Comparison_result operator()(const X_monotone_curve_2& cv,
                                  const Xy_monotone_surface_3& s1,
                                  const Xy_monotone_surface_3& s2) const {
-      printf("\n ---> Compare at cv\n");
+      printf("---> Compare at cv\n");
       /* compare using the middle point */
       Point_2 p = construct_middle_point(cv);
       return this->operator()(p, s1, s2);
