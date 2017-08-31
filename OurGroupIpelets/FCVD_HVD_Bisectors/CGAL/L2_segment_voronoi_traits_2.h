@@ -838,6 +838,46 @@ private:
     return result;
   }
 
+  /* Given a ray, find an endpoint as the intersection with an imaginary
+   * boundary (for example a box at 10000 around the origin).
+   * Create a segment from the source of the ray and invert it if the flag is
+   * set to true.
+   * This is used so to be able to store the ray as a Curve_2, that in the
+   * traits class we are using, Arr_conic_traits_2, can only be a bounded curve.
+   * Return the segment. */
+  static Rat_segment_2 make_segment_from_ray(Rat_ray_2 ray, bool invert) {
+
+    //TODO change, can be smarter than brute force
+
+    RT far_l = 10000;
+    std::vector<Rat_segment_2> border = {
+      Rat_segment_2(Rat_point_2(-far_l, -far_l), Rat_point_2(far_l, -far_l)),
+      Rat_segment_2(Rat_point_2(far_l, -far_l), Rat_point_2(far_l, far_l)),
+      Rat_segment_2(Rat_point_2(far_l, far_l), Rat_point_2(-far_l, far_l)),
+      Rat_segment_2(Rat_point_2(-far_l, far_l), Rat_point_2(-far_l, -far_l))
+    };
+
+    Rat_point_2 start_point = ray.source();
+    Rat_point_2 end_point;
+    bool assigned = false;
+    for (auto& seg : border) {
+      if (CGAL::do_intersect(ray, seg) && !assigned) {
+        assigned = true;
+        CGAL_assertion_msg(
+          CGAL::assign(end_point, CGAL::intersection(ray, seg)),
+          "Could not assign end."
+        );
+        break;
+      }
+    }
+    CGAL_assertion_msg(assigned, "Could not find ray end_point.");
+
+    /* make segment, invert if needed and return */
+    Rat_segment_2 segment(start_point, end_point);
+    if (invert) segment = segment.opposite();
+    return segment;
+  }
+
   /* Convert the Curve_2 cv into multiple X_monotone_curve_2 using the provided
    * make_x_monotone function. Store the results into the list x_mono_curves.
    * Precondition (checked): cv is a valid curve. */
@@ -1370,38 +1410,14 @@ public:
             Rat_line_2 bisector_line = CGAL::bisector(
               eit->target(), eit->source()
             );
+
             /* find "farthest" intersection with delimiters, ray starts there */
             Rat_ray_2 unbounded_ray = find_unbounded_ray(
               bisector_line, delimiter_lines
             );
+
+            /* add ray to list of unbounded rays */
             unbounded_ray_list.push_back(unbounded_ray);
-
-            /* make very long segment to represent an unbounded ray, so that it
-             * can be saved as an X_monotone_curve_2, because the Conic_traits
-             * require that curves are bounded */
-            Rat_point_2 start_point = unbounded_ray.source();
-            Rat_point_2 end_point;
-            bool assigned = false;
-            for (auto& seg : border) {
-              if (assigned) break;
-              else if (CGAL::do_intersect(unbounded_ray, seg) && !assigned) {
-                assigned = true;
-                CGAL_assertion_msg(
-                  CGAL::assign(
-                    end_point,
-                    CGAL::intersection(unbounded_ray, seg)
-                  ),
-                  "Could not assign end."
-                );
-              }
-            }
-
-            CGAL_assertion_msg(assigned, "Could not find ray end_point.");
-            Rat_segment_2 segment(start_point, end_point);
-            X_monotone_curve_2 segment_curve(segment); // it's just straight
-            *o++ = CGAL::make_object(
-              Intersection_curve(segment_curve, 0)
-            );
           }
         }
 
@@ -1426,17 +1442,30 @@ public:
             - start_ray.direction()
           );
 
+          /* list to store all parts of the bisector */
+          std::list<Curve_2> parts_of_bisector;
+
+          /* add start ray (as a long segment) */
+          parts_of_bisector.push_back(make_segment_from_ray(start_ray, true));
+
           /* call big private function that iteratively constructs the parts of
            * the plane bisector of the segments s1 and s2 starting from a start
            * point going in a given direction and finishing at an end point */
-          o = this->construct_bisector_from_point_to_point(
+          this->construct_bisector_from_point_to_point(
             s1, s2,                 // the two segments
-            o,                      // OutputIterator
-            start_ray, end_ray,       // construct bisector between two sources
+            std::back_inserter(parts_of_bisector),  // OutputIterator
+            start_ray, end_ray,     // construct bisector between two sources
             curr_direction,         // initial direction, updated
             alg_delimiter_lines,    // delimiter lines of s1 and s2
             delimiter_lines_vector  // same but as vector and in rational
           );
+
+          /* add end ray (as a long segment) */
+          parts_of_bisector.push_back(make_segment_from_ray(end_ray, false));
+
+          /* convert and add curves to OutputIterator o */
+          o = this->convert_and_add_curves(parts_of_bisector, o);
+
         } // end of segments do not intersect
 
         /* if instead they do intersect, assert it, then proceed to computing
@@ -1480,26 +1509,53 @@ public:
             - start_ray_two.direction()
           );
 
+          /* lists to store all parts of the bisector */
+          std::list<Curve_2> parts_of_bisector_one;
+          std::list<Curve_2> parts_of_bisector_two;
+
+          /* add start rays (as long segments) */
+          parts_of_bisector_one.push_back(make_segment_from_ray(
+            start_ray_one, true
+          ));
+          parts_of_bisector_two.push_back(make_segment_from_ray(
+            start_ray_two, true
+          ));
+
           /* call big private function that iteratively constructs the parts of
            * the bisector of s1 and s2 starting from a start point going in a
            * given direction and finishing at an end point. Do this two times,
            * for both bisectors */
-          o = this->construct_bisector_from_point_to_point(
+          this->construct_bisector_from_point_to_point(
             s1, s2,                     // the two segments
-            o,                          // OutputIterator
+            std::back_inserter(parts_of_bisector_one),  // OutputIterator
             start_ray_one, end_ray_one, // construct bisector between sources
             curr_direction_one,         // initial direction, updated
             alg_delimiter_lines,        // delimiter lines of s1 and s2
             delimiter_lines_vector      // same but as vector and in rational
           );
-          o = this->construct_bisector_from_point_to_point(
+          this->construct_bisector_from_point_to_point(
             s1, s2,                     // the two segments
-            o,                          // OutputIterator
+            std::back_inserter(parts_of_bisector_two),  // OutputIterator
             start_ray_two, end_ray_two, // construct bisector between sources
             curr_direction_two,         // initial direction, updated
             alg_delimiter_lines,        // delimiter lines of s1 and s2
             delimiter_lines_vector      // same but as vector and in rational
           );
+
+          /* add end rays (as long segments) */
+          parts_of_bisector_one.push_back(make_segment_from_ray(
+            end_ray_one, true
+          ));
+          parts_of_bisector_two.push_back(make_segment_from_ray(
+            end_ray_two, true
+          ));
+
+          /* convert and add curves to OutputIterator o */
+          //TODO test if fucking stupid but very cool syntax of nesting the two
+          // expressions would also work
+          o = this->convert_and_add_curves(parts_of_bisector_one, o);
+          o = this->convert_and_add_curves(parts_of_bisector_two, o);
+
         } // end of segments intersect
 
       } // end of segments are not the same
@@ -1639,17 +1695,53 @@ public:
       return;
     }
 
+    /* Given a list of Curve_2 and an OutputIterator o, convert those curves to
+     * X_monotone_curve_2 and add them to the OutputIterator o */
+    template <class OutputIterator>
+    OutputIterator convert_and_add_curves(
+      std::list<Curve_2>& cvs, OutputIterator o
+    ) const {
+      /* While iterating, also keep checking if the curves are all connected */
+      int piece = 0;
+      Alg_point_2 connection = cvs.front().source();
+      for (auto& cv : cvs) {
+        /* check and update */
+        std::cout << piece++ << ": " << cv << '\n';
+        CGAL_warning_msg(
+          (cv.source() == connection),
+          COUT_COLOUR_RED "Warning: " COUT_COLOUR_YELLOW
+          "The curve is not connected." COUT_COLOUR_RESET
+        );
+        connection = cv.target();
+
+        /* convert and add */
+        std::vector<X_monotone_curve_2> cv_x_mono_parts;
+        make_curve_2_into_many_x_monotone_curve_2(
+          cv,
+          cv_x_mono_parts
+        );
+        for (auto& x_cv : cv_x_mono_parts) {
+          *o++ = CGAL::make_object(
+            Intersection_curve(x_cv, 0)
+            //TODO multiplicity? would need to save it in list bisector_parts
+          );
+        }
+      }
+
+      /* return one past the end iterator */
+      return o;
+    }
+
     /* Helper function for the construction of the plane bisecotr of two line
      * segments.
      * Given a start point and and end point, iteratively constructs all pieces
      * of the bisector. Other objects passed to the function are the segments
      * themselves, the initial direction where the bisector must continue from
      * start_pt, the iterator where to store the pieces of the bisector as
-     * Intersection_curve objects (containing X_monotone_curve_2), and two
-     * different instances of the delimiter lines, that are the lines orthogonal
-     * to the segments' endpoints, such that each segment is inside the negative
-     * part of his couple of delimiter lines.
-     * Returns a one past the end iterator of the list of Intersection_curve.
+     * Curve_2 objects, and two different instances of the delimiter lines, that
+     * are the lines orthogonal to the segments' endpoints, such that each
+     * segment is inside the negative part of his couple of delimiter lines.
+     * Returns a one past the end iterator of the list of Curve_2.
      */
     template <class OutputIterator>
     OutputIterator construct_bisector_from_point_to_point(
@@ -2064,40 +2156,10 @@ public:
         part_to_approximate_exists = false; // reset flag
       }
 
-      /* iterate over all Curve_2 (inner parts of the bisector) to convert them
-       * all to X_monotone_curve_2, add them all to the OutputIterator o.
-       * While iterating, also keep checking if the curves are all connected */
-      int piece = 0;
-      Alg_point_2 connection = start_pt;
-      for (auto& current_cv : bisector_parts) {
-        /* check and update */
-        std::cout << piece++ << ": " << current_cv << '\n';
-        CGAL_warning_msg(
-          (current_cv.source() == connection),
-          COUT_COLOUR_RED "Warning: " COUT_COLOUR_YELLOW
-          "The curve is not connected." COUT_COLOUR_RESET
-        );
-        connection = current_cv.target();
-
-        /* convert and add */
-        std::vector<X_monotone_curve_2> arc_x_mono_parts;
-        make_curve_2_into_many_x_monotone_curve_2(
-          current_cv,
-          arc_x_mono_parts
-        );
-        for (auto& x_mono_curve : arc_x_mono_parts) {
-          *o++ = CGAL::make_object(
-            Intersection_curve(x_mono_curve, 0)
-            //TODO multiplicity? would need to save it in list bisector_parts
-          );
-        }
-      }
-
-      /* check connection of last curve to end_pt */
-      CGAL_assertion_msg(
-        (bisector_parts.back().target() == end_pt),
-        "The curve is not connected at the end."
-      );
+      /* add all Curve_2 to OutputIterator o (conversion to X_monotone_curve_2
+       * and adding to the actual list of projected intersections happens in the
+       * main function) */
+      for (auto cv : bisector_parts) *o++ = cv;
 
       /* return one past the end iterator */
       return o;
