@@ -229,8 +229,9 @@ private:
   // two bounds?
   bool on_boundary(Point_2 p1, Point_2 p2) {
     return
-      (CGAL::abs(p1.x()) == BOUNDARY && CGAL::abs(p2.x()) == BOUNDARY) ||
-      (CGAL::abs(p1.y()) == BOUNDARY && CGAL::abs(p2.y()) == BOUNDARY)
+      false && // comment this line to activate the method
+      ((CGAL::abs(p1.x()) == BOUNDARY && CGAL::abs(p2.x()) == BOUNDARY) ||
+      (CGAL::abs(p1.y()) == BOUNDARY && CGAL::abs(p2.y()) == BOUNDARY))
     ;
   }
 
