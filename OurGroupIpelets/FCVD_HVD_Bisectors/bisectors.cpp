@@ -39,11 +39,11 @@
 #include <CGAL/L2_coarse_FCVD_traits_2.h>
 #include <CGAL/envelope_3.h>
 
-// added for FSVD, fn == 10
+// added for L_2 SVD/FSVD, fn == 10, fn == 11
 #include <CGAL/CORE_algebraic_number_traits.h>
 #include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/L2_segment_voronoi_traits_2.h>
-// end added for FSVD
+// end added for L_2 SVD/FSVD
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/point_generators_2.h>
@@ -88,7 +88,7 @@ typedef CGAL::L2_voronoi_traits_2<VD_Kernel>            L2_VD_Traits_3;
 typedef L2_VD_Traits_3::Surface_3                       L2_VD_Surface_3;
 typedef CGAL::Envelope_diagram_2<L2_VD_Traits_3>        L2_VD_Envelope_diagram_2;
 
-/* Added for FSVD, fn == 10 */
+/* Added for L_2 SVD/FSVD, fn == 10, fn == 11 */
 typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
 typedef Nt_traits::Rational                             Rational;
 typedef Nt_traits::Algebraic                            Algebraic;
@@ -102,7 +102,7 @@ typedef CGAL::Arr_conic_traits_2<Rat_kernel, Alg_kernel, Nt_traits> Conic_traits
 typedef CGAL::L2_segment_voronoi_traits_2<Conic_traits_2, VD_Kernel> L2_FSVD_Traits_3;
 typedef CGAL::Envelope_diagram_2<L2_FSVD_Traits_3>      L2_FSVD_Envelope_diagram_2;
 typedef Conic_traits_2::X_monotone_curve_2              X_monotone_curve_2;
-/* end added for FSVD */
+/* end added for L_2 SVD/FSVD */
 
 typedef CGAL::L2_HVD_traits_2<VD_Kernel>                HVD_Traits_3;
 typedef HVD_Traits_3::Surface_3                         HVD_Surface_3;
@@ -127,8 +127,9 @@ const std::string sublabel[] = {
   "L2 FVD with polygonal input",              // 7
   "L2 farthest color Voronoi diagram (FCVD)", // 8
   "L2 NVD with polygonal input",              // 9
-  "L2 farthest segment Voronoi Diagram",      // 10
-  "L2 FCVDstar",                              // 11
+  "L2 segment Voronoi Diagram",               // 10
+  "L2 farthest segment Voronoi Diagram",      // 11
+  "L2 FCVDstar",                              // 12
   "Help"
 };
 const std::string helpmsg[] = {
@@ -142,6 +143,7 @@ const std::string helpmsg[] = {
   "Draw the L2 FVD for points of given clusters",
   "Draw the farthest color Voronoi diagram for points",
   "Draw the L2 NVD for points of given clusters",
+  "Draw the L2 Voronoi diagram for segments",
   "Draw the L2 farthest Voronoi diagram for segments",
   "Draw the L2 FCVDstar for points of given clusters",
 };
@@ -223,6 +225,8 @@ private:
 
   /* Check if two points are both on the boundary of the diagram. This boundary
    * is added artificially in FSVD (fn: 10). */
+  //TODO correct: what if this the diagram is a single long line that touches
+  // two bounds?
   bool on_boundary(Point_2 p1, Point_2 p2) {
     return
       (CGAL::abs(p1.x()) == BOUNDARY && CGAL::abs(p2.x()) == BOUNDARY) ||
@@ -257,7 +261,7 @@ void bisectorIpelet::protected_run(int fn) {
 
   Iso_rectangle_2 bbox;
 
-  if ((fn == 6) or (fn == 7) or (fn == 8) or (fn == 9) or (fn == 11)) {
+  if ((fn == 6) or (fn == 7) or (fn == 8) or (fn == 9) or (fn == 12)) {
     // HVD, FVD from clusters, FCVD, NVD, FCVDstar from clusters
     // use cluster grabber:
     // a 1-point cluster {p}   is denoted by a point p (mark in ipe);
@@ -408,7 +412,8 @@ void bisectorIpelet::protected_run(int fn) {
       }
       break;
 
-    case 10: // L_2 FSVD (segments)
+    case 10: // L_2 SVD (segments)
+    case 11: // L_2 FSVD (segments)
       if (sg_list.empty()) {
         print_error_message(("No segments selected"));
       }
@@ -423,7 +428,7 @@ void bisectorIpelet::protected_run(int fn) {
       }
       break;
 
-    case 11: // L_2 FCVD Star
+    case 12: // L_2 FCVD Star
       if (cluster_list.empty()) {
         print_error_message(("No points selected"));
 	    }
@@ -884,18 +889,27 @@ void bisectorIpelet::protected_run(int fn) {
     } // end of draw edges
   } // end of case: fn == 8
 
-  /* L_2 FSVD (segments) */
-  if (fn == 10) {
+  /* L_2 SVD or FSVD (segments) */
+  if (fn == 10 || fn == 11) {
     /* create envelope diagram object */
     L2_FSVD_Envelope_diagram_2 *m_envelope_diagram;
     m_envelope_diagram = new L2_FSVD_Envelope_diagram_2();
 
     /* compute the diagram */
-    CGAL::upper_envelope_3(
-      vd_sg_list.begin(),
-      vd_sg_list.end(),
-      *m_envelope_diagram
-    );
+    if (fn == 10) { // fn == 10, SVD
+      CGAL::lower_envelope_3(
+        vd_sg_list.begin(),
+        vd_sg_list.end(),
+        *m_envelope_diagram
+      );
+    }
+    else { // fn == 11, FSVD
+      CGAL::upper_envelope_3(
+        vd_sg_list.begin(),
+        vd_sg_list.end(),
+        *m_envelope_diagram
+      );
+    }
 
     /* print informative message */
     char message[100];
@@ -964,7 +978,7 @@ void bisectorIpelet::protected_run(int fn) {
     /* draw bbox if needed */
     // draw_in_ipe(bbox);
 
-    /* draw FSVD edges. It's Voronice! */
+    /* draw SVD of FSVD edges. It's Voronice! */
     std::list<Segment_2> segments_to_draw;
     L2_FSVD_Envelope_diagram_2::Edge_const_iterator eit;
     for (eit = m_envelope_diagram->edges_begin();
@@ -1004,7 +1018,7 @@ void bisectorIpelet::protected_run(int fn) {
     draw_in_ipe(segments_to_draw.begin(), segments_to_draw.end(), true);
     // end of draw FSVD edges
 
-  } // enf of case: fn == 10
+  } // enf of case: fn == 10 or fn == 11
 
 } // end of void bisectorIpelet::protected_run(int fn)
 
