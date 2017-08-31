@@ -135,13 +135,18 @@ private:
     FOURTH_Q
   };
 
+
+
+/* ########################################################################## */
+/* ###                           CLASS PARABOLA                           ### */
+/* ########################################################################## */
+
   /* Parabola class used to provide methods to find intersections with lines,
    * to check point location with respect to a parabola, to create parabolic
    * arcs, to get tangent directions at points. */
   class Parabola {
 
   private:
-
     /* Fields */
 
     /* coefficients of equation: rx^2 + sy^2 + txy + ux + vy + w = 0 */
@@ -557,7 +562,13 @@ private:
       CGAL_assertion(arc.is_valid()); // valid arc
       return arc;
     }
-  }; // end of class Parabola
+  };
+
+/* ########################################################################## */
+/* ###                        END OF CLASS PARABOLA                       ### */
+/* ########################################################################## */
+
+
 
   /* Returns the squared distance between two points in L2 metric. */
   static Algebraic sqdistance(const Point_2& p1, const Point_2& p2) {
