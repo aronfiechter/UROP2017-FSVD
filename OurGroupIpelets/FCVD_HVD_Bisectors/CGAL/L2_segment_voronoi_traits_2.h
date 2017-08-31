@@ -807,6 +807,19 @@ private:
     }
   }
 
+  /* Given a segment with one algebraic endpoint and potentially an underlying
+   * supporting line with algebraic coefficients, adjust the algebraic endpoint
+   * of the segment up or down to a rational point.
+   * `source` indicates if the source of the segent that is algebraic or not
+   * (if it is false, it meanst that the target is algebraic)
+   * `up` indicates whether the endpoint needs to be moved to the positive (up)
+   * or negative (!up) part of the segment.
+   * Return a rational segment.
+   */
+  static Rat_segment_2 adjust_endpoint(Alg_segment_2 s, bool up, bool source) {
+    
+  }
+
   /* Given two segments return true if they are collinear */
   static bool segments_collinear(Rat_segment_2 s1, Rat_segment_2 s2) {
     return
@@ -1887,11 +1900,13 @@ public:
       //  * intersecting, of course).
        */
       bool prev_arc_exists = false;
-      bool part_to_approximate_exists = false;
       Curve_2 prev_arc;
+      bool part_to_approximate_exists = false;
       Alg_segment_2 part_to_approximate;
-      // Alg_segment_2 part_to_approximate_1;
-      // Alg_segment_2 part_to_approximate_2;
+      bool part_to_approximate_1_exists;
+      bool part_to_approximate_2_exists;
+      Alg_segment_2 part_to_approximate_1;
+      Alg_segment_2 part_to_approximate_2;
 
       /* rename start point */
       Alg_point_2 curr_pt = start_pt;
@@ -1963,8 +1978,15 @@ public:
               actual_next_intersection
             );
 
-            /* deal with approximation of previous segment if necessary */
-            if (part_to_approximate_exists && prev_arc_exists) {
+            /* deal with approximation of previous segment if necessary;
+             * distinguish the cases where the segments intersect and the cases
+             * in which they do not
+             */
+            if (
+              !do_intersect &&
+              part_to_approximate_exists &&
+              prev_arc_exists
+            ) {
               part_to_approximate_exists = false; // reset flag
               /* get the approximated segment supporting_conic (a line) */
               Rat_line_2 approx_last_segment_line =
@@ -2027,6 +2049,63 @@ public:
               bisector_parts.push_back(prev_arc);
               bisector_parts.push_back(approx_last_segment_curve);
             }
+            /* if the segments intersect, we have two parts to approximate, but
+             * they are oriented differently and the target of the first and the
+             * source of the second are the intersection point of the two
+             * segments (saved at the beginning of the method)
+             */
+            else if (
+              do_intersect
+              && part_to_approximate_2_exists
+              /* part_1 might be first part, in which case there is also no
+               * prev_arc */
+            ) {
+              part_to_approximate_2_exists = false; // reset flag
+
+              /* to save two curves (or just one) */
+              Curve_2 part_1, part_2;
+
+              /* we have to approximate part_2 anyway, so let's do it;
+               * create approximated part_2 by changing its target */
+              //TODO
+
+              /* update source of this_arc */
+              //TODO
+
+              /* if part_1 was the first internal part of the bisector (i.e.
+               * excluding the rays), then we just have to approximate part_2,
+               * as we just did;
+               * otherwise both need to be approximated */
+              if (part_to_approximate_1_exists) {
+
+                /* there must exist an arc before this one */
+                CGAL_assertion_msg(
+                  prev_arc_exists,
+                  "There must be a prev_arc, to approximate part_1."
+                );
+
+                /* the prev_arc must be the last one in the list */
+                Curve_2 prev_arc_in_list = bisector_parts.back();
+                CGAL_assertion_msg(
+                  same_curves(prev_arc_in_list, prev_arc),
+                  "prev_arc must be last element in list of parts of bisector."
+                );
+                bisector_parts.pop_back(); // remove last curve
+
+                /* create approximated part_1 by changing its source */
+                //TODO
+
+                /* update target of prev_arc */
+                //TODO
+
+                /* push in list of bisector parts the updated prev_arc and the
+                 * now approximated part_1 */
+                //TODO
+              }
+
+              /* push in list of bisector parts the now approximated part_2 */
+              bisector_parts.push_back(part_2);
+            }
 
             /* save as Curve_2 in list of bisector parts, save this curve */
             bisector_parts.push_back(this_arc);
@@ -2044,7 +2123,7 @@ public:
             CGAL_assertion(CGAL::assign(supp_line2, o2));
 
             /* orient supporting lines according to curr_direction, get
-             * bisector, assert that curr_pt is on it and get direction */
+             * bisector, assert that curr_pt is on it */
             if (!generally_same_direction(
               to_alg(supp_line1), curr_direction
             )) {
@@ -2159,21 +2238,170 @@ public:
                 "The intersection should be on the bisector, but it is not."
               );
 
-              /* save next_direction, find actual next intersection */
-              next_direction = supp_line_bisector.direction();
+              /* before everything we need to find the second bisector of the
+               * supporting lines of the two intersecting segments.
+               * More precisely, we'd like to have it oriented towards the right
+               * relative to the current direction.
+               * This is because we have given as end point of this bisector of
+               * two intersecting segments the ray that is adjacent to the start
+               * ray in counterclockwise direction (the "other" bisector instead
+               * connects the other two rays).
+               * But why not just connect the two pairs of rays that are
+               * opposite to each other? Because that way, the two pieces we are
+               * building here on the intersection of the two segments would
+               * have a major difference. If the first part has s1 on its right
+               * and s2 on its left, then the second part would have the
+               * opposite.
+               * Instead, by creating the two bisectors so that they "touch" on
+               * the intersection of the two segments and then turn away from
+               * each other, we ensure that on each bisector, the two pieces we
+               * are building here always have s1 on one side and s2 on the
+               * other side.
+               *
+               * To find the new bisector, we invert the supporting line that
+               * has a Direction_2 greater than (directions are compared by
+               * angle in counterclockwise order) the current
+               * supp_line_bisector, then we take the bisector of the supporting
+               * lines again so to get the new bisector; this works because the
+               * CGAL::bisector() function creates the bisector such that the
+               * direction is the sum of the normalized directions of the two
+               * lines
+               */
+              Alg_line_2 next_supp_line_bisector;
+              if (
+                to_alg(supp_line1).direction()
+                >
+                supp_line_bisector.direction()
+              ) {
+                supp_line1 = supp_line1.opposite();
+              }
+              else if (
+                to_alg(supp_line2).direction()
+                >
+                supp_line_bisector.direction()
+              ) {
+                supp_line2 = supp_line2.opposite();
+              }
+              else {
+                CGAL_error_msg("The bisector should lie between the two lines");
+              }
+
+              next_supp_line_bisector = CGAL::bisector(
+                to_alg(supp_line1), to_alg(supp_line2)
+              );
+              next_direction = next_supp_line_bisector.direction();
+
+              /* find actual next intersection according to the new direction */
               actual_next_intersection = find_next_intersection(
-                next_direction, curr_pt, delimiter_lines_vector
+                next_direction,
+                to_alg(segments_intersection),
+                delimiter_lines_vector
               );
 
-              //TODO update to smart approximation of segment version
-              /* save first part as Curve_2 in list of bisector parts */
-              bisector_parts.push_back(Curve_2(to_rat(to_dbl(
-                Alg_segment_2(curr_pt, to_alg(segments_intersection))
-              ))));
-              /* save second part as Curve_2 in list of bisector parts */
-              bisector_parts.push_back(Curve_2(to_rat(to_dbl(
-                Alg_segment_2(to_alg(segments_intersection), actual_next_intersection)
-              ))));
+              /* special cases:
+               * the first part, or the second part, or both, are the first
+               * and/or last parts of the bisector.
+               * if this is the first bisector part (meaning that before this
+               * piece there was only the ray) then also the start point is
+               * already known
+               */
+              bool first_to_approximate = true, second_to_approximate = true;
+              if (curr_pt == start_pt) {
+                first_to_approximate = false;
+                Rat_line_2 supporting_conic =
+                  start_ray.supporting_line().opposite()
+                ;
+                bisector_parts.push_back(Curve_2(
+                  0,
+                  0,
+                  0,
+                  supporting_conic.a(),
+                  supporting_conic.b(),
+                  supporting_conic.c(),
+                  CGAL::COLLINEAR,
+                  curr_pt,
+                  to_alg(segments_intersection)
+                ));
+              }
+              if (actual_next_intersection == end_pt) {
+                second_to_approximate = false;
+                Rat_line_2 supporting_conic = end_ray.supporting_line();
+                bisector_parts.push_back(Curve_2(
+                  0,
+                  0,
+                  0,
+                  supporting_conic.a(),
+                  supporting_conic.b(),
+                  supporting_conic.c(),
+                  CGAL::COLLINEAR,
+                  to_alg(segments_intersection),
+                  actual_next_intersection
+                ));
+              }
+
+              /* if the parts were the first and the last we don't have to
+               * approximate anything;
+               * if the second part was the last part but the first one was not,
+               * we have to deal with the approximation here, as there will be
+               * no more PARABOLIC_ARC after this where we can deal with the
+               * approximation;
+               * in the opposite case, where the first part was the first part
+               * of the bisector but the second was not, we save just the second
+               * part and leave it to be approximated when the next
+               * PARABOLIC_ARC is found;
+               * if both parts need to be approximated, we can just save them
+               * and let the next PARABOLIC_ARC case deal with the approximation
+               */
+              if (first_to_approximate && second_to_approximate) {
+                part_to_approximate_1 = Alg_segment_2(
+                  curr_pt, to_alg(segments_intersection)
+                );
+                part_to_approximate_2 = Alg_segment_2(
+                  to_alg(segments_intersection), actual_next_intersection
+                );
+                part_to_approximate_1_exists = true;
+                part_to_approximate_2_exists = true;
+              }
+              /* deal with approximation of first part already here, since
+               * after this the while loop ends */
+              else if (first_to_approximate && !second_to_approximate) {
+
+                /* extract part_2 (we have to add in order) and prev_arc
+                 * (because it needs to be updated) */
+                Curve_2 part_2 = bisector_parts.back();
+                bisector_parts.pop_back();
+                CGAL_assertion_msg(
+                  prev_arc_exists,
+                  "prev_arc should exist in the list, otherwise we cannot "
+                  "approximate part_1."
+                );
+                Curve_2 prev_arc_in_list = bisector_parts.back();
+                bisector_parts.pop_back();
+                CGAL_assertion_msg(
+                  same_curves(prev_arc_in_list, prev_arc),
+                  "prev_arc must be last element in list of parts of bisector."
+                );
+
+                /* create approximated part_1 by changing its source */
+                //TODO
+                Curve_2 part_1;
+
+                /* update target of prev_arc */
+                //TODO
+
+                /* push the updated prev_arc, then the approximated first part,
+                 * then the second part */
+                bisector_parts.push_back(prev_arc);
+                bisector_parts.push_back(part_1);
+                bisector_parts.push_back(part_2);
+              }
+              else if (!first_to_approximate && second_to_approximate) {
+                part_to_approximate_2 = Alg_segment_2(
+                  to_alg(segments_intersection), actual_next_intersection
+                );
+                part_to_approximate_2_exists = true;
+              }
+              else break; //nothing to do
             }
 
             break;
@@ -2249,7 +2477,7 @@ public:
        */
       if (part_to_approximate_exists) {
         part_to_approximate_exists = false; // reset flag
-      }
+      } //TODO remove, dealt with it already in SUPP_LINE_BISECTOR
 
       /* add all Curve_2 to OutputIterator o (conversion to X_monotone_curve_2
        * and adding to the actual list of projected intersections happens in the
