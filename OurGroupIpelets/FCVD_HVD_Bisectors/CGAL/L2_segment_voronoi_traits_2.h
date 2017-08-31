@@ -807,6 +807,15 @@ private:
     }
   }
 
+  /* Given two segments return true if they are collinear */
+  static bool segments_collinear(Rat_segment_2 s1, Rat_segment_2 s2) {
+    return
+      CGAL::collinear(s1.source(), s1.target(), s2.source())
+      &&
+      CGAL::collinear(s2.source(), s2.target(), s1.source())
+    ;
+  }
+
   /* Given two Curve_2 objects, return true if they are the same */
   static bool same_curves(Curve_2 cv1, Curve_2 cv2) {
     return
@@ -1203,6 +1212,8 @@ public:
         /* line */
         if (s1.is_degenerate() && s2.is_degenerate()) {
           Rat_line_2 bisector = CGAL::bisector(s1.source(), s2.source());
+
+          /* find endpoints */ //TODO abstract this
           Rat_point_2 start, end;
           bool assigned_start = false, assigned_end = false;
           for (auto& segment : border) {
@@ -1314,8 +1325,68 @@ public:
           // );
         }
       }
-      /* if the two segments are not the same, compute all parts of their plane
+      /* if the two segments lie on a single line, we just have a line as a
        * bisector */
+      else if (segments_collinear(s1, s2)) {
+        Rat_point_2 p1, p2;
+        /* find the closest pair of points */
+        if (s1.direction() == s2.direction()) {
+          if (
+            sqdistance(s1.source(), s2.target())
+            <
+            sqdistance(s1.target(), s2.source())
+          ) {
+            p1 = s1.source();
+            p2 = s2.target();
+          }
+          else {
+            p1 = s1.target();
+            p2 = s2.source();
+          }
+        }
+        else {
+          if (
+            sqdistance(s1.source(), s2.source())
+            <
+            sqdistance(s1.target(), s2.target())
+          ) {
+            p1 = s1.source(); p2 = s2.source();
+          }
+          else {
+            p1 = s1.target(); p2 = s2.target();
+          }
+        }
+
+        /* bisector is bisector of these two points */
+        Rat_line_2 bisector = CGAL::bisector(p1, p2);
+        Rat_point_2 start, end;
+        bool assigned_start = false, assigned_end = false;
+        for (auto& segment : border) {
+          if (CGAL::do_intersect(bisector, segment)) {
+            if (assigned_start && !assigned_end) {
+              assigned_end = true;
+              CGAL_assertion_msg(
+                CGAL::assign(end, CGAL::intersection(bisector, segment)),
+                "Could not assing end."
+              );
+            }
+            else if (!assigned_start && !assigned_end) {
+              assigned_start = true;
+              CGAL_assertion_msg(
+                CGAL::assign(start, CGAL::intersection(bisector, segment)),
+                "Could not assing start."
+              );
+            }
+          }
+        }
+        Rat_segment_2 seg_bisector(start, end);
+        X_monotone_curve_2 x_seg_bisector = X_monotone_curve_2(seg_bisector);
+        *o++ = CGAL::make_object(
+          Intersection_curve(x_seg_bisector, 0)
+        );
+      }
+      /* if the two segments are not the same and not degenerate, compute all
+       * parts of their plane bisector */
       else {
         /* first of all, for each segment create the two lines that divide the
          * plane in three areas: one of all points closest to the inner part of
