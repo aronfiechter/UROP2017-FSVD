@@ -115,7 +115,7 @@ typedef CGAL::Envelope_diagram_2<FCVD_Traits_3>         FCVD_Envelope_diagram_2;
 typedef HVD_Envelope_diagram_2                          Envelope;
 
 /* Ipelet labels */
-const unsigned int num_entries = 12;
+const unsigned int num_entries = 13;
 const std::string sublabel[] = {
   "two points euclidean bisector",            // 0
   "two points L_inf bisector",                // 1
