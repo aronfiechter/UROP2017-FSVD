@@ -45,6 +45,13 @@
 
 namespace CGAL {
 
+/* colour */
+#define COUT_COLOUR_RESET   "\033[0m"
+#define COUT_COLOUR_RED     "\033[31m"      /* Red */
+#define COUT_COLOUR_GREEN   "\033[32m"      /* Green */
+#define COUT_COLOUR_YELLOW  "\033[33m"      /* Yellow */
+#define COUT_COLOUR_BLUE    "\033[34m"      /* Blue */
+
 template <class Conic_traits_2, class Kernel_>
 class L2_segment_voronoi_traits_2 : public Conic_traits_2 {
 
@@ -61,6 +68,8 @@ public:
   typedef typename C_traits_2::Rat_kernel             Rat_kernel;
   typedef typename C_traits_2::Alg_kernel             Alg_kernel;
   typedef typename C_traits_2::Nt_traits              Nt_traits;
+
+  typedef typename Nt_traits::Integer                 BigInt;
 
   typedef typename Rat_kernel::FT                     Rational;
   typedef typename Rat_kernel::Point_2                Rat_point_2;
@@ -109,11 +118,28 @@ private:
     std::pair<Alg_line_2, Alg_line_2>
   >                                                   Alg_delimiter_lines;
 
+  /* Enum to store the three type of bisector parts that can be found in the
+   * bisector of two segments (excluding the unbounded rays) */
   enum Bisector_type {
     PARABOLIC_ARC,
     SUPP_LINE_BISECTOR,
     ENDPOINT_BISECTOR
   };
+
+  /* Enum to store the four possible quadrants something can be oriented to.
+   * Used when rotating a segment. */
+  enum Quadrant {
+    FIRST_Q,
+    SECOND_Q,
+    THIRD_Q,
+    FOURTH_Q
+  };
+
+
+
+/* ########################################################################## */
+/* ###                           CLASS PARABOLA                           ### */
+/* ########################################################################## */
 
   /* Parabola class used to provide methods to find intersections with lines,
    * to check point location with respect to a parabola, to create parabolic
@@ -121,7 +147,6 @@ private:
   class Parabola {
 
   private:
-
     /* Fields */
 
     /* coefficients of equation: rx^2 + sy^2 + txy + ux + vy + w = 0 */
@@ -537,7 +562,13 @@ private:
       CGAL_assertion(arc.is_valid()); // valid arc
       return arc;
     }
-  }; // end of class Parabola
+  };
+
+/* ########################################################################## */
+/* ###                        END OF CLASS PARABOLA                       ### */
+/* ########################################################################## */
+
+
 
   /* Returns the squared distance between two points in L2 metric. */
   static Algebraic sqdistance(const Point_2& p1, const Point_2& p2) {
@@ -577,10 +608,9 @@ private:
     }
   }
 
-
   /* Given a point p and a list of points, return the closest point.
    * Precondition (checked): the list of points is not empty */
-  template <class K>
+  template <class K> // Kernel
   static typename K::Point_2 closest_point(
     typename K::Point_2 p,
     std::list<typename K::Point_2> points
@@ -600,6 +630,220 @@ private:
     return result;
   }
 
+  /* Given a segment, determine the Quadrant where it is oriented "into".
+   * Precondition (checked): the segment is not degenerate.
+   * Return the Quadrant. */
+  template <class K> // Kernel
+  static Quadrant general_direction(typename K::Segment_2 s) {
+    CGAL_precondition_msg(!s.is_degenerate(), "Segment cannot be degenerate.");
+
+    /* get direction */
+    typename K::Direction_2 s_direction = s.direction();
+    typename K::RT dx = s_direction.dx(), dy = s_direction.dy();
+
+    /* for each quadrant, always include the "starting" vertical or horizontal
+     * direction of the quadrant, but exclude the last direction */
+    if (dx > 0 && dy >= 0) {
+      return FIRST_Q;
+    }
+    else if (dx <= 0 && dy > 0) {
+      return SECOND_Q;
+    }
+    else if (dx < 0 && dy <= 0) {
+      return THIRD_Q;
+    }
+    else if (dx >= 0 && dy < 0) {
+      return FOURTH_Q;
+    }
+    else {
+      CGAL_error_msg("This function is not working properly.");
+    }
+  }
+
+  /* Given an Algebraic number, approximate it to a Rational according to the
+   * given flag (ceiling or floor) */
+  static RT approximate_algebraic(AT n, bool up) {
+    /* precision, better if power of 2 */
+    BigInt precision(65536); // use string for more precision
+
+    /* multiply number by precision, take ceil or floor */
+    AT big_n = n * precision;
+    BigInt approximate_big_n;
+    if (up) approximate_big_n = big_n.BigIntValue() + 1;  // ceil
+    else approximate_big_n = big_n.BigIntValue() - 1;     // floor
+
+    /* create rational with approximate_big_n and precision */
+    RT result(approximate_big_n, precision);
+    return result;
+  }
+
+  /* Given a segment, rotate it very slightly clockwise or counterclockwise
+   * according to the flag. It doesn't matter if the length changes.
+   * The supporting line must keep approximately the same orientation.
+   * Return the rotated segment, it has rational coordinates. */
+  static Rat_segment_2 slightly_rotate_segment(Alg_segment_2 s, bool ccw) {
+    /* depending on towards which Quadrant the segment is oriented, rotate it
+     * by changing individually each one of its coordinates according to the
+     * given flag ccw (if true, rotate counterclockwise) */
+    switch (general_direction<Alg_kernel>(s)) {
+      case FIRST_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ ccw),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ !ccw)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ !ccw),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ ccw)
+          )
+        );
+        break;
+      }
+      case SECOND_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ ccw),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ ccw)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ !ccw),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ !ccw)
+          )
+        );
+        break;
+      }
+      case THIRD_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ !ccw),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ ccw)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ ccw),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ !ccw)
+          )
+        );
+        break;
+      }
+      case FOURTH_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ !ccw),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ !ccw)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ ccw),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ ccw)
+          )
+        );
+        break;
+      }
+      default: break; // should never happen
+    }
+  }
+
+  /* Given a segment, translate it very slightly up or down according to the
+   * given flag. It doesn't matter if the length changes.
+   * The supporting line must keep approximately the same orientation.
+   * Return the translated segment, it has rational coordinates. */
+  static Rat_segment_2 slightly_translate_segment(Alg_segment_2 s, bool up) {
+    /* depending on towards which Quadrant the segment is oriented, translate it
+     * by changing individually each one of its coordinates according to the
+     * given flag up (if true, translate towards positive side) */
+    switch (general_direction<Alg_kernel>(s)) {
+      case FIRST_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ !up),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ up)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ !up),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ up)
+          )
+        );
+        break;
+      }
+      case SECOND_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ !up),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ !up)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ !up),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ !up)
+          )
+        );
+        break;
+      }
+      case THIRD_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ up),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ !up)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ up),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ !up)
+          )
+        );
+        break;
+      }
+      case FOURTH_Q: {
+        return Rat_segment_2(
+          Rat_point_2(
+            approximate_algebraic(s.source().x(), /* ceil or floor */ up),
+            approximate_algebraic(s.source().y(), /* ceil or floor */ up)
+          ),
+          Rat_point_2(
+            approximate_algebraic(s.target().x(), /* ceil or floor */ up),
+            approximate_algebraic(s.target().y(), /* ceil or floor */ up)
+          )
+        );
+        break;
+      }
+      default: break; // should never happen
+    }
+  }
+
+  /* Given a segment with one algebraic endpoint and potentially an underlying
+   * supporting line with algebraic coefficients, adjust the algebraic endpoint
+   * of the segment up or down to a rational point.
+   * `source` indicates if the source of the segent that is algebraic or not
+   * (if it is false, it meanst that the target is algebraic)
+   * `up` indicates whether the endpoint needs to be moved to the positive (up)
+   * or negative (!up) part of the segment.
+   * Return a rational segment.
+   */
+  static Rat_segment_2 adjust_endpoint(Alg_segment_2 s, bool up, bool source) {
+    
+  }
+
+  /* Given two segments return true if they are collinear */
+  static bool segments_collinear(Rat_segment_2 s1, Rat_segment_2 s2) {
+    return
+      CGAL::collinear(s1.source(), s1.target(), s2.source())
+      &&
+      CGAL::collinear(s2.source(), s2.target(), s1.source())
+    ;
+  }
+
+  /* Given two Curve_2 objects, return true if they are the same */
+  static bool same_curves(Curve_2 cv1, Curve_2 cv2) {
+    return
+      (cv1.r() == cv2.r()) &&
+      (cv1.s() == cv2.s()) &&
+      (cv1.t() == cv2.t()) &&
+      (cv1.u() == cv2.u()) &&
+      (cv1.v() == cv2.v()) &&
+      (cv1.w() == cv2.w()) &&
+      (cv1.orientation() == cv2.orientation()) &&
+      (cv1.source() == cv2.source()) &&
+      (cv1.target() == cv2.target())
+    ;
+  }
+
   /* Construct a point in the middle of the curve cv. This function is copied
    * from Env_sphere_traits_3.h */
   static Point_2 construct_middle_point(const X_monotone_curve_2& cv) {
@@ -614,6 +858,46 @@ private:
     else result = Point_2(cv.point_at_x(mid_x));
 
     return result;
+  }
+
+  /* Given a ray, find an endpoint as the intersection with an imaginary
+   * boundary (for example a box at 10000 around the origin).
+   * Create a segment from the source of the ray and invert it if the flag is
+   * set to true.
+   * This is used so to be able to store the ray as a Curve_2, that in the
+   * traits class we are using, Arr_conic_traits_2, can only be a bounded curve.
+   * Return the segment. */
+  static Rat_segment_2 make_segment_from_ray(Rat_ray_2 ray, bool invert) {
+
+    //TODO change, can be smarter than brute force
+
+    RT far_l = 10000;
+    std::vector<Rat_segment_2> border = {
+      Rat_segment_2(Rat_point_2(-far_l, -far_l), Rat_point_2(far_l, -far_l)),
+      Rat_segment_2(Rat_point_2(far_l, -far_l), Rat_point_2(far_l, far_l)),
+      Rat_segment_2(Rat_point_2(far_l, far_l), Rat_point_2(-far_l, far_l)),
+      Rat_segment_2(Rat_point_2(-far_l, far_l), Rat_point_2(-far_l, -far_l))
+    };
+
+    Rat_point_2 start_point = ray.source();
+    Rat_point_2 end_point;
+    bool assigned = false;
+    for (auto& seg : border) {
+      if (CGAL::do_intersect(ray, seg) && !assigned) {
+        assigned = true;
+        CGAL_assertion_msg(
+          CGAL::assign(end_point, CGAL::intersection(ray, seg)),
+          "Could not assign end."
+        );
+        break;
+      }
+    }
+    CGAL_assertion_msg(assigned, "Could not find ray end_point.");
+
+    /* make segment, invert if needed and return */
+    Rat_segment_2 segment(start_point, end_point);
+    if (invert) segment = segment.opposite();
+    return segment;
   }
 
   /* Convert the Curve_2 cv into multiple X_monotone_curve_2 using the provided
@@ -900,9 +1184,10 @@ public:
                               const Xy_monotone_surface_3& s2,
                               OutputIterator o) const {
 
-      //TODO remove
-      std::cout << "Finding bisector of s1 = "
-                << s1 << " and s2 = " << s2 << " --- "
+      std::cout << "\n#######################################################"
+                << "#######################################################\n"
+                << "#\tFinding bisector of s1 = {"
+                << s1 << "} and s2 = {" << s2 << "}:\n"
       ;
 
       /* create converter functors to convert from:
@@ -940,6 +1225,8 @@ public:
         /* line */
         if (s1.is_degenerate() && s2.is_degenerate()) {
           Rat_line_2 bisector = CGAL::bisector(s1.source(), s2.source());
+
+          /* find endpoints */ //TODO abstract this
           Rat_point_2 start, end;
           bool assigned_start = false, assigned_end = false;
           for (auto& segment : border) {
@@ -966,7 +1253,7 @@ public:
             Intersection_curve(x_seg_bisector, 0)
           );
         }
-        /* parabolic arc and two rays */
+        /* parabolic arc and two rays (or in other special cases just lines) */
         else {
           /* determine which one is the non-degenerate segment */
           bool s1_is_degenerate = s1.is_degenerate();
@@ -976,10 +1263,74 @@ public:
           );
 
           /* get directrix and focus */
-          Rat_line_2 directrix =
-            s1_is_degenerate ? s2.supporting_line() : s1.supporting_line()
-          ;
+          Rat_segment_2 directrix_generator = s1_is_degenerate ? s2 : s1;
+          Rat_line_2 directrix = directrix_generator.supporting_line();
           Rat_point_2 focus = s1_is_degenerate ? s1.source() : s2.source();
+
+          /* if segment and point collinear, the bisector is just the bisector
+           * of the closest endpoint and the point */
+          if (CGAL::collinear(
+            focus,
+            directrix_generator.source(),
+            directrix_generator.target())
+          ) {
+            Rat_line_2 bisector;
+
+            /* if the point is not on the segment just get the bisector */
+            if (!directrix_generator.has_on(focus)) {
+
+              /* get bisector */
+              if (
+                sqdistance(focus, directrix_generator.source())
+                <
+                sqdistance(focus, directrix_generator.target())
+              ) {
+                bisector = CGAL::bisector(focus, directrix_generator.source());
+              }
+              else {
+                bisector = CGAL::bisector(focus, directrix_generator.target());
+              }
+            }
+            /* otherwise the bisector is the line on orthogonal to the segment
+             * that goes through the point on it */
+            else {
+              bisector = directrix.perpendicular(focus);
+            }
+
+            /* find endpoints */ //TODO abstract this part
+            Rat_point_2 start, end;
+            bool assigned_start = false, assigned_end = false;
+            for (auto& segment : border) {
+              if (CGAL::do_intersect(bisector, segment)) {
+                if (assigned_start && !assigned_end) {
+                  assigned_end = true;
+                  CGAL_assertion_msg(
+                    CGAL::assign(end, CGAL::intersection(bisector, segment)),
+                    "Could not assing end."
+                  );
+                }
+                else if (!assigned_start && !assigned_end) {
+                  assigned_start = true;
+                  CGAL_assertion_msg(
+                    CGAL::assign(
+                      start,
+                      CGAL::intersection(bisector, segment)
+                    ),
+                    "Could not assing start."
+                  );
+                }
+              }
+            }
+            Rat_segment_2 sg_bisector(start, end);
+            X_monotone_curve_2 x_sg_bisector = X_monotone_curve_2(sg_bisector);
+            *o++ = CGAL::make_object(
+              Intersection_curve(x_sg_bisector, 0)
+            );
+          }
+          /* otherwise, we have the actual parabola and the two rays */
+          else {
+            /* ... */
+          }
 
           /* make parabola */
           // *o++ = CGAL::make_object(
@@ -987,8 +1338,68 @@ public:
           // );
         }
       }
-      /* if the two segments are not the same, compute all parts of their plane
+      /* if the two segments lie on a single line, we just have a line as a
        * bisector */
+      else if (segments_collinear(s1, s2)) {
+        Rat_point_2 p1, p2;
+        /* find the closest pair of points */
+        if (s1.direction() == s2.direction()) {
+          if (
+            sqdistance(s1.source(), s2.target())
+            <
+            sqdistance(s1.target(), s2.source())
+          ) {
+            p1 = s1.source();
+            p2 = s2.target();
+          }
+          else {
+            p1 = s1.target();
+            p2 = s2.source();
+          }
+        }
+        else {
+          if (
+            sqdistance(s1.source(), s2.source())
+            <
+            sqdistance(s1.target(), s2.target())
+          ) {
+            p1 = s1.source(); p2 = s2.source();
+          }
+          else {
+            p1 = s1.target(); p2 = s2.target();
+          }
+        }
+
+        /* bisector is bisector of these two points */
+        Rat_line_2 bisector = CGAL::bisector(p1, p2);
+        Rat_point_2 start, end;
+        bool assigned_start = false, assigned_end = false;
+        for (auto& segment : border) {
+          if (CGAL::do_intersect(bisector, segment)) {
+            if (assigned_start && !assigned_end) {
+              assigned_end = true;
+              CGAL_assertion_msg(
+                CGAL::assign(end, CGAL::intersection(bisector, segment)),
+                "Could not assing end."
+              );
+            }
+            else if (!assigned_start && !assigned_end) {
+              assigned_start = true;
+              CGAL_assertion_msg(
+                CGAL::assign(start, CGAL::intersection(bisector, segment)),
+                "Could not assing start."
+              );
+            }
+          }
+        }
+        Rat_segment_2 seg_bisector(start, end);
+        X_monotone_curve_2 x_seg_bisector = X_monotone_curve_2(seg_bisector);
+        *o++ = CGAL::make_object(
+          Intersection_curve(x_seg_bisector, 0)
+        );
+      }
+      /* if the two segments are not the same and not degenerate, compute all
+       * parts of their plane bisector */
       else {
         /* first of all, for each segment create the two lines that divide the
          * plane in three areas: one of all points closest to the inner part of
@@ -1083,38 +1494,14 @@ public:
             Rat_line_2 bisector_line = CGAL::bisector(
               eit->target(), eit->source()
             );
+
             /* find "farthest" intersection with delimiters, ray starts there */
             Rat_ray_2 unbounded_ray = find_unbounded_ray(
               bisector_line, delimiter_lines
             );
+
+            /* add ray to list of unbounded rays */
             unbounded_ray_list.push_back(unbounded_ray);
-
-            /* make very long segment to represent an unbounded ray, so that it
-             * can be saved as an X_monotone_curve_2, because the Conic_traits
-             * require that curves are bounded */
-            Rat_point_2 start_point = unbounded_ray.source();
-            Rat_point_2 end_point;
-            bool assigned = false;
-            for (auto& seg : border) {
-              if (assigned) break;
-              else if (CGAL::do_intersect(unbounded_ray, seg) && !assigned) {
-                assigned = true;
-                CGAL_assertion_msg(
-                  CGAL::assign(
-                    end_point,
-                    CGAL::intersection(unbounded_ray, seg)
-                  ),
-                  "Could not assign end."
-                );
-              }
-            }
-
-            CGAL_assertion_msg(assigned, "Could not find ray end_point.");
-            Rat_segment_2 segment(start_point, end_point);
-            X_monotone_curve_2 segment_curve(segment); // it's just straight
-            *o++ = CGAL::make_object(
-              Intersection_curve(segment_curve, 0)
-            );
           }
         }
 
@@ -1135,24 +1522,34 @@ public:
           Rat_ray_2 start_ray = unbounded_ray_list.front();
           Rat_ray_2 end_ray = unbounded_ray_list.back();
 
-          Alg_point_2 start_pt = to_alg(start_ray.source());
-          Alg_point_2 end_pt = to_alg(end_ray.source());
-
           Alg_direction_2 curr_direction = to_alg(
             - start_ray.direction()
           );
 
+          /* list to store all parts of the bisector */
+          std::list<Curve_2> parts_of_bisector;
+
+          /* add start ray (as a long segment) */
+          parts_of_bisector.push_back(make_segment_from_ray(start_ray, true));
+
           /* call big private function that iteratively constructs the parts of
            * the plane bisector of the segments s1 and s2 starting from a start
            * point going in a given direction and finishing at an end point */
-          o = this->construct_bisector_from_point_to_point(
+          this->construct_bisector_from_point_to_point(
             s1, s2,                 // the two segments
-            o,                      // OutputIterator
-            start_pt, end_pt,       // construct bisector from start to end
+            std::back_inserter(parts_of_bisector),  // OutputIterator
+            start_ray, end_ray,     // construct bisector between two sources
             curr_direction,         // initial direction, updated
             alg_delimiter_lines,    // delimiter lines of s1 and s2
             delimiter_lines_vector  // same but as vector and in rational
           );
+
+          /* add end ray (as a long segment) */
+          parts_of_bisector.push_back(make_segment_from_ray(end_ray, false));
+
+          /* convert and add curves to OutputIterator o */
+          o = this->convert_and_add_curves(parts_of_bisector, o);
+
         } // end of segments do not intersect
 
         /* if instead they do intersect, assert it, then proceed to computing
@@ -1166,13 +1563,14 @@ public:
           // check for three collinear points among the segments)
 
           /* starting from the source of one unbounded ray and finishing at the
-           * source of the other, compute the rest of the bisector, consisting
-           * of:
+           * source of another, compute the rest of the bisector, consisting of:
            * - parabolic arcs: when we are in the "area of influence" of the
            *   interior of a segment and of one endpoint of the other
            * - segments: when we are in the "area of influence" of the interiors
            *   of the two segments or of two endpoints of the two segments
-           * Since in this case we have four rays, do this process twice. */
+           * Since in this case we have four rays, do this process twice, and we
+           * create two main parts of the bisector that "touch" at the
+           * intersection of the two segments. */
           CGAL_assertion(unbounded_ray_list.size() == 4);
           Rat_ray_2 start_ray_one = unbounded_ray_list.front();
           unbounded_ray_list.pop_front();
@@ -1182,65 +1580,267 @@ public:
           unbounded_ray_list.pop_front();
           Rat_ray_2 end_ray_two = unbounded_ray_list.front();
           unbounded_ray_list.pop_front();
+          // Rat_ray_2 start_ray_one = unbounded_ray_list.front();
+          // unbounded_ray_list.pop_front();
+          // Rat_ray_2 end_ray_one = unbounded_ray_list.front();
+          // unbounded_ray_list.pop_front();
+          // Rat_ray_2 start_ray_two = unbounded_ray_list.front();
+          // unbounded_ray_list.pop_front();
+          // Rat_ray_2 end_ray_two = unbounded_ray_list.front();
+          // unbounded_ray_list.pop_front();
 
           CGAL_assertion_msg(
             unbounded_ray_list.empty(),
             "There should only be 4 rays, and all were popped."
           );
 
-          /* get start point, end point and direction for both cases */
-          Alg_point_2 start_pt_one = to_alg(start_ray_one.source());
-          Alg_point_2 end_pt_one = to_alg(end_ray_one.source());
+          /* get direction for both cases */
           Alg_direction_2 curr_direction_one = to_alg(
             - start_ray_one.direction()
           );
-          Alg_point_2 start_pt_two = to_alg(start_ray_two.source());
-          Alg_point_2 end_pt_two = to_alg(end_ray_two.source());
           Alg_direction_2 curr_direction_two = to_alg(
             - start_ray_two.direction()
           );
+
+          /* lists to store all parts of the bisector */
+          std::list<Curve_2> parts_of_bisector_one;
+          std::list<Curve_2> parts_of_bisector_two;
+
+          /* add start rays (as long segments) */
+          parts_of_bisector_one.push_back(make_segment_from_ray(
+            start_ray_one, true
+          ));
+          parts_of_bisector_two.push_back(make_segment_from_ray(
+            start_ray_two, true
+          ));
 
           /* call big private function that iteratively constructs the parts of
            * the bisector of s1 and s2 starting from a start point going in a
            * given direction and finishing at an end point. Do this two times,
            * for both bisectors */
-          o = this->construct_bisector_from_point_to_point(
-            s1, s2,                   // the two segments
-            o,                        // OutputIterator
-            start_pt_one, end_pt_one, // construct bisector from start to end
-            curr_direction_one,        // initial direction, updated
-            alg_delimiter_lines,      // delimiter lines of s1 and s2
-            delimiter_lines_vector    // same but as vector and in rational
+          this->construct_bisector_from_point_to_point(
+            s1, s2,                     // the two segments
+            std::back_inserter(parts_of_bisector_one),  // OutputIterator
+            start_ray_one, end_ray_one, // construct bisector between sources
+            curr_direction_one,         // initial direction, updated
+            alg_delimiter_lines,        // delimiter lines of s1 and s2
+            delimiter_lines_vector      // same but as vector and in rational
           );
-          o = this->construct_bisector_from_point_to_point(
-            s1, s2,                   // the two segments
-            o,                        // OutputIterator
-            start_pt_two, end_pt_two, // construct bisector from start to end
-            curr_direction_two,        // initial direction, updated
-            alg_delimiter_lines,      // delimiter lines of s1 and s2
-            delimiter_lines_vector    // same but as vector and in rational
+          this->construct_bisector_from_point_to_point(
+            s1, s2,                     // the two segments
+            std::back_inserter(parts_of_bisector_two),  // OutputIterator
+            start_ray_two, end_ray_two, // construct bisector between sources
+            curr_direction_two,         // initial direction, updated
+            alg_delimiter_lines,        // delimiter lines of s1 and s2
+            delimiter_lines_vector      // same but as vector and in rational
           );
+
+          /* add end rays (as long segments) */
+          parts_of_bisector_one.push_back(make_segment_from_ray(
+            end_ray_one, true
+          ));
+          parts_of_bisector_two.push_back(make_segment_from_ray(
+            end_ray_two, true
+          ));
+
+          /* convert and add curves to OutputIterator o */
+          //TODO test if fucking stupid but very cool syntax of nesting the two
+          // expressions would also work
+          o = this->convert_and_add_curves(parts_of_bisector_one, o);
+          o = this->convert_and_add_curves(parts_of_bisector_two, o);
+
         } // end of segments intersect
 
-
-        //TODO remove
-        std::cout << "Created bisector of s1 = "
-                  << s1 << " and s2 = " << s2 << std::endl
-        ;
-
-        /* return one past the end iterator */
-        return o;
-
       } // end of segments are not the same
+
+      /* return one past the end iterator */
+      return o;
     }
 
   private:
 
+    /* Given a two Curve_2 parabolic arcs and an algebraic segment that
+     * connects them, find an approximated segment supported by a line with
+     * rational coefficients. The supporting MUST intersect both arcs.
+     * The arcs are tangent to the segment to approximate at its endpoints.
+     * Precondition (not checked): the arcs and the segment are oriented in the
+     * correct way, so that they are directed from the source of prev_arc to the
+     * target of next_arc.
+     * Return this supporting line.
+     */
+    Rat_line_2 get_approximated_inner_segment_supporting_line(
+      Alg_segment_2& segment,
+      Curve_2& prev_arc,
+      Curve_2& next_arc
+    ) const {
+      /* determine if we have to rotate or translate: if the orientation of the
+       * previous and of the next arc is the same, we have to translate the
+       * algebraic segment up or down, if the orientations are different instead
+       * we have to slightly rotate the segment.
+       * This is to ensure that the supporting_line line of the approximated
+       * Rational segment still intersects both curves.
+       *
+       * There are two main cases:
+       * - the curves have the same orientation. In this case, the approximated
+       *   segment needs to be slightly moved towards the "interior" of both
+       *   curves, so that it definitely intersects still both of them
+       * - the curves have a different orietnat. In this case, the approximated
+       *   segment needs to be slightly rotated so that the source is in the
+       *   "interior" of the prev_arc, and the target of the next_arc
+       *
+       * To approximate, we work on the single coordinates of the points, so we
+       * need to create four Rational numbers.
+       * According to which direction each point needs to be moved, we multiply
+       * the Algebraic coordinate by a large multiple of 2 (say, 2^16), then we
+       * take the ceiling or floor of this number so to get an Integer, then
+       * create a Rational that is this integer divided by the large multiple of
+       * 2 (again, for example 2^16).
+       */
+      Rat_segment_2 approximated_segment;
+
+      /* for checks */
+      RK_to_AK to_alg;
+
+      std::cout << "\nApproximating [" << segment << "] with supporting line ["
+                << segment.supporting_line() << "] "
+      ;
+
+      /* rotate */
+      if (prev_arc.orientation() != next_arc.orientation()) {
+        std::cout << "by rotation ";
+        /* rotate segment counterclockwise */
+        if (prev_arc.orientation() == CGAL::CLOCKWISE) {
+          approximated_segment = slightly_rotate_segment(segment, true);
+        }
+        /* rotate segment clockwise */
+        else {
+          approximated_segment = slightly_rotate_segment(segment, false);
+        }
+
+      }
+      /* translate "up or down" */
+      else {
+        std::cout << "by translation ";
+        /* move "up" (positive side) */
+        if (prev_arc.orientation() == CGAL::COUNTERCLOCKWISE) {
+          approximated_segment = slightly_translate_segment(segment, true);
+          /* check */
+          Alg_segment_2 alg_approx_seg = to_alg(approximated_segment);
+          CGAL_assertion_msg(
+            (segment.supporting_line().has_on_positive_side(
+              alg_approx_seg.source()
+            )
+            &&
+            segment.supporting_line().has_on_positive_side(
+              alg_approx_seg.target()
+            )),
+            "The approximated segment should be above initial segment."
+          );
+        }
+        /* move "down" (negative side) */
+        else {
+          approximated_segment = slightly_translate_segment(segment, false);
+          /* check */
+          Alg_segment_2 alg_approx_seg = to_alg(approximated_segment);
+          CGAL_assertion_msg(
+            (segment.supporting_line().has_on_negative_side(
+              alg_approx_seg.source()
+            )
+            &&
+            segment.supporting_line().has_on_negative_side(
+              alg_approx_seg.target()
+            )),
+            "The approximated segment should be below initial segment."
+          );
+        }
+      }
+
+      std::cout << "to [" << approximated_segment << "]" << '\n';
+
+      return approximated_segment.supporting_line();
+    }
+
+    /* Given three Curve_2 in sequence, update the endpoints to make themselves
+     * connected, if they are not already.
+     * Keep curr like it is, update the others.
+     * Precondition (not checked): the three curved arcs are oriented in the
+     * correct way, so that they are directed from the source of prev to the
+     * target of next.
+     * Precondition (not checked): the source and target of curr lie on prev and
+     * on next respectively.
+     */
+    void update_endpoints(Curve_2& prev, Curve_2& curr, Curve_2& next) const {
+      bool one = false, two = false;
+      if (prev.target() != curr.source()) {
+        prev.set_target(curr.source());
+        one = true;
+      }
+      if (next.source() != curr.target()) {
+        next.set_source(curr.target());
+        two = true;
+      }
+      std::cout << "[updated "
+                << (one ? "prev " : "")
+                << (two ? "next " : "")
+                << (!(one || two) ? "nothing" : "")
+                << "] "
+      ;
+      return;
+    }
+
+    /* Given a list of Curve_2 and an OutputIterator o, convert those curves to
+     * X_monotone_curve_2 and add them to the OutputIterator o */
+    template <class OutputIterator>
+    OutputIterator convert_and_add_curves(
+      std::list<Curve_2>& cvs, OutputIterator o
+    ) const {
+      /* While iterating, also keep checking if the curves are all connected */
+      int piece = 0;
+      Alg_point_2 connection = cvs.front().source();
+      for (auto& cv : cvs) {
+        /* check and update */
+        std::cout << piece++ << ": " << cv << '\n';
+        CGAL_warning_msg(
+          (cv.source() == connection),
+          COUT_COLOUR_RED "Warning: " COUT_COLOUR_YELLOW
+          "The curve is not connected." COUT_COLOUR_RESET
+        );
+        connection = cv.target();
+
+        /* convert and add */
+        std::vector<X_monotone_curve_2> cv_x_mono_parts;
+        make_curve_2_into_many_x_monotone_curve_2(
+          cv,
+          cv_x_mono_parts
+        );
+        for (auto& x_cv : cv_x_mono_parts) {
+          *o++ = CGAL::make_object(
+            Intersection_curve(x_cv, 0)
+            //TODO multiplicity? would need to save it in list bisector_parts
+          );
+        }
+      }
+
+      /* return one past the end iterator */
+      return o;
+    }
+
+    /* Helper function for the construction of the plane bisecotr of two line
+     * segments.
+     * Given a start point and and end point, iteratively constructs all pieces
+     * of the bisector. Other objects passed to the function are the segments
+     * themselves, the initial direction where the bisector must continue from
+     * start_pt, the iterator where to store the pieces of the bisector as
+     * Curve_2 objects, and two different instances of the delimiter lines, that
+     * are the lines orthogonal to the segments' endpoints, such that each
+     * segment is inside the negative part of his couple of delimiter lines.
+     * Returns a one past the end iterator of the list of Curve_2.
+     */
     template <class OutputIterator>
     OutputIterator construct_bisector_from_point_to_point(
       Rat_segment_2 s1, Rat_segment_2 s2,
       OutputIterator o,
-      Alg_point_2 start_pt, Alg_point_2 end_pt,
+      Rat_ray_2 start_ray, Rat_ray_2 end_ray,
       Alg_direction_2 curr_direction,
       Alg_delimiter_lines alg_delimiter_lines,
       std::vector<Rat_line_2> delimiter_lines_vector
@@ -1255,6 +1855,24 @@ public:
       AK_to_DK to_dbl;
       DK_to_RK to_rat;
 
+      /* get start and end points, they are the sources of the rays */
+      Alg_point_2 start_pt = to_alg(start_ray.source());
+      Alg_point_2 end_pt = to_alg(end_ray.source());
+
+      /* determine if the segments intersect and get the intersection point,
+       * which is a rational point because the segments are rational (that is,
+       * their endpoints are, and their supporting lines have rational
+       * coefficients) */
+      bool do_intersect = false;
+      Rat_point_2 segments_intersection;
+      if (CGAL::do_intersect(s1, s2)) {
+        do_intersect = true;
+        CGAL_assertion_msg(
+          CGAL::assign(segments_intersection, CGAL::intersection(s1, s2)),
+          "Could not assign segments_intersection."
+        );
+      }
+
       /* list to store all Curve_2 bisector part. They all will be converted to
        * X_monotone_curve_2 and inserted into OutputIterator o at the end of
        * this method */
@@ -1263,19 +1881,32 @@ public:
       /* when computing the straight parts of the bisector between two conic
        * arcs, it is likely that the starting and ending points of these
        * straight parts (segments) are algebraic points. These cannot be added
-       * as Curve_2 objects because their supporting conic (a line) would have
-       * algebraic coefficients, and this is not supported.
+       * as Curve_2 objects because their supporting conic (a line) could have
+       * algebraic coefficients, and this is not supported by the arrangement
+       * traits class (Arr_conic_traits_2).
        * As a solution, keep the coefficients of the parabola of the previous
        * arc and wait until the coefficients of the parabola of the next arc are
-       * available; then, just approximate the algebraic segment with the
-       * closest possible rational segment, correct the endpoints of the
-       * previous and next arc so that they are the intersections with the line
-       * supporting the segment, and add the segment itself (the endpoints
-       * will be rational points)
+       * available; then, just use the Curve_2 constructor that does not require
+       * the exact endpoints, but the three conic coefficients lists and two
+       * approximate endpoints: it computes the actual endpoints as the
+       * intersections of the three curves closest to the approximate endpoints.
+       * Then, get the computed endpoints of the new curve and update the
+       * end point of the previous Curve_2 and the start point of the successive
+       * Curve_2
+       *
+      //  * Keep two parts to approximate for the case in which the segment is the
+      //  * part of the bisector that intersects the two segments at their
+      //  * intersection (so this happens only when the two segments are
+      //  * intersecting, of course).
        */
-      bool part_to_approximate_exists = false;
+      bool prev_arc_exists = false;
       Curve_2 prev_arc;
+      bool part_to_approximate_exists = false;
       Alg_segment_2 part_to_approximate;
+      bool part_to_approximate_1_exists;
+      bool part_to_approximate_2_exists;
+      Alg_segment_2 part_to_approximate_1;
+      Alg_segment_2 part_to_approximate_2;
 
       /* rename start point */
       Alg_point_2 curr_pt = start_pt;
@@ -1308,6 +1939,7 @@ public:
         switch (find_position(midpoint, alg_delimiter_lines, s1, s2, o1, o2)) {
 
           case PARABOLIC_ARC: {
+            std::cout << "PARABOLIC_ARC -> ";
             /* extract directrix and focus */
             Rat_line_2 directrix; Rat_point_2 focus;
             if (CGAL::assign(directrix, o1)) {
@@ -1341,31 +1973,157 @@ public:
             next_direction = tangent.direction();
 
             /* get parabolic arc */
-            Curve_2 parabolic_arc = supporting_conic.construct_parabolic_arc(
+            Curve_2 this_arc = supporting_conic.construct_parabolic_arc(
               curr_pt,
               actual_next_intersection
             );
 
-            /* deal with approximation of segment if necessary */
-            if (part_to_approximate_exists) {
+            /* deal with approximation of previous segment if necessary;
+             * distinguish the cases where the segments intersect and the cases
+             * in which they do not
+             */
+            if (
+              !do_intersect &&
+              part_to_approximate_exists &&
+              prev_arc_exists
+            ) {
+              part_to_approximate_exists = false; // reset flag
+              /* get the approximated segment supporting_conic (a line) */
+              Rat_line_2 approx_last_segment_line =
+                get_approximated_inner_segment_supporting_line(
+                part_to_approximate,
+                prev_arc,
+                this_arc
+              );
+
+              /* the prev_arc must be the last one in the list */
+              Curve_2 prev_arc_in_list = bisector_parts.back();
+              CGAL_assertion_msg(
+                same_curves(prev_arc_in_list, prev_arc),
+                "prev_arc should be last element in list of parts of bisector."
+              );
+              bisector_parts.pop_back(); // remove last curve
+
+              std::cout << "Prev, segment, next:\n";
+              std::cout << prev_arc << '\n';
+              std::cout << approx_last_segment_line << '\n';
+              std::cout << this_arc << '\n';
+
+              /* create new segment curve */
+              Curve_2 approx_last_segment_curve(
+                0,
+               	0,  // supporting conic is a line, so it's linear
+               	0,
+               	approx_last_segment_line.a(),
+               	approx_last_segment_line.b(),
+               	approx_last_segment_line.c(),
+                CGAL::COLLINEAR,
+                part_to_approximate.source(),
+               	prev_arc.r(),
+               	prev_arc.s(),
+               	prev_arc.t(),
+               	prev_arc.u(),
+               	prev_arc.v(),
+               	prev_arc.w(),
+                part_to_approximate.target(),
+               	this_arc.r(),
+               	this_arc.s(),
+               	this_arc.t(),
+               	this_arc.u(),
+               	this_arc.v(),
+               	this_arc.w()
+              );
+              CGAL_assertion_msg(
+                approx_last_segment_curve.is_valid(),
+                "Created approximated segment curve is not valid"
+              );
+
+              /* if needed (because the endpoints might just be the same ones,
+               * for example if the approximation was exact), update prev_arc
+               * and this_arc end and start point to coincide with start and end
+               * of this new approximated segment curve */
+              update_endpoints(prev_arc, approx_last_segment_curve, this_arc);
+
+              /* push in list of bisector parts the updated prev_arc and the
+               * now approximated segment curve */
+              bisector_parts.push_back(prev_arc);
+              bisector_parts.push_back(approx_last_segment_curve);
+            }
+            /* if the segments intersect, we have two parts to approximate, but
+             * they are oriented differently and the target of the first and the
+             * source of the second are the intersection point of the two
+             * segments (saved at the beginning of the method)
+             */
+            else if (
+              do_intersect
+              && part_to_approximate_2_exists
+              /* part_1 might be first part, in which case there is also no
+               * prev_arc */
+            ) {
+              part_to_approximate_2_exists = false; // reset flag
+
+              /* to save two curves (or just one) */
+              Curve_2 part_1, part_2;
+
+              /* we have to approximate part_2 anyway, so let's do it;
+               * create approximated part_2 by changing its target */
               //TODO
+
+              /* update source of this_arc */
+              //TODO
+
+              /* if part_1 was the first internal part of the bisector (i.e.
+               * excluding the rays), then we just have to approximate part_2,
+               * as we just did;
+               * otherwise both need to be approximated */
+              if (part_to_approximate_1_exists) {
+
+                /* there must exist an arc before this one */
+                CGAL_assertion_msg(
+                  prev_arc_exists,
+                  "There must be a prev_arc, to approximate part_1."
+                );
+
+                /* the prev_arc must be the last one in the list */
+                Curve_2 prev_arc_in_list = bisector_parts.back();
+                CGAL_assertion_msg(
+                  same_curves(prev_arc_in_list, prev_arc),
+                  "prev_arc must be last element in list of parts of bisector."
+                );
+                bisector_parts.pop_back(); // remove last curve
+
+                /* create approximated part_1 by changing its source */
+                //TODO
+
+                /* update target of prev_arc */
+                //TODO
+
+                /* push in list of bisector parts the updated prev_arc and the
+                 * now approximated part_1 */
+                //TODO
+              }
+
+              /* push in list of bisector parts the now approximated part_2 */
+              bisector_parts.push_back(part_2);
             }
 
             /* save as Curve_2 in list of bisector parts, save this curve */
-            bisector_parts.push_back(parabolic_arc);
-            prev_arc = parabolic_arc;
+            bisector_parts.push_back(this_arc);
+            prev_arc = this_arc;
+            prev_arc_exists = true;
 
             break;
           }
 
           case SUPP_LINE_BISECTOR: {
+            std::cout << "SUPP_LINE_BISECTOR -> ";
             /* extract two supporting lines */
             Rat_line_2 supp_line1; Rat_line_2 supp_line2;
             CGAL_assertion(CGAL::assign(supp_line1, o1));
             CGAL_assertion(CGAL::assign(supp_line2, o2));
 
             /* orient supporting lines according to curr_direction, get
-             * bisector, assert that curr_pt is on it and get direction */
+             * bisector, assert that curr_pt is on it */
             if (!generally_same_direction(
               to_alg(supp_line1), curr_direction
             )) {
@@ -1382,59 +2140,275 @@ public:
             );
             CGAL_assertion_msg(
               supp_line_bisector.has_on(curr_pt),
-              "The point curr_pt should be on the bisector, but it is not"
+              "The point curr_pt should be on the bisector, but it is not."
             );
 
-            /* save next_direction, find actual next intersection */
-            next_direction = supp_line_bisector.direction();
-            actual_next_intersection = find_next_intersection(
-              next_direction, curr_pt, delimiter_lines_vector
-            );
-
-            /* get bisector part, check if it intersects the two segments (this
-             * happens when the segments intersect) and if yes split it in two
-             * parts */
-            Alg_segment_2 bisector_part(curr_pt, actual_next_intersection);
-            if (CGAL::do_intersect(bisector_part, to_alg(s1))) {
-              /* must also intersect s2 */
-              CGAL_assertion(CGAL::do_intersect(bisector_part, to_alg(s2)));
-
-              /* should also intersect with s2 at exactly the same point */
-              Alg_point_2 segments_intersection_1, segments_intersection_2;
-              CGAL_assertion(CGAL::assign(
-                segments_intersection_1,
-                CGAL::intersection(bisector_part, to_alg(s1))
-              ));
-              CGAL_assertion(CGAL::assign(
-                segments_intersection_2,
-                CGAL::intersection(bisector_part, to_alg(s2))
-              ));
-              CGAL_assertion_msg(
-                (segments_intersection_1 == segments_intersection_2),
-                "The bisector should intersect the two segments exactly on the "
-                "intersection of the two segments."
+            /* if the segments to not intersect, just get the next intersection,
+             * build the segment and approximate it if needed */
+            if (!do_intersect) {
+              /* save next_direction, find actual next intersection */
+              next_direction = supp_line_bisector.direction();
+              actual_next_intersection = find_next_intersection(
+                next_direction, curr_pt, delimiter_lines_vector
               );
 
-              //TODO update to smart approximation of segment version
-              /* save first part as Curve_2 in list of bisector parts */
-              bisector_parts.push_back(Curve_2(to_rat(to_dbl(
-                Alg_segment_2(curr_pt, segments_intersection_1)
-              ))));
-              /* save second part as Curve_2 in list of bisector parts */
-              bisector_parts.push_back(Curve_2(to_rat(to_dbl(
-                Alg_segment_2(segments_intersection_1, actual_next_intersection)
-              ))));
+              /* special cases: if this SUPP_LINE_BISECTOR is the first or the
+               * last part of the internal parts of the bisector (that is,
+               * excluding the rays), then it can be added easily as it is just
+               * an "extension" of that ray, with the same slope (rational).
+               * No need to approximate it.
+               */
+              if (curr_pt == start_pt) {
+                Rat_line_2 supporting_conic = start_ray.supporting_line();
+
+                /* direction should be opposite */
+                CGAL_assertion_msg(
+                  - to_alg(supporting_conic).direction() == next_direction,
+                  "Start ray direction should be the opposite as the current."
+                );
+                supporting_conic = supporting_conic.opposite();
+
+                /* add segment */
+                bisector_parts.push_back(Curve_2(
+                  0,
+                  0,  // supporting conic is a line, so it's linear
+                  0,
+                  supporting_conic.a(),
+                  supporting_conic.b(),
+                  supporting_conic.c(),
+                  CGAL::COLLINEAR,
+                  start_pt,
+                  actual_next_intersection
+                ));
+
+                /* BREAK here because we already added the bisector part */
+                break;
+              }
+              else if (actual_next_intersection == end_pt) {
+                Rat_line_2 supporting_conic = end_ray.supporting_line();
+
+                /* direction should be the same */
+                CGAL_assertion_msg(
+                  to_alg(supporting_conic).direction() == next_direction,
+                  "Start ray direction should be the opposite as the current."
+                );
+
+                /* add segment */
+                bisector_parts.push_back(Curve_2(
+                  0,
+                  0,  // supporting conic is a line, so it's linear
+                  0,
+                  supporting_conic.a(),
+                  supporting_conic.b(),
+                  supporting_conic.c(),
+                  CGAL::COLLINEAR,
+                  curr_pt,
+                  end_pt
+                ));
+
+                /* BREAK here because we already added the bisector part */
+                break;
+              }
+
+              /* no special case, then just get the segment */
+              Alg_segment_2 bisector_part(curr_pt, actual_next_intersection);
+
+              /* save this algebraic segment in the `part_to_approximate`
+               * variable; when the next bisector part will be constructed (and
+               * it should be an arc) this segment will be approximated and
+               * added to the list of pieces of the bisector
+               */
+              part_to_approximate = bisector_part;
+              part_to_approximate_exists = true;
+
             }
+            /* if the segments intersect, we have to create two parts: the first
+             * part from curr_pt to the intersection of the two segments, the
+             * second part from the intersection of the two segments to a new
+             * point to find.
+             * At the intersection, the bisector makes a more or less sharp turn
+             * to the right (because we give as start and end points the sources
+             * of two adjecent rays).
+             */
             else {
-              //TODO update to smart approximation of segment version
-              /* save as Curve_2 in list of bisector parts */
-              bisector_parts.push_back(Curve_2(to_rat(to_dbl(bisector_part))));
+              /* check that the intersection (saved at the beginning of the
+               * function) is on the bisector */
+              CGAL_assertion_msg(
+                supp_line_bisector.has_on(to_alg(segments_intersection)),
+                "The intersection should be on the bisector, but it is not."
+              );
+
+              /* before everything we need to find the second bisector of the
+               * supporting lines of the two intersecting segments.
+               * More precisely, we'd like to have it oriented towards the right
+               * relative to the current direction.
+               * This is because we have given as end point of this bisector of
+               * two intersecting segments the ray that is adjacent to the start
+               * ray in counterclockwise direction (the "other" bisector instead
+               * connects the other two rays).
+               * But why not just connect the two pairs of rays that are
+               * opposite to each other? Because that way, the two pieces we are
+               * building here on the intersection of the two segments would
+               * have a major difference. If the first part has s1 on its right
+               * and s2 on its left, then the second part would have the
+               * opposite.
+               * Instead, by creating the two bisectors so that they "touch" on
+               * the intersection of the two segments and then turn away from
+               * each other, we ensure that on each bisector, the two pieces we
+               * are building here always have s1 on one side and s2 on the
+               * other side.
+               *
+               * To find the new bisector, we invert the supporting line that
+               * has a Direction_2 greater than (directions are compared by
+               * angle in counterclockwise order) the current
+               * supp_line_bisector, then we take the bisector of the supporting
+               * lines again so to get the new bisector; this works because the
+               * CGAL::bisector() function creates the bisector such that the
+               * direction is the sum of the normalized directions of the two
+               * lines
+               */
+              Alg_line_2 next_supp_line_bisector;
+              if (
+                to_alg(supp_line1).direction()
+                >
+                supp_line_bisector.direction()
+              ) {
+                supp_line1 = supp_line1.opposite();
+              }
+              else if (
+                to_alg(supp_line2).direction()
+                >
+                supp_line_bisector.direction()
+              ) {
+                supp_line2 = supp_line2.opposite();
+              }
+              else {
+                CGAL_error_msg("The bisector should lie between the two lines");
+              }
+
+              next_supp_line_bisector = CGAL::bisector(
+                to_alg(supp_line1), to_alg(supp_line2)
+              );
+              next_direction = next_supp_line_bisector.direction();
+
+              /* find actual next intersection according to the new direction */
+              actual_next_intersection = find_next_intersection(
+                next_direction,
+                to_alg(segments_intersection),
+                delimiter_lines_vector
+              );
+
+              /* special cases:
+               * the first part, or the second part, or both, are the first
+               * and/or last parts of the bisector.
+               * if this is the first bisector part (meaning that before this
+               * piece there was only the ray) then also the start point is
+               * already known
+               */
+              bool first_to_approximate = true, second_to_approximate = true;
+              if (curr_pt == start_pt) {
+                first_to_approximate = false;
+                Rat_line_2 supporting_conic =
+                  start_ray.supporting_line().opposite()
+                ;
+                bisector_parts.push_back(Curve_2(
+                  0,
+                  0,
+                  0,
+                  supporting_conic.a(),
+                  supporting_conic.b(),
+                  supporting_conic.c(),
+                  CGAL::COLLINEAR,
+                  curr_pt,
+                  to_alg(segments_intersection)
+                ));
+              }
+              if (actual_next_intersection == end_pt) {
+                second_to_approximate = false;
+                Rat_line_2 supporting_conic = end_ray.supporting_line();
+                bisector_parts.push_back(Curve_2(
+                  0,
+                  0,
+                  0,
+                  supporting_conic.a(),
+                  supporting_conic.b(),
+                  supporting_conic.c(),
+                  CGAL::COLLINEAR,
+                  to_alg(segments_intersection),
+                  actual_next_intersection
+                ));
+              }
+
+              /* if the parts were the first and the last we don't have to
+               * approximate anything;
+               * if the second part was the last part but the first one was not,
+               * we have to deal with the approximation here, as there will be
+               * no more PARABOLIC_ARC after this where we can deal with the
+               * approximation;
+               * in the opposite case, where the first part was the first part
+               * of the bisector but the second was not, we save just the second
+               * part and leave it to be approximated when the next
+               * PARABOLIC_ARC is found;
+               * if both parts need to be approximated, we can just save them
+               * and let the next PARABOLIC_ARC case deal with the approximation
+               */
+              if (first_to_approximate && second_to_approximate) {
+                part_to_approximate_1 = Alg_segment_2(
+                  curr_pt, to_alg(segments_intersection)
+                );
+                part_to_approximate_2 = Alg_segment_2(
+                  to_alg(segments_intersection), actual_next_intersection
+                );
+                part_to_approximate_1_exists = true;
+                part_to_approximate_2_exists = true;
+              }
+              /* deal with approximation of first part already here, since
+               * after this the while loop ends */
+              else if (first_to_approximate && !second_to_approximate) {
+
+                /* extract part_2 (we have to add in order) and prev_arc
+                 * (because it needs to be updated) */
+                Curve_2 part_2 = bisector_parts.back();
+                bisector_parts.pop_back();
+                CGAL_assertion_msg(
+                  prev_arc_exists,
+                  "prev_arc should exist in the list, otherwise we cannot "
+                  "approximate part_1."
+                );
+                Curve_2 prev_arc_in_list = bisector_parts.back();
+                bisector_parts.pop_back();
+                CGAL_assertion_msg(
+                  same_curves(prev_arc_in_list, prev_arc),
+                  "prev_arc must be last element in list of parts of bisector."
+                );
+
+                /* create approximated part_1 by changing its source */
+                //TODO
+                Curve_2 part_1;
+
+                /* update target of prev_arc */
+                //TODO
+
+                /* push the updated prev_arc, then the approximated first part,
+                 * then the second part */
+                bisector_parts.push_back(prev_arc);
+                bisector_parts.push_back(part_1);
+                bisector_parts.push_back(part_2);
+              }
+              else if (!first_to_approximate && second_to_approximate) {
+                part_to_approximate_2 = Alg_segment_2(
+                  to_alg(segments_intersection), actual_next_intersection
+                );
+                part_to_approximate_2_exists = true;
+              }
+              else break; //nothing to do
             }
 
             break;
           }
 
           case ENDPOINT_BISECTOR: {
+            std::cout << "ENDPOINT_BISECTOR -> ";
             /* extract two endpoints */
             Rat_point_2 endpoint1; Rat_point_2 endpoint2;
             CGAL_assertion(CGAL::assign(endpoint1, o1));
@@ -1457,6 +2431,14 @@ public:
               next_direction, curr_pt, delimiter_lines_vector
             );
 
+            /* check that there is no SUPP_LINE_BISECTOR to approximate */
+            CGAL_assertion_msg(
+              !part_to_approximate_exists,
+              "There cannot be a SUPP_LINE_BISECTOR followed by an "
+              "ENDPOINT_BISECTOR that is internal (i.e. not a ray)."
+            );
+            if (prev_arc_exists) prev_arc_exists = false;
+
             /* no need to approximate the segment in this case: the supporting
              * conic (a line) has rational coefficients; just save curve with
              * rational coefficients and the two alg points as endpoints,
@@ -1464,7 +2446,7 @@ public:
              * save as Curve_2 in list of bisector parts */
             bisector_parts.push_back(Curve_2(
               0,
-              0,
+              0,  // supporting conic is a line, so it's linear
               0,
               endpoint_bisector.a(),
               endpoint_bisector.b(),
@@ -1485,22 +2467,22 @@ public:
         curr_pt = actual_next_intersection;
         curr_direction = next_direction;
       }
+      std::cout << "FINISHED\n";
 
-      /* convert all Curve_2 to X_monotone_curve_2, add them all to the
-       * OutputIterator o */
-      for (auto& current_cv : bisector_parts) {
-        std::vector<X_monotone_curve_2> arc_x_mono_parts;
-        make_curve_2_into_many_x_monotone_curve_2(
-          current_cv,
-          arc_x_mono_parts
-        );
-        for (auto& x_mono_curve : arc_x_mono_parts) {
-          *o++ = CGAL::make_object(
-            Intersection_curve(x_mono_curve, 0)
-            //TODO multiplicity? would need to save it in list bisector_parts
-          );
-        }
-      }
+      /* deal with approximation of supp_line_bisector segment if necessary;
+       * this could happen in the case in which the supp_line_bisector is
+       * not followed by an arc but directly by the unbounded_ray.
+       * This is actually easier because it means that the segment itself has
+       * the same slope as the ray, and is therefore rational.
+       */
+      if (part_to_approximate_exists) {
+        part_to_approximate_exists = false; // reset flag
+      } //TODO remove, dealt with it already in SUPP_LINE_BISECTOR
+
+      /* add all Curve_2 to OutputIterator o (conversion to X_monotone_curve_2
+       * and adding to the actual list of projected intersections happens in the
+       * main function) */
+      for (auto cv : bisector_parts) *o++ = cv;
 
       /* return one past the end iterator */
       return o;
@@ -1523,14 +2505,14 @@ public:
     Comparison_result operator()(const Point_2& p,
                                  const Xy_monotone_surface_3& s1,
                                  const Xy_monotone_surface_3& s2) const {
-      printf("\n ---> Compare at point\n");
+      printf("---> Compare at point\n");
       return CGAL::compare(sqdistance(p, s1), sqdistance(p, s2));
     }
 
     Comparison_result operator()(const X_monotone_curve_2& cv,
                                  const Xy_monotone_surface_3& s1,
                                  const Xy_monotone_surface_3& s2) const {
-      printf("\n ---> Compare at cv\n");
+      printf("---> Compare at cv\n");
       /* compare using the middle point */
       Point_2 p = construct_middle_point(cv);
       return this->operator()(p, s1, s2);
@@ -1596,7 +2578,7 @@ public:
     const Xy_monotone_surface_3& s2,
     bool compare_above
   ) {
-    Algebraic move_by = 10;
+    Algebraic move_by = 1;
 
     /* construct a point on the curve cv, assert equidistant from s1 and s2 */
     Alg_point_2 midpoint = construct_middle_point(cv);
@@ -1616,20 +2598,15 @@ public:
     std::cout << "# midpoint(" << midpoint << ") , ";
 
     /* print warning if necessary */
-    /* colour */
-    #define RESET   "\033[0m"
-    #define RED     "\033[31m"      /* Red */
-    #define GREEN   "\033[32m"      /* Green */
-    #define YELLOW  "\033[33m"      /* Yellow */
-    #define BLUE    "\033[34m"      /* Blue */
     char message[100];
     sprintf(
       message,
-      RED "Warning: " YELLOW "s1 and s2 are not equidistant, difference: %lf" RESET,
+      COUT_COLOUR_RED "Warning: " COUT_COLOUR_YELLOW
+      "s1 and s2 are not equidistant, difference: %lf" COUT_COLOUR_RESET,
       CGAL::to_double(difference)
     );
     CGAL_warning_msg((difference == 0), message);
-    std::cout << "the difference is: " << difference << ".";
+    std::cout << "the difference is: " << difference.toString() << ".";
 
     /* get converter and convert */
     RK_to_AK to_alg;
@@ -1638,12 +2615,15 @@ public:
 
     Alg_point_2 moved_point;
     Algebraic displacement = compare_above ? move_by : -move_by;
-    if (!cv.is_vertical()) {
-      moved_point = Alg_point_2(midpoint.x(), midpoint.y() + displacement);
-    }
-    else {
+    if (cv.is_vertical()) {
       std::cout << " -- CV IS VERTICAL --";
       moved_point = Alg_point_2(midpoint.x() - displacement, midpoint.y());
+    }
+    // else if (more_vertical_than_horizontal(cv)) {
+    //   moved_point = Alg_point_2(midpoint.x() - displacement, midpoint.y());
+    // }
+    else {
+      moved_point = Alg_point_2(midpoint.x(), midpoint.y() + displacement);
     }
 
     std::cout << " Moved midpoint to pt(" << moved_point << ")" << std::endl;
@@ -1664,6 +2644,14 @@ public:
     CGAL_error_msg("This function is not working properly");
     return CGAL::EQUAL;
   }
+
+  // static more_vertical_than_horizontal(X_monotone_curve_2 cv) {
+  //   return
+  //     CGAL::abs(cv.source().x() - cv.target().x())  // dx
+  //     <
+  //     CGAL::abs(cv.source().y() - cv.target().y())  // dy
+  //   ;
+  // }
 
 }; // class L2_segment_voronoi_traits_2
 } // namespace CGAL

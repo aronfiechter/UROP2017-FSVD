@@ -1,0 +1,40 @@
+\documentclass[11pt,a4paper,english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{babel}
+\usepackage{geometry}
+    \geometry{
+    	left=2cm,
+	right=2cm,
+	includeheadfoot, top=1cm, bottom=1cm,
+    headsep=2cm,
+    footskip=2.5cm
+    }
+\usepackage{fancyhdr}
+\usepackage{lipsum}
+\usepackage{import}
+
+% Extensions file
+\import{"/Users/aron/Google Drive/TEMPLATES/"}{falcon.tex} % path filled by fasttex in .zprofile
+
+% Setup for page layout (fancyhdr)
+\fancyhf{}
+\lhead{Aron Fiechter}
+\chead{UROP 2017}
+\rhead{\today}
+\cfoot{\thepage}
+\pagestyle{fancy}
+
+\begin{document}
+
+    {\centering\huge\textbf{Report}\par}
+
+    \vspace{1cm}
+
+    \section*{Section 1}
+    1
+
+    \section*{Section 2}
+    2
+
+\end{document}
