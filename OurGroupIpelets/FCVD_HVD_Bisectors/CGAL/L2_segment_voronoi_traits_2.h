@@ -1681,10 +1681,13 @@ public:
           ));
 
           /* convert and add curves to OutputIterator o */
-          //TODO test if really silly but very cool syntax of nesting the two
-          // expressions would also work
-          o = this->convert_and_add_curves(parts_of_bisector_one, o);
-          o = this->convert_and_add_curves(parts_of_bisector_two, o);
+          // o = this->convert_and_add_curves(parts_of_bisector_one, o);
+          // o = this->convert_and_add_curves(parts_of_bisector_two, o);
+          /* do it this way cuz it's cooler */
+          o = this->convert_and_add_curves(
+            parts_of_bisector_two,
+            this->convert_and_add_curves(parts_of_bisector_one, o)
+          );
 
         } // end of segments intersect
 
