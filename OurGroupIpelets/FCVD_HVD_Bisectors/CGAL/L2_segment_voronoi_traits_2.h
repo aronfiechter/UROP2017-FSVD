@@ -811,10 +811,56 @@ private:
    * (if it is false, it meanst that the target is algebraic)
    * `up` indicates whether the endpoint needs to be moved to the positive (up)
    * or negative (!up) part of the segment.
+   * As last argument, pass the exact point that is the endpoint that doesn't
+   * have to be approximated.
    * Return a rational segment.
    */
-  static Rat_segment_2 adjust_endpoint(Alg_segment_2 s, bool up, bool source) {
-    
+  static Rat_segment_2 adjust_endpoint(
+    Alg_segment_2 s,
+    bool up,
+    bool source,
+    Rat_point_2 exact_endpoint
+  ) {
+    /* determine direction to approximate (in the form of a Quadrant) */
+    Quadrant quadrant_direction_to_move_point_towards;
+    switch (general_direction<Alg_kernel>(s)) {
+      case FIRST_Q: {
+        if (up) quadrant_direction_to_move_point_towards = SECOND_Q;
+        else quadrant_direction_to_move_point_towards = FOURTH_Q;
+        break;
+      }
+      case SECOND_Q: {
+        if (up) quadrant_direction_to_move_point_towards = THIRD_Q;
+        else quadrant_direction_to_move_point_towards = FIRST_Q;
+        break;
+      }
+      case THIRD_Q: {
+        if (up) quadrant_direction_to_move_point_towards = FOURTH_Q;
+        else quadrant_direction_to_move_point_towards = SECOND_Q;
+        break;
+      }
+      case FOURTH_Q: {
+        if (up) quadrant_direction_to_move_point_towards = FIRST_Q;
+        else quadrant_direction_to_move_point_towards = THIRD_Q;
+        break;
+      }
+    }
+
+    /* approximate the correct endpoint */
+    Alg_point_2 endpoint_to_approximate = source ? s.source() : s.target();
+    Rat_point_2 approximated_endpoint = move_point_alg_to_rat(
+      endpoint_to_approximate, quadrant_direction_to_move_point_towards
+    );
+
+    Rat_segment_2 approximated_s;
+    if (source) {
+      approximated_s = Rat_segment_2(approximated_endpoint, exact_endpoint);
+    }
+    else {
+      approximated_s = Rat_segment_2(exact_endpoint, approximated_endpoint);
+    }
+
+    return approximated_s;
   }
 
   /* Given two segments return true if they are collinear */
