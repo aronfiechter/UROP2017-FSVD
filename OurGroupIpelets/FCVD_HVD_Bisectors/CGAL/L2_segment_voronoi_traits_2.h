@@ -653,7 +653,9 @@ private:
       return FOURTH_Q;
     }
     else {
-      CGAL_error_msg("This function is not working properly.");
+      CGAL_error_msg(
+        "This function is not working properly: general_direction."
+      );
     }
   }
 
