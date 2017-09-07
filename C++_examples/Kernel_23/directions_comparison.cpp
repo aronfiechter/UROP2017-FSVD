@@ -24,5 +24,9 @@ int main() {
   Line_2 bisector_2 = CGAL::bisector(l.opposite(), flat);
   std::cout << "bisector(-l, flat) = " << bisector_2 << " with direction " << bisector_2.direction() << std::endl;
 
+  std::cout << "bisector direction is " << (bisector.direction() < flat.direction() ? "smaller than " : "greater than ") << "flat direction" << std::endl;
+
+  std::cout << "bisector_2 direction is " << (bisector_2.direction() < flat.direction() ? "smaller than " : "greater than ") << "flat direction" << std::endl;
+
   return 0;
 }
