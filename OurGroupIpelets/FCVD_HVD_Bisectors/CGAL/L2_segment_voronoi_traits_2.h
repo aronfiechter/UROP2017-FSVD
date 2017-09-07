@@ -807,7 +807,7 @@ private:
   /* Given a segment with one algebraic endpoint and potentially an underlying
    * supporting line with algebraic coefficients, adjust the algebraic endpoint
    * of the segment up or down to a rational point.
-   * `source` indicates if the source of the segent that is algebraic or not
+   * `source` indicates if the source of the segment that is algebraic or not
    * (if it is false, it meanst that the target is algebraic)
    * `up` indicates whether the endpoint needs to be moved to the positive (up)
    * or negative (!up) part of the segment.
