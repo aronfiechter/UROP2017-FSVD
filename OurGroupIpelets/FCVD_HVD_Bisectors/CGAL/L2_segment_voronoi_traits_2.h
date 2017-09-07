@@ -583,6 +583,50 @@ private:
     return result;
   }
 
+  /* Given an Algebraic point and a Quadrant, move the point in the in the
+   * general direction of that quadrant (e.g. 2nd quadrant == decrease x,
+   * increase y) and return it as algebraic. */
+  static Rat_point_2 move_point_alg_to_rat(Alg_point_2 p, Quadrant q) {
+    Rat_point_2 rp;
+    switch (q) {
+      case FIRST_Q: {
+        rp = Rat_point_2(
+          approximate_algebraic(p.x(), true),   // increase x
+          approximate_algebraic(p.y(), true)   // increase y
+        );
+        break;
+      }
+      case SECOND_Q: {
+        rp = Rat_point_2(
+          approximate_algebraic(p.x(), false),  // decrease x
+          approximate_algebraic(p.y(), true)   // increase y
+        );
+        break;
+      }
+      case THIRD_Q: {
+        rp = Rat_point_2(
+          approximate_algebraic(p.x(), false),  // decrease x
+          approximate_algebraic(p.y(), false)  // decrease y
+        );
+        break;
+      }
+      case FOURTH_Q: {
+        rp = Rat_point_2(
+          approximate_algebraic(p.x(), true),   // increase x
+          approximate_algebraic(p.y(), false)  // decrease y
+        );
+        break;
+      }
+      default: {
+        CGAL_error_msg(
+          "This function is not working properly: move_point_alg_to_rat."
+        );
+        break;
+      }
+    }
+    return rp;
+  }
+
   /* Given a segment, determine the Quadrant where it is oriented "into".
    * Precondition (checked): the segment is not degenerate.
    * Return the Quadrant. */
