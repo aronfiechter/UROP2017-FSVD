@@ -4,6 +4,9 @@ old/
 # ignore Ipe drawings for testing
 Ipe_drawings/
 
+# ignore img (used in documentation)
+img/*
+
 # ignore all build files. To build, look at documentation
 CMakeFiles/
 CMakeCache.txt
