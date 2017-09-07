@@ -1644,7 +1644,7 @@ public:
           ));
 
           /* convert and add curves to OutputIterator o */
-          //TODO test if fucking stupid but very cool syntax of nesting the two
+          //TODO test if really silly but very cool syntax of nesting the two
           // expressions would also work
           o = this->convert_and_add_curves(parts_of_bisector_one, o);
           o = this->convert_and_add_curves(parts_of_bisector_two, o);
