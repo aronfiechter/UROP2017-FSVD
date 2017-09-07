@@ -1619,20 +1619,12 @@ public:
           CGAL_assertion(unbounded_ray_list.size() == 4);
           Rat_ray_2 start_ray_one = unbounded_ray_list.front();
           unbounded_ray_list.pop_front();
-          Rat_ray_2 start_ray_two = unbounded_ray_list.front();
-          unbounded_ray_list.pop_front();
           Rat_ray_2 end_ray_one = unbounded_ray_list.front();
+          unbounded_ray_list.pop_front();
+          Rat_ray_2 start_ray_two = unbounded_ray_list.front();
           unbounded_ray_list.pop_front();
           Rat_ray_2 end_ray_two = unbounded_ray_list.front();
           unbounded_ray_list.pop_front();
-          // Rat_ray_2 start_ray_one = unbounded_ray_list.front();
-          // unbounded_ray_list.pop_front();
-          // Rat_ray_2 end_ray_one = unbounded_ray_list.front();
-          // unbounded_ray_list.pop_front();
-          // Rat_ray_2 start_ray_two = unbounded_ray_list.front();
-          // unbounded_ray_list.pop_front();
-          // Rat_ray_2 end_ray_two = unbounded_ray_list.front();
-          // unbounded_ray_list.pop_front();
 
           CGAL_assertion_msg(
             unbounded_ray_list.empty(),
@@ -2093,16 +2085,60 @@ public:
 
               /* we have to approximate part_2 anyway, so let's do it;
                * create approximated part_2 by changing its target */
-              //TODO
+              Rat_segment_2 approx_seg_part_2 = adjust_endpoint(
+                part_to_approximate_2,  // saved before
+                this_arc.orientation() == CGAL::COUNTERCLOCKWISE,
+                false,  // approximate target of segment
+                segments_intersection
+              );
+              Rat_line_2 supporting_conic_approx_part_2 =
+                approx_seg_part_2.supporting_line()
+              ;
+              part_2 = Curve_2(
+                0,
+                0,  // supporting conic is a line, so it's linear
+                0,
+                supporting_conic_approx_part_2.a(),
+                supporting_conic_approx_part_2.b(),
+                supporting_conic_approx_part_2.c(),
+                CGAL::COLLINEAR,
+                to_alg(segments_intersection),
+                0,
+                0,
+                0,
+                s1.supporting_line().a(),
+                s1.supporting_line().b(),   // also s2 would work
+                s1.supporting_line().c(),
+                actual_next_intersection,
+                this_arc.r(),
+                this_arc.s(),
+                this_arc.t(),
+                this_arc.u(),
+                this_arc.v(),
+                this_arc.w()
+              );
+              CGAL_assertion_msg(
+                part_2.is_valid(),
+                "Curve part_2 is not valid."
+              );
 
-              /* update source of this_arc */
-              //TODO
+              /* the source should be actually exact */
+              CGAL_assertion_msg(
+                part_2.source() == to_alg(segments_intersection),
+                "The source of part_2 must be exactly segments_intersection."
+              );
+
+              /* update source of this_arc if needed */
+              if (this_arc.source() != part_2.target()) {
+                this_arc.set_source(part_2.target());
+              }
 
               /* if part_1 was the first internal part of the bisector (i.e.
                * excluding the rays), then we just have to approximate part_2,
                * as we just did;
                * otherwise both need to be approximated */
               if (part_to_approximate_1_exists) {
+                part_to_approximate_1_exists = false; // reset flag
 
                 /* there must exist an arc before this one */
                 CGAL_assertion_msg(
@@ -2119,14 +2155,58 @@ public:
                 bisector_parts.pop_back(); // remove last curve
 
                 /* create approximated part_1 by changing its source */
-                //TODO
+                Rat_segment_2 approx_seg_part_1 = adjust_endpoint(
+                  part_to_approximate_1,  // saved before
+                  prev_arc.orientation() == CGAL::COUNTERCLOCKWISE,
+                  true,  // approximate source of segment
+                  segments_intersection
+                );
+                Rat_line_2 supporting_conic_approx_part_1 =
+                  approx_seg_part_1.supporting_line()
+                ;
+                part_1 = Curve_2(
+                  0,
+                  0,  // supporting conic is a line, so it's linear
+                  0,
+                  supporting_conic_approx_part_1.a(),
+                  supporting_conic_approx_part_1.b(),
+                  supporting_conic_approx_part_1.c(),
+                  CGAL::COLLINEAR,
+                  curr_pt,
+                  prev_arc.r(),
+                  prev_arc.s(),
+                  prev_arc.t(),
+                  prev_arc.u(),
+                  prev_arc.v(),
+                  prev_arc.w(),
+                  to_alg(segments_intersection),
+                  0,
+                  0,
+                  0,
+                  s1.supporting_line().a(),
+                  s1.supporting_line().b(),   // also s2 would work
+                  s1.supporting_line().c()
+                );
+                CGAL_assertion_msg(
+                  part_1.is_valid(),
+                  "Curve part_2 is not valid."
+                );
 
-                /* update target of prev_arc */
-                //TODO
+                /* the target should be actually exact */
+                CGAL_assertion_msg(
+                  part_1.target() == to_alg(segments_intersection),
+                  "The target of part_1 must be exactly segments_intersection."
+                );
+
+                /* update target of prev_arc if needed */
+                if (prev_arc.target() != part_1.source()) {
+                  prev_arc.set_target(part_1.source());
+                }
 
                 /* push in list of bisector parts the updated prev_arc and the
                  * now approximated part_1 */
-                //TODO
+                bisector_parts.push_back(prev_arc);
+                bisector_parts.push_back(part_1);
               }
 
               /* push in list of bisector parts the now approximated part_2 */
@@ -2316,6 +2396,10 @@ public:
               next_supp_line_bisector = CGAL::bisector(
                 to_alg(supp_line1), to_alg(supp_line2)
               );
+              CGAL_assertion_msg(
+                next_supp_line_bisector.has_on(to_alg(segments_intersection)),
+                "The new bisector should contain the intersection point."
+              );
               next_direction = next_supp_line_bisector.direction();
 
               /* find actual next intersection according to the new direction */
@@ -2340,7 +2424,7 @@ public:
                 ;
                 bisector_parts.push_back(Curve_2(
                   0,
-                  0,
+                  0,  // supporting conic is a line, so it's linear
                   0,
                   supporting_conic.a(),
                   supporting_conic.b(),
@@ -2355,7 +2439,7 @@ public:
                 Rat_line_2 supporting_conic = end_ray.supporting_line();
                 bisector_parts.push_back(Curve_2(
                   0,
-                  0,
+                  0,  // supporting conic is a line, so it's linear
                   0,
                   supporting_conic.a(),
                   supporting_conic.b(),
@@ -2366,16 +2450,17 @@ public:
                 ));
               }
 
-              /* if the parts were the first and the last we don't have to
-               * approximate anything;
-               * if the second part was the last part but the first one was not,
-               * we have to deal with the approximation here, as there will be
-               * no more PARABOLIC_ARC after this where we can deal with the
-               * approximation;
+              /* if the parts were the first and the last parts of the internal
+               * parts of the bisector then we don't have to approximate
+               * anything;
+               * if the second part was the last internal part of the bisector
+               * but the first one was not, we have to deal with the
+               * approximation here, as there will be no more PARABOLIC_ARC
+               * after this where we can deal with the approximation;
                * in the opposite case, where the first part was the first part
-               * of the bisector but the second was not, we save just the second
-               * part and leave it to be approximated when the next
-               * PARABOLIC_ARC is found;
+               * of the internal parts of the bisector but the second was not,
+               * we save just the second part and leave it to be approximated
+               * when the next PARABOLIC_ARC is found;
                * if both parts need to be approximated, we can just save them
                * and let the next PARABOLIC_ARC case deal with the approximation
                */
@@ -2389,12 +2474,13 @@ public:
                 part_to_approximate_1_exists = true;
                 part_to_approximate_2_exists = true;
               }
-              /* deal with approximation of first part already here, since
-               * after this the while loop ends */
+              /* in this case deal with approximation of first part already
+               * here, since after this the while loop ends */
               else if (first_to_approximate && !second_to_approximate) {
 
-                /* extract part_2 (we have to add in order) and prev_arc
-                 * (because it needs to be updated) */
+                /* extract part_2 that was already added (extract because we
+                 * have to add the parts in order)
+                 * and prev_arc (because its target needs to be updated) */
                 Curve_2 part_2 = bisector_parts.back();
                 bisector_parts.pop_back();
                 CGAL_assertion_msg(
@@ -2409,25 +2495,77 @@ public:
                   "prev_arc must be last element in list of parts of bisector."
                 );
 
-                /* create approximated part_1 by changing its source */
-                //TODO
-                Curve_2 part_1;
+                /* create approximated part_1 by adjusting its source */
+                Alg_segment_2 seg_part_1(
+                  curr_pt,
+                  to_alg(segments_intersection)
+                );
+                Rat_segment_2 approx_seg_part_1 = adjust_endpoint(
+                  seg_part_1,
+                  prev_arc.orientation() == CGAL::COUNTERCLOCKWISE,
+                  true,   // approximate source of segment
+                  segments_intersection
+                );
+                Rat_line_2 supporting_conic_approx_part_1 =
+                  approx_seg_part_1.supporting_line()
+                ;
+                Curve_2 part_1(
+                  0,
+                  0,  // supporting conic is a line, so it's linear
+                  0,
+                  supporting_conic_approx_part_1.a(),
+                  supporting_conic_approx_part_1.b(),
+                  supporting_conic_approx_part_1.c(),
+                  CGAL::COLLINEAR,
+                  curr_pt,
+                  prev_arc.r(),
+                  prev_arc.s(),
+                  prev_arc.t(),
+                  prev_arc.u(),
+                  prev_arc.v(),
+                  prev_arc.w(),
+                  to_alg(segments_intersection),
+                  0,
+                  0,
+                  0,
+                  s1.supporting_line().a(),
+                  s1.supporting_line().b(),   // also s2 would work
+                  s1.supporting_line().c()
+                );
+                CGAL_assertion_msg(
+                  part_1.is_valid(),
+                  "Curve part_2 is not valid."
+                );
 
-                /* update target of prev_arc */
-                //TODO
+                /* the target should be actually exact */
+                CGAL_assertion_msg(
+                  part_1.target() == to_alg(segments_intersection),
+                  "The target of part_1 must be exactly segments_intersection."
+                );
+
+                /* update target of prev_arc if needed */
+                if (prev_arc.target() != part_1.source()) {
+                  prev_arc.set_target(part_1.source());
+                }
 
                 /* push the updated prev_arc, then the approximated first part,
-                 * then the second part */
+                 * then the second part (which is the last internal part of the
+                 * segments bisector) */
                 bisector_parts.push_back(prev_arc);
                 bisector_parts.push_back(part_1);
                 bisector_parts.push_back(part_2);
               }
+              /* in this case leave the approximation of the second part to when
+               * the next PARABOLIC_ARC is found */
               else if (!first_to_approximate && second_to_approximate) {
                 part_to_approximate_2 = Alg_segment_2(
                   to_alg(segments_intersection), actual_next_intersection
                 );
                 part_to_approximate_2_exists = true;
               }
+              /* both parts were already added, meaning that they were the first
+               * and last internal parts of the bisector (that is, excluding the
+               * unbounded rays) */
               else break; //nothing to do
             }
 
