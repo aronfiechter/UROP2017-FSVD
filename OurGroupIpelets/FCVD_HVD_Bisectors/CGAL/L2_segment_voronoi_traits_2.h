@@ -213,17 +213,6 @@ private:
       this->_v = v;
       this->_w = w;
 
-      //TODO remove
-      // std::cout << "Constructed parabola: "
-      //           << _r << "x^2 + "
-      //           << _s << "y^2 + "
-      //           << _t << "xy + "
-      //           << _u << "x + "
-      //           << _v << "y + "
-      //           << _w
-      //           << std::endl
-      // ;
-
       RK_to_AK to_alg;
       CGAL_assertion(CGAL::square(_t) - 4 * _r * _s == 0);  // curve is parabola
       CGAL_assertion(this->has_on(to_alg(
@@ -259,11 +248,6 @@ private:
         this->v() * y +
         this->w()
       );
-      //TODO remove
-      // std::cout << "Evaluated point " << point
-      //           << " and the result is " << result
-      //           << std::endl
-      // ;
       return result;
     }
 
@@ -370,13 +354,6 @@ private:
       RT b = line.b();
       RT c = line.c();
 
-      //TODO remove
-      // std::cout << "Finding intersections with line: "
-      //           << a << "x + "
-      //           << b << "y + "
-      //           << c << std::endl
-      // ;
-
       /* convert line to algebraic, get nt_traits to solve quadratic equation */
       RK_to_AK to_alg;
       Alg_line_2 alg_line = to_alg(line);
@@ -399,14 +376,6 @@ private:
           this->w()
         ;
 
-        //TODO remove
-        // std::cout << "Solving quadratic equation: "
-        //           << EQ_A << "y^2 + "
-        //           << EQ_B << "y + "
-        //           << EQ_C
-        //           << std::endl
-        // ;
-
         /* to store the 0, 1, or 2 results, indicating the intersections.
          * For all resulting y, find the corresponding x, and add a point to
          * the OutputIterator o */
@@ -415,9 +384,6 @@ private:
         int n_ys;
         ys_end = nt_traits.solve_quadratic_equation(EQ_A, EQ_B, EQ_C, ys);
         n_ys = ys_end - ys;
-
-        //TODO remove
-        // std::cout << "Found " << n_ys << " intersections." << std::endl;
 
         /* if no intersections return */
         if (n_ys == 0) {
@@ -458,14 +424,6 @@ private:
           this->w()
         ;
 
-        //TODO remove
-        // std::cout << "Solving quadratic equation: "
-        //           << EQ_A << "x^2 + "
-        //           << EQ_B << "x + "
-        //           << EQ_C
-        //           << std::endl
-        // ;
-
         /* to store the 0, 1, or 2 results, indicating the intersections.
          * For all resulting x, find the corresponding y, and add a point to
          * the OutputIterator o */
@@ -474,9 +432,6 @@ private:
         int n_xs;
         xs_end = nt_traits.solve_quadratic_equation(EQ_A, EQ_B, EQ_C, xs);
         n_xs = xs_end - xs;
-
-        //TODO remove
-        // std::cout << "Found " << n_xs << " intersections." << std::endl;
 
         /* if no intersections return */
         if (n_xs == 0) {
@@ -545,8 +500,6 @@ private:
       }
 
       CGAL_assertion_msg(assigned, "Could not find closest point");
-      //TODO remove
-      // std::cout << "This is the closest intersection: " << result << std::endl;
       return result;
     }
 
@@ -1701,13 +1654,8 @@ public:
       /* for checks */
       RK_to_AK to_alg;
 
-      std::cout << "\nApproximating [" << segment << "] with supporting line ["
-                << segment.supporting_line() << "] "
-      ;
-
       /* rotate */
       if (prev_arc.orientation() != next_arc.orientation()) {
-        std::cout << "by rotation ";
         /* rotate segment counterclockwise */
         if (prev_arc.orientation() == CGAL::CLOCKWISE) {
           approximated_segment = slightly_rotate_segment(segment, true);
@@ -1720,7 +1668,6 @@ public:
       }
       /* translate "up or down" */
       else {
-        std::cout << "by translation ";
         /* move "up" (positive side) */
         if (prev_arc.orientation() == CGAL::COUNTERCLOCKWISE) {
           approximated_segment = slightly_translate_segment(segment, true);
@@ -1755,8 +1702,6 @@ public:
         }
       }
 
-      std::cout << "to [" << approximated_segment << "]" << '\n';
-
       return approximated_segment.supporting_line();
     }
 
@@ -1779,12 +1724,6 @@ public:
         next.set_source(curr.target());
         two = true;
       }
-      std::cout << "[updated "
-                << (one ? "prev " : "")
-                << (two ? "next " : "")
-                << (!(one || two) ? "nothing" : "")
-                << "] "
-      ;
       return;
     }
 
@@ -2003,11 +1942,6 @@ public:
                 "prev_arc should be last element in list of parts of bisector."
               );
               bisector_parts.pop_back(); // remove last curve
-
-              std::cout << "Prev, segment, next:\n";
-              std::cout << prev_arc << '\n';
-              std::cout << approx_last_segment_line << '\n';
-              std::cout << this_arc << '\n';
 
               /* create new segment curve */
               Curve_2 approx_last_segment_curve(
