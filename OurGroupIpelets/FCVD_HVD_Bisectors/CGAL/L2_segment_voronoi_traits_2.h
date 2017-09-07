@@ -2285,8 +2285,7 @@ public:
                * other side.
                *
                * To find the new bisector, we invert the supporting line that
-               * has a Direction_2 greater than (directions are compared by
-               * angle in counterclockwise order) the current
+               * has a Direction_2 towards the left with respect to the current
                * supp_line_bisector, then we take the bisector of the supporting
                * lines again so to get the new bisector; this works because the
                * CGAL::bisector() function creates the bisector such that the
@@ -2295,16 +2294,18 @@ public:
                */
               Alg_line_2 next_supp_line_bisector;
               if (
-                to_alg(supp_line1).direction()
-                >
-                supp_line_bisector.direction()
+                to_alg(supp_line1).direction().counterclockwise_in_between(
+                  supp_line_bisector.direction(),
+                  - supp_line_bisector.direction()
+                )
               ) {
                 supp_line1 = supp_line1.opposite();
               }
               else if (
-                to_alg(supp_line2).direction()
-                >
-                supp_line_bisector.direction()
+                to_alg(supp_line2).direction().counterclockwise_in_between(
+                  supp_line_bisector.direction(),
+                  - supp_line_bisector.direction()
+                )
               ) {
                 supp_line2 = supp_line2.opposite();
               }
