@@ -1674,10 +1674,10 @@ public:
 
           /* add end rays (as long segments) */
           parts_of_bisector_one.push_back(make_segment_from_ray(
-            end_ray_one, true
+            end_ray_one, false
           ));
           parts_of_bisector_two.push_back(make_segment_from_ray(
-            end_ray_two, true
+            end_ray_two, false
           ));
 
           /* convert and add curves to OutputIterator o */
