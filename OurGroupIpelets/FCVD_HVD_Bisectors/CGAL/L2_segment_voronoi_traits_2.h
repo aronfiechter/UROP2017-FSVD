@@ -2637,16 +2637,6 @@ public:
       }
       std::cout << "FINISHED\n";
 
-      /* deal with approximation of supp_line_bisector segment if necessary;
-       * this could happen in the case in which the supp_line_bisector is
-       * not followed by an arc but directly by the unbounded_ray.
-       * This is actually easier because it means that the segment itself has
-       * the same slope as the ray, and is therefore rational.
-       */
-      if (part_to_approximate_exists) {
-        part_to_approximate_exists = false; // reset flag
-      } //TODO remove, dealt with it already in SUPP_LINE_BISECTOR
-
       /* add all Curve_2 to OutputIterator o (conversion to X_monotone_curve_2
        * and adding to the actual list of projected intersections happens in the
        * main function) */
