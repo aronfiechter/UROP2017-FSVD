@@ -31,24 +31,21 @@
 
     \vspace{1cm}
 
-    \section{Clear description of generally what you want to do and why. (fsvd, etc.)}
-
-    \section{Clear description of the method proposed and why. (envelopes, etc.)}
-    
-    \begin{quote}
-    For the 2 previous, introductory concepts, feel free to get inspired by existing papers/guides/etc, just mention them.
-    \end{quote}
-    
-    \section{A timeline of all steps and approaches done.}
-    
-    \subsection{You should mention all issues faced one by one.}
-    \subsection{How you attempted to solve them initially and why it didn't work out.}
-    \subsection{How you solved them, finally.}
-    \subsection{For all issues not solved, mention them clearly.}
-    \subsection{Why you didn't manage to solve them, what were the main difficulties.}
-    \subsection{How would you have solved them if you had more item (drop ideas).}
-    \subsection{Special cases you didn't have time to tackle and ideas for dealing with them.}
-    \subsection{What would further work on this topic include.}
+	\section*{List}
+	
+	\begin{enumerate}
+	\item A timeline of all steps and approaches done.
+	\begin{enumerate}
+	\item{You should mention all issues faced one by one.}
+    \item{How you attempted to solve them initially and why it didn't work out.}
+    \item{How you solved them, finally.}
+    \item{For all issues not solved, mention them clearly.}
+    \item{Why you didn't manage to solve them, what were the main difficulties.}
+    \item{How would you have solved them if you had more time (drop ideas).}
+    \item{Special cases you didn't have time to tackle and ideas for dealing with them.}
+    \item{What would further work on this topic include.}
+	\end{enumerate}
+	\end{enumerate}
     
     \begin{quote}
 	In general keep in mind that someone would ideally read your report and clearly understand what your problem was, how you dealt with it, which difficulties you faced, how did you tackle them (or not) and how your work could be extended.
@@ -65,7 +62,8 @@
 	
 	\subsection{FSVD}
 	
-	The Farthest Line Segment Voronoi Diagram is a planar arrangement  constructed for a set of line segments. It has faces, edges and vertices and it represents the area of points that are farthest from a given segment, for all segments (for some, this area might be empty); for some segments, this area could also be disjoint, for example constituted by two separate parts. The edges of a FSVD always form a tree, and are therefore never disconnected (unlike the Nearest Line Segment Voronoi Diagram, where the edges can be in up to \(n -1\) disconnected parts (for a diagram for \n segments). See examples below (figure \ref{fig:examples}).
+	The Farthest Line Segment Voronoi Diagram is a planar arrangement  constructed for a set of line segments. It has faces, edges and vertices and it represents the area of points that are farthest from a given segment, for all segments (for some, this area might be empty); for some segments, this area could also be disjoint, for example constituted by two separate parts. The edges of a FSVD always form a tree, and are therefore never disconnected (unlike the Nearest Line Segment Voronoi Diagram, where the edges can be in up to \(n -1\) disconnected parts (for a diagram for \n segments).\par
+	See examples below, with segments in dark and the diagrams in orange (figure \ref{fig:examples}).
 	
 	\begin{figure}[h]
     \centering
@@ -103,20 +101,43 @@
 	%____________________________________________________________
 
 	\section{Envelope package and \cod{Envelope_diagram_2<EnvTraits>}}
-	CGAL features a package to compute projections of envelopes. The methods \cod{upper_envelope_3} and \cod{lower_envelope_3} output their resulting diagram in a \cod{Envelope_diagram_2} object.
-	This diagram class is parametrised by a traits class (it has to be a model of the concept \cod{EnvelopeTraits_3}) that needs to support computation of the projected boundary of a surface, the projection of the intersection of two surfaces, as well as other functions to determine the z-order of two surfaces in specific cases.
-	There are already traits classes to support construction of envelopes of spheres, triangles and planes.
+	CGAL features a package to compute projections of envelopes. The methods \cod{upper_envelope_3} and \cod{lower_envelope_3} output their resulting \(xy\)-projection diagram in a \cod{Envelope_diagram_2} object.\par
+	This diagram class is parametrised by a traits class that must define the geometry it handles; to do so, it needs to support computation of the projected boundary of a surface, the projection of the intersection of two surfaces, as well as other functions to determine the z-order of two surfaces in specific cases (more specifically, the traits class must be a model of the concept \cod{EnvelopeTraits_3}, specified on the \href{https://doc.cgal.org/4.9.1/Envelope_3/classEnvelopeTraits__3.html}{CGAL documentation}).\par
+	There are already traits classes to support construction of envelopes of spheres, triangles and planes, but these did not include what we needed for FSVD, so a new class needed to be developed.
 	
-	\subsection{Traits class}
-	The \cod{EnvelopeTraits_3} concept allows the surfaces to be any kind of object, as long as the required functions do their task. Because of this, for FSVD (and SVD too, they can use the same traits class) the surfaces are simply the segments themselves, since they contain all the information needed for the computations.
-	In the function that requires to compute the projected intersection of two surfaces, we can in fact simply compute the planar euclidean bisector of the two segments.
-	The bisector is formed, in the general case, by unbounded rays, segments and parabolic arcs (figure 5).
+	\subsection{Traits class \cod{L2_segment_voronoi_traits_2<ArrTraits_2>}}
+	The \cod{EnvelopeTraits_3} concept allows the surfaces to be any kind of object, as long as the required functions do their task. Because of this, for FSVD (and SVD too, they can use the same traits class) the surfaces are simply the segments themselves, since they contain all the information needed for the computations.\par
+	In the function that requires to compute the projected intersection of two surfaces, we can in fact simply compute the planar euclidean bisector of the two segments.\par
+	The bisector is formed, in the general case, by unbounded rays, segments and parabolic arcs (figure \ref{fig:areas_of_influence}).\ppar
+	\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{areas_of_influence}
+    \caption{Different parts of the bisector\label{fig:areas_of_influence}}
+	\end{figure}
+	Notice how the parts of the bisector are delimited by the lines orthogonal to the segments at their endpoints. For a single segment, these two lines divide the plane in three parts: the points closest to the source of the segment, the points closest to the inner part of the segment, the points closest to the target.\ppar
+	The model of the concept \cod{EnvelopeTraits_3} that was developed is  \cod{L2_segment_voronoi_traits_2} and is parametrised by an Arrangements class from which it inherits, similarly to how the already available model \cod{Env_sphere_traits_3} for envelopes of spheres does; again similarly, the Arrangements class used is \cod{Arr_conic_traits2}.\par
+	This Arrangements class defines the geometry of the edges of the diagram, as well as methods for computation of intersections and predicates.
 	
-	\subsection{Arrangement traits class}
-	\cod{Arr_conic_traits2}
+	\subsection{Arrangement traits class \cod{Arr_conic_traits2}}
+	This class was chosen because it supports construction and computation using conic curves, needed because of the parabolic arcs in the planar euclidean bisector of two segments; such arcs are present in the part of the bisector that is closest to one of the segments' inner part and to one the other segment's endpoints (see figure \ref{fig:areas_of_influence}).\par
+	The curves need to be closed conic arcs lying on a supporting conic curve defined by the equation:
+	\[
+		rx^{2} + sy^{2} + txy + ux + vy + w = 0 
+	\]
+	According to the specification (available on the \href{https://doc.cgal.org/latest/Arrangement_on_surface_2/classCGAL_1_1Arr__conic__traits__2.html}{CGAL documentation}), the coefficients (\(r, s, t, u ,v, w\)) need to be all rational numbers. This is because by enforcing this, all intersections between such conic arcs are guaranteed to be algebraic numbers of degree at most 4, and the traits class is optimised for operations with these numbers.\par
+	If the supporting conic is not a closed curve such as a circle or an ellipse, and it our case it never is (because it's either a parabola or a line for the straight parts of the bisector), then two endpoints have to be provided. This poses a problem with the unbounded rays (the first and last parts of the bisector, again see figure \ref{fig:areas_of_influence}), because they only have one endpoint.\par
+	To obviate this, the rays were cut off at an arbitrary distance: imagine this as if the distance surfaces were not unbounded, but were all limited inside the same huge square. Because of this, the traits class \cod{L2_segment_voronoi_traits_2} also constructs a projected boundary for all surfaces (the same for all of them).
+	
 
-	\subsection{Parabola class}
-	A parabola class was implemented to support construction of parabolas, computation of intersection with lines and construction of arcs on the parabolas. Other predicates such as \cod{has_on} were also implemented.
+	\subsection{\cod{Parabola} class}
+	A \cod{Parabola} class was implemented to support construction of parabolas, computation of intersection with lines and construction of arcs on the parabolas. Other predicates such as \cod{has_on} were also implemented.\par
+	The only constructor for a \cod{Parabola} object takes a focus point and a directrix line. These are defined as the endpoint of one segment and the supporting line of the other segment accordingly (see figure \ref{fig:parabola}, parabola in green).
+	\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{parabola}
+    \caption{A parabola defined by a supporting line (dotted) and the highlighted endpoint \label{fig:parabola}}
+	\end{figure}
+	
 	
 	%____________________________________________________________
 
