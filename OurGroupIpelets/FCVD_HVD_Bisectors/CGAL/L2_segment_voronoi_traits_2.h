@@ -1374,7 +1374,7 @@ public:
           }
           /* otherwise, we have the actual parabola and the two rays */
           else {
-            /* ... */
+            /* ... */ //TODO bisector of point and segment
           }
 
           /* make parabola */
