@@ -1,0 +1,10 @@
+\begin{enumerate}
+	\item{You should mention all issues faced one by one.}
+    \item{How you attempted to solve them initially and why it didn't work out.}
+    \item{How you solved them, finally.}
+    \item{For all issues not solved, mention them clearly.}
+    \item{Why you didn't manage to solve them, what were the main difficulties.}
+    \item{How would you have solved them if you had more time (drop ideas).}
+    \item{Special cases you didn't have time to tackle and ideas for dealing with them.}
+    \item{What would further work on this topic include.}
+	\end{enumerate}
