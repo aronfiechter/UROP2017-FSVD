@@ -69,14 +69,12 @@
     \centering
     \begin{subfigure}[b]{0.45\textwidth}
         \includegraphics[width=\textwidth]{SVD_example}
-        \caption{Nearest}
-        \label{fig:SVD_example}
+        \caption{Nearest\label{fig:SVD_example}}
     \end{subfigure}
 	\qquad
     \begin{subfigure}[b]{0.45\textwidth}
         \includegraphics[width=\textwidth]{FSVD_example}
-        \caption{Farthest}
-        \label{fig:FSVD_example}
+        \caption{Farthest\label{fig:FSVD_example}}
     \end{subfigure}
     \caption{Voronoi diagrams with line segments\label{fig:examples}}
 	\end{figure}
@@ -142,10 +140,39 @@
 	%____________________________________________________________
 
 	\section{Bisector computation}
+	The main part of the project was to implement the functor \cod{Construct_projected_intersections_2} which, as the name suggests, must construct all parts of the \(xy\)-projection of the intersection of two given surfaces. As said before, for FSVD this consists of constructing the bisector of two segments.\par
+	The approach used is to first find the unbounded rays and their endpoints.\par
+	Then, iteratively construct the rest of the bisector, the internal parts, starting from one ray's endpoint until the other ray's endpoint.
+	This is true for the case in which the segments are disjoint; if the segments are intersecting, then there are four unbounded rays, and the bisector is constructed in two parts that "touch" at the intersection of the two segments.\ppar
+	
+	For both segments, the lines orthogonal to each endpoint are kept saved for the whole computation, since they determine all separations between the bisector parts. In the code, these lines are called \cod{Delimiter_lines}.
+	
 	
 	\subsection{Unbounded rays}
+	\begin{figure}[h]
+	\begin{subfigure}[b]{0.3\textwidth}
+		\includegraphics[width=\textwidth]{two_unbounded_rays}
+    	\caption{Disjoint \label{fig:two_unbounded_rays}}
+	\end{subfigure}
+	\qquad
+	\begin{subfigure}[b]{0.3\textwidth}
+		\includegraphics[width=\textwidth]{two_unbounded_rays_2}
+    	\caption{Disjoint 2 \label{fig:two_unbounded_rays_2}}
+	\end{subfigure}
+	\qquad
+	\begin{subfigure}[b]{0.3\textwidth}
+		\includegraphics[width=\textwidth]{four_unbounded_rays}
+    	\caption{Intersecting \label{fig:four_unbounded_rays}}
+	\end{subfigure}
+	\caption{The unbounded rays of the bisector in two cases (in orange)\label{fig:unbounded_rays}}
+	\end{figure}
 	
-	\subsection{Internal part}
+	To find the unbounded rays we have to find the bisector of all pairs of endpoints of the two segments that are extremal in the set of the four endpoints of the segments. That is, we find the convex hull of the set of endpoints of the segments, then we construct a polygon with these points. Walking through the edges of this polygon, if the edge is not one of the two segments, trace the orthogonal line through the midpoint of this edge (which is the bisector of the endpoints of the edge) directed towards the outside of the polyogn.\par
+	To find the endpoints of a ray, take the farthest intersection of the line (in the direction of the line) with the four \cod{Delimiter_lines}.
+	
+	\subsection{Internal parts}
+	To find the internal parts we implemented the function \cod{construct_bisector_from_point_to_point}; it takes the two segments, a start and an end point (they are the endpoints of two rays.\par
+	The computation is iterative, and keeps as status a current point (\cod{curr_pt}) and a current direction (\cod{curr_direction}); it stops when \cod{curr_pt} is the same as the end point.
 	
 	\subsection{Challenges and solutions}
 	
