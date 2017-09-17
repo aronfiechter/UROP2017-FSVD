@@ -1,0 +1,18 @@
+################################################################################
+###                            SETUP INSTRUCTIONS                            ###
+
+# Prerequisites: CGAL and Ipe installed, basic Ipelets working
+
+# To unzip, setup the Makefile for the Ipelet, run
+
+unzip FCVD_HVD_Bisectors.zip
+cmake -DIPE_LIBRARIES=/Applications/Ipe.app/Contents/Frameworks/libipe.dylib -DIPE_INCLUDE_DIR=/Applications/Ipe.app/Contents/Frameworks/Headers/
+
+
+# To compile the Ipelet, copy the files to Ipe and restart Ipe
+# (in command line mode to see the output), run
+
+make
+cp libCGAL_bisectors.so /Applications/Ipe.app/Contents/Resources/ipelets/libCGAL_bisectors.dylib
+cp lua/libCGAL_bisectors.lua /Applications/Ipe.app/Contents/Resources/ipelets/libCGAL_bisectors.lua
+pkill ipe || sleep 1 && /Applications/Ipe.app/Contents/MacOS/ipe
