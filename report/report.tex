@@ -39,7 +39,7 @@
 	
 	\subsection{FSVD}
 	
-	The Farthest Line Segment Voronoi Diagram is a planar arrangement  constructed for a set of line segments. It has faces, edges and vertices and it represents the area of points that are farthest from a given segment, for all segments (for some, this area might be empty); for some segments, this area could also be disjoint, for example constituted by two separate parts. The edges of a FSVD always form a tree, and are therefore never disconnected (unlike the Nearest Line Segment Voronoi Diagram, where the edges can be in up to \(n -1\) disconnected parts (for a diagram for \n segments).\par
+	The Farthest Line Segment Voronoi Diagram is a planar arrangement  constructed for a set of line segments. It has faces, edges and vertices and it represents the region (called Voronoi region) of points that are farthest from a given segment, for all segments; for some segments, this region could also be constituted by two or more separate parts; for others, this region might even	 be empty. The edges of a FSVD always form a tree, and the diagram is therefore never disconnected (unlike the Nearest Line Segment Voronoi Diagram, where the edges can be in up to \(n -1\) disconnected parts, for a diagram for \n segments).\par
 	See examples below, with segments in dark and the diagrams in orange (figure \ref{fig:examples}).
 	
 	\begin{figure}[h]
@@ -56,14 +56,16 @@
     \caption{Voronoi diagrams with line segments\label{fig:examples}}
 	\end{figure}
 	
+	For figure \ref{fig:FSVD_example}, the region of the two smaller segments are the two larger ones, each opposed to its segment. The two smaller parts are the two pieces of the region of the longest segment.
+	
 	\subsection{CGAL and Ipelets}
 	
 	In this project two new functions were added to an Ipelet that already featured functions to construct Voronoi diagrams of points, Voronoi diagrams for segments, points and polygons using the \(L_{\infty}\) metric, farthest color and Hausdorff Voronoi diagrams.\par
-	The two functions added are to construct, under \(L_{2}\) metric, the nearest or the farthest Voronoi diagram for line segments.\par
-	For both cases the strategy used is to get the distance function of each segment as a surface, then take either the upper or the lower envelope of these surfaces (for FSVD and SVD respectively).
+	The two functions added are to construct, under \(L_{2}\) metric, the nearest and the farthest Voronoi diagram for line segments.\par
+	For both cases the concept used is to represent the distance function of each segment as a surface, then take either the upper or the lower envelope of these surfaces (for FSVD and SVD respectively).
 	
 	\subsection{The envelopes strategy}
-	For a single segment on the \(xy\)-plane, for every point plot on the \(z\) axis the distance of that point to the segment. This creates a 3D surface. For a point, this surface is simply a cone; for a segment, it's two haflcones originating at the endpoints of the segment and two planes originating from the inner part of the segment (figure \ref{fig:distance_function}).\par
+	For a single segment on the \(xy\)-plane, for every point plot on the \(z\) axis the distance of that point to the segment. This creates an (unlimited) 3D surface. For a point, this surface is simply a cone; for a segment, it's two haflcones originating at the endpoints of the segment and two planes originating from the inner part of the segment (figure \ref{fig:distance_function}).\par
 	\begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{distance_function}
@@ -76,37 +78,43 @@
 	%____________________________________________________________
 
 	\section{Envelope package and \cod{Envelope_diagram_2<EnvTraits>}}
-	CGAL features a package to compute projections of envelopes. The methods \cod{upper_envelope_3} and \cod{lower_envelope_3} output their resulting \(xy\)-projection diagram in a \cod{Envelope_diagram_2} object.\par
-	This diagram class is parametrised by a traits class that must define the geometry it handles; to do so, it needs to support computation of the projected boundary of a surface, the projection of the intersection of two surfaces, as well as other functions to determine the z-order of two surfaces in specific cases (more specifically, the traits class must be a model of the concept \cod{EnvelopeTraits_3}, specified on the \href{https://doc.cgal.org/4.9.1/Envelope_3/classEnvelopeTraits__3.html}{CGAL documentation}).\par
+	CGAL features a package to compute envelopes and their projections. The methods \cod{upper_envelope_3} and \cod{lower_envelope_3} output the resulting \(xy\)-projection diagrams in a \cod{Envelope_diagram_2} object.\par
+	This diagram class is parametrised by a traits class that must define the geometry of the surfaces that it handles; to do so, it needs to support construction of the projected boundary of a single surface, the construction of the projection of the intersection of two surfaces, as well as other functions to determine the z-order of two surfaces in specific cases (more specifically, the traits class must be a model of the concept \cod{EnvelopeTraits_3}, specified on the \href{https://doc.cgal.org/4.9.1/Envelope_3/classEnvelopeTraits__3.html}{CGAL documentation}).\par
 	There are already traits classes to support construction of envelopes of spheres, triangles and planes, but these did not include what we needed for FSVD, so a new class needed to be developed.
 	
 	\subsection{Traits class \cod{L2_segment_voronoi_traits_2<ArrTraits_2>}}
-	The \cod{EnvelopeTraits_3} concept allows the surfaces to be any kind of object, as long as the required functions do their task. Because of this, for FSVD (and SVD too, they can use the same traits class) the surfaces are simply the segments themselves, since they contain all the information needed for the computations.\par
-	In the function that requires to compute the projected intersection of two surfaces, we can in fact simply compute the planar euclidean bisector of the two segments.\par
+	The \cod{EnvelopeTraits_3} concept requires any model to define the types \cod{Surface_3} and \cod{X_monotone_surface_3}, but it allows the surfaces to be any kind of object, as long as the other required functions do their task correctly. Because of this, for FSVD (and SVD too, they can use the same traits class) the surfaces are defined to be simply the segments themselves, since they contain all the information needed for the computations.\par
+	In the function that requires to compute the projected intersection of two surfaces, we can in fact directly compute the planar euclidean bisector of the two segments.\par
 	The bisector is formed, in the general case, by unbounded rays, segments and parabolic arcs (figure \ref{fig:areas_of_influence}).\ppar
 	\begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{areas_of_influence}
     \caption{Different parts of the bisector\label{fig:areas_of_influence}}
 	\end{figure}
-	Notice how the parts of the bisector are delimited by the lines orthogonal to the segments at their endpoints. For a single segment, these two lines divide the plane in three parts: the points closest to the source of the segment, the points closest to the inner part of the segment, the points closest to the target.\ppar
+	Notice how the parts of the bisector are delimited by the lines orthogonal to the segments at their endpoints. For a single segment, these two lines divide the plane in three parts: the points closest to the source of the segment, the points closest to the inner part of the segment, the points closest to the target of the segment.\ppar
 	The model of the concept \cod{EnvelopeTraits_3} that was developed is  \cod{L2_segment_voronoi_traits_2} and is parametrised by an Arrangements class from which it inherits, similarly to how the already available model \cod{Env_sphere_traits_3} for envelopes of spheres does; again similarly, the Arrangements class used is \cod{Arr_conic_traits2}.\par
 	This Arrangements class defines the geometry of the edges of the diagram, as well as methods for computation of intersections and predicates.
 	
 	\subsection{Arrangement traits class \cod{Arr_conic_traits2}}
-	This class was chosen because it supports construction and computation using conic curves, needed because of the parabolic arcs in the planar euclidean bisector of two segments; such arcs are present in the part of the bisector that is closest to one of the segments' inner part and to one the other segment's endpoints (see figure \ref{fig:areas_of_influence}).\par
+	This class was chosen because it supports construction and computation using conic curves, needed because of the parabolic arcs in the planar euclidean bisector of two segments; such arcs are present in the part of the bisector that is closest to one of the segments' inner part and to one of the other segment's endpoints (see figure \ref{fig:areas_of_influence}).\par
 	The curves need to be closed conic arcs lying on a supporting conic curve defined by the equation:
 	\[
 		rx^{2} + sy^{2} + txy + ux + vy + w = 0 
 	\]
 	According to the specification (available on the \href{https://doc.cgal.org/latest/Arrangement_on_surface_2/classCGAL_1_1Arr__conic__traits__2.html}{CGAL documentation}), the coefficients (\(r, s, t, u ,v, w\)) need to be all rational numbers. This is because by enforcing this, all intersections between such conic arcs are guaranteed to be algebraic numbers of degree at most 4, and the traits class is optimised for operations with these numbers.\par
-	If the supporting conic is not a closed curve such as a circle or an ellipse, and it our case it never is (because it's either a parabola or a line for the straight parts of the bisector), then two endpoints have to be provided. This poses a problem with the unbounded rays (the first and last parts of the bisector, again see figure \ref{fig:areas_of_influence}), because they only have one endpoint.\par
-	To obviate this, the rays were cut off at an arbitrary distance: imagine this as if the distance surfaces were not unbounded, but were all limited inside the same huge square. Because of this, the traits class \cod{L2_segment_voronoi_traits_2} also constructs a projected boundary for all surfaces (the same for all of them).
+	If the supporting conic is not a closed curve such as a circle or an ellipse, and in our case it never is (because it's either a parabola or a line for the straight parts of the bisector), then two endpoints have to be provided. This poses a problem with the unbounded rays (the first and last parts of the bisector, again see figure \ref{fig:areas_of_influence}), because they only have one endpoint.\par
+	To obviate this, the rays were cut off at an arbitrary distance: imagine this as if the distance surfaces were not unbounded, but were all limited inside the same large square region. Because of this, the traits class \cod{L2_segment_voronoi_traits_2} also constructs a projected boundary for all surfaces (the same large square boundary for all segments).\par
+	Another problem arises when constructing the parts of the bisector that lie on the line that is the bisector of the supporting lines of two segments (the middle part in \ref{fig:areas_of_influence}): all segments are read from the input as rational segments, and have therefore all supporting lines with rational coordinates; this, however, does not prevent the bisector of two such supporting lines to have algebraic coefficients, as can be see in figure \ref{fig:algebraic_line} below. To solve this problem, some approximation was necessary.
+	\begin{figure}[h!]
+    \centering
+    \fbox{\includegraphics[clip, trim=0 8cm 0 4cm, width=0.6\textwidth]{algebraic_line}}
+    \caption{Two segments, their supporting lines and the bisector with algebraic coefficients \label{fig:algebraic_line}}
+	\end{figure}
 	
 
 	\subsection{\cod{Parabola} class}
 	A \cod{Parabola} class was implemented to support construction of parabolas, computation of intersection with lines, construction of arcs on the parabolas and construction of tangent lines at given points on the parabola. Other predicates such as \cod{has_on} were also implemented.\par
-	The only constructor for a \cod{Parabola} object takes a focus point and a directrix line. These are defined as the endpoint of one segment and the supporting line of the other segment accordingly (see figure \ref{fig:parabola}, parabola in green).
+	The only constructor for a \cod{Parabola} object takes a focus point and a directrix line. When this class is used in the Ipelet, the directrix and the focus are given as the endpoint of one segment and the supporting line of the other segment accordingly (see figure \ref{fig:parabola}, parabola in green).
 	\begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{parabola}
@@ -120,7 +128,7 @@
 	The main part of the project was to implement the functor \cod{Construct_projected_intersections_2} which, as the name suggests, must construct all parts of the \(xy\)-projection of the intersection of two given surfaces. As said before, for FSVD this consists of constructing the bisector of two segments.\par
 	The approach used is to first find the unbounded rays and their endpoints.\par
 	Then, iteratively construct the rest of the bisector, the internal parts, starting from one ray's endpoint until the other ray's endpoint.
-	This is true for the case in which the segments are disjoint; if the segments are intersecting, then there are four unbounded rays, and the bisector is constructed in two parts that "touch" at the intersection of the two segments.\ppar
+	This is true for the case in which the segments are disjoint; if the segments are intersecting, then there are four unbounded rays, and the bisector is constructed in two iterations, creating two bisectors that "touch" at the intersection of the two segments.\ppar
 	
 	For both segments, the lines orthogonal to each endpoint are kept saved for the whole computation, since they determine all separations between the bisector parts. In the code, these lines are called \cod{Delimiter_lines}.
 	
@@ -158,13 +166,10 @@
 	\end{itemize}
 	To do this, based on the \cod{curr_direction} and starting from \cod{curr_point}, shoot a straight line until the next intersection with the \cod{Delimiter_lines} is found. Then take the midpoint between \cod{curr_pt} and the next intersection found. Determine where this midpoint is, based on the orientation of the \cod{Delimiter_lines} (they always have their segment on the negative side) and on the predicates \cod{has_on_positive_side} and \cod{has_on_negative_side}.
 	
-	\subsection{Challenges and solutions}
-	The main problem with the computation of the bisector were the parts that lie on the bisector of the supporting lines of the two segments. This is because even if the two segments lie on lines with rational coefficients, the bisector might potentially have algebraic coefficients, as shown in figure \ref{fig:algebraic_bisector}:
-	\begin{figure}[h]
-	\centering
-	\includegraphics[width=0.8\textwidth]{algebraic_bisector}
-	\caption{The two lines are \(\left\{x-y=0\right\}\), \(\left\{\frac{1}{2}x-y=0\right\}\), the bisector is \(\left\{\frac{2\sqrt{5}+5\sqrt{2}}{4\sqrt{5}+5\sqrt{2}}-y=0\right\}\) \label{fig:algebraic_bisector}}
-	\end{figure}
+	\subsection{Disjoint and intersecting segments}
+	
+	\subsection{Approximation}
+	The main problem with the computation of the bisector were the parts that lie on the bisector of the supporting lines of the two segments. This is because even if the two segments lie on lines with rational coefficients, the bisector might potentially have algebraic coefficients, as shown in figure \ref{fig:algebraic_line} previously.\ppar
 
 	As said before, the class \cod{Arr_conic_traits2} allows to construct only \cod{Curve_2} objects that lie on curves that have rational coefficients. An algebraic segment has as supporting curve a line that has algebraic coefficients.\par
 	To save it, it needs to be slightly approximated. To do it, the two endpoints of the algebraic segment are moved sligtly so that the supporting line  is either translated or rotated, but it still intersects the previous and the next parts of the bisector (in the general case they are parabolic arcs). This is done in such a way that the approximated supporting line has rational coefficients.\par
