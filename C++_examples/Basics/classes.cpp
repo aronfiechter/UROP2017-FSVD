@@ -22,6 +22,18 @@ public:
     this->height = _height;
   }
 
+  void birthday() {
+    this->age = age + 1;
+  }
+
+  Person operator+(Person& p) {
+    return Person(
+      this->get_name() + " " + p.get_name(),
+      this->get_age() + p.get_age(),
+      this->get_height() + p.get_height()
+    );
+  }
+
 private:
   std::string name;
   int age;
@@ -34,6 +46,11 @@ std::ostream& operator<<(std::ostream& os, const Person& person) {
      << "Height: " << person.get_height() << "\n"
   ;
   return os;
+}
+
+int make_birthday(Person& p) {
+  p.birthday();
+  return p.get_age();
 }
 
 int main() {
@@ -63,4 +80,14 @@ int main() {
 
   std::cout << "Updated height of dad:\n" << dad << '\n';
 
+  std::cout << "Adding two people (?): " << '\n'
+            << mom
+            << "+\n"
+            << dad
+            << "=\n"
+            << (mom.operator+(dad))
+  ;
+
+  std::cout << "\n\n" << make_birthday(me) << '\n';
+  std::cout << me;
 }
