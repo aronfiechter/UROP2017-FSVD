@@ -68,7 +68,7 @@
 	For a single segment on the \(xy\)-plane, for every point plot on the \(z\) axis the distance of that point to the segment. This creates an (unlimited) 3D surface. For a point, this surface is simply a cone; for a segment, it's two haflcones originating at the endpoints of the segment and two planes originating from the inner part of the segment (figure \ref{fig:distance_function}).\par
 	\begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\textwidth]{distance_function}
+    \framebox{\includegraphics[width=0.8\textwidth]{distance_function}}
     \caption{Distance function surface for a segment\protect\footnotemark \label{fig:distance_function}}
 	\end{figure}
 	\footnotetext{created using MATLAB script by Martin Suderland}
@@ -88,7 +88,7 @@
 	The bisector is formed, in the general case, by unbounded rays, segments and parabolic arcs (figure \ref{fig:areas_of_influence}).\ppar
 	\begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\textwidth]{areas_of_influence}
+    \framebox{\includegraphics[width=0.8\textwidth]{areas_of_influence}}
     \caption{Different parts of the bisector\label{fig:areas_of_influence}}
 	\end{figure}
 	Notice how the parts of the bisector are delimited by the lines orthogonal to the segments at their endpoints. For a single segment, these two lines divide the plane in three parts: the points closest to the source of the segment, the points closest to the inner part of the segment, the points closest to the target of the segment.\ppar
@@ -117,7 +117,7 @@
 	The only constructor for a \cod{Parabola} object takes a focus point and a directrix line. When this class is used in the Ipelet, the directrix and the focus are given as the endpoint of one segment and the supporting line of the other segment accordingly (see figure \ref{fig:parabola}, parabola in green).
 	\begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\textwidth]{parabola}
+    \framebox{\includegraphics[width=0.8\textwidth]{parabola}}
     \caption{A parabola defined by a supporting line (dotted) and the highlighted endpoint \label{fig:parabola}}
 	\end{figure}
 	
@@ -131,7 +131,6 @@
 	This is true for the case in which the segments are disjoint; if the segments are intersecting, then there are four unbounded rays, and the bisector is constructed in two iterations, creating two bisectors that "touch" at the intersection of the two segments.\ppar
 	
 	For both segments, the lines orthogonal to each endpoint are kept saved for the whole computation, since they determine all separations between the bisector parts. In the code, these lines are called \cod{Delimiter_lines}.
-	
 	
 	\subsection{Unbounded rays}
 	\begin{figure}[h]
@@ -164,9 +163,30 @@
 	\item a segment part of the bisector of the two supporting lines \hfill(\cod{SUPP_LINE_BISECTOR})
 	\item a segment part of the bisector of two endpoints \hfill(\cod{ENDPOINT_BISECTOR})
 	\end{itemize}
-	To do this, based on the \cod{curr_direction} and starting from \cod{curr_point}, shoot a straight line until the next intersection with the \cod{Delimiter_lines} is found. Then take the midpoint between \cod{curr_pt} and the next intersection found. Determine where this midpoint is, based on the orientation of the \cod{Delimiter_lines} (they always have their segment on the negative side) and on the predicates \cod{has_on_positive_side} and \cod{has_on_negative_side}.
+	To do this, based on the \cod{curr_direction} and starting from \cod{curr_point}, shoot a straight line until the next intersection with the \cod{Delimiter_lines} is found (see figure \ref{fig:iteration_shoot}). Then take the midpoint between \cod{curr_pt} and the next intersection found (called \cod{approximate_next_intersection} in the program). Determine where this midpoint is, based on the orientation of the \cod{Delimiter_lines} (they always have their segment on the negative side) and on the predicates \cod{has_on_positive_side} and \cod{has_on_negative_side}.
+	
+	\begin{figure}[h]
+    \centering
+    \framebox{\includegraphics[clip, trim=2cm 2cm 0 12cm, width=0.8\textwidth]{iteration_shoot}}
+    \caption{Step in the iteration. Previous parts in bold orange, future parts in thin. \label{fig:iteration_shoot}}
+	\end{figure}
+	
+	Once determined in which case of the three (\cod{PARABOLIC_ARC}, \cod{SUPP_LINE_BISECTOR} or \cod{ENDPOINT_BISECTOR}) we are, construct a parabolic arc or a segment, then find the real next intersection with the \cod{Delimiter_lines}, update the \cod{curr_pt} and the \cod{curr_direction}.
 	
 	\subsection{Disjoint and intersecting segments}
+	For this iteration, as said, there are two main cases: either the segments are disjoint, or the segments are intersecting; the case in which the intersection is weak (i.e. one segment just touches the other by an endpoint) was not taken into account.\par
+	To distinguish between these two cases, it suffices to check using the provided \cod{CGAL::do_intersect} function. If the segments do not intersect, then there are only two unbounded rays constructed. If they do intersect, there are four unbounded rays.
+	\subsubsection{Disjoint segments}
+	In this case, there are two rays, so just start from one ray and iterate constructing all internal parts of the bisector until the other ray (the endpoint) is found. In this case there are no real struggles, even when adding the approximation for the algebraic parts as described below.
+	\subsubsection{Intersecing segments}
+	In this case, there are four rays, therefore the iteration has to be done two times. The bisector can be seen as two bisectors that meet at the intersection of the two segments.\par
+	At first, the idea was to just make the two bisectors cross in the middle, but after a first implementation we observed that in this way they were not logically correct. Each bisector started by having one segment on the left side and the other on the right side; after the intersection, however, the two segments were in the opposite sides.\par
+	Therefore, it was decided to change the implementation to have the two bisectors touch at the segments intersection and then turn away from each other, maintaining the side on which the segments were for both bisectors (see figure \ref{fig:intersecting_bisectors}).
+	\begin{figure}[h]
+    \centering
+    \framebox{\includegraphics[clip, trim=2cm 2cm 2cm 2cm, width=0.8\textwidth]{intersecting_bisectors}}
+    \caption{The two lines (in orange and green) constituting the bisector of two intersecting segments. \label{fig:intersecting_bisectors}}
+	\end{figure}
 	
 	\subsection{Approximation}
 	The main problem with the computation of the bisector were the parts that lie on the bisector of the supporting lines of the two segments. This is because even if the two segments lie on lines with rational coefficients, the bisector might potentially have algebraic coefficients, as shown in figure \ref{fig:algebraic_line} previously.\ppar
